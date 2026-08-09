@@ -13,7 +13,7 @@ import {
 import { calculateBallot } from '../lib/ballotCalculator';
 
 // ---------------------------------------------------------
-// INITIAL REALISTIC DATASETS (Dựa theo tài liệu 1.pdf)
+// INITIAL DATASETS
 // ---------------------------------------------------------
 
 const INITIAL_UNIT: ElectionUnit = {
@@ -56,13 +56,13 @@ const INITIAL_CONFIGS: Record<ElectionLevel, ElectionLevelConfig> = {
   HDND_XA: {
     levelCode: 'HDND_XA',
     levelName: 'Đại biểu HĐND Xã',
-    totalVoters: 1369,
+    totalVoters: 1220,
     numCandidates: 5,
     numRepresentatives: 3,
-    ballotsReceived: 100,
-    ballotsIssued: 100,
+    ballotsReceived: 1240,
+    ballotsIssued: 1240,
     ballotsDamaged: 0,
-    ballotsReturned: 0,
+    ballotsReturned: 1220,
   },
 };
 
@@ -86,28 +86,27 @@ const INITIAL_WITNESSES: Witness[] = [
 
 const INITIAL_CANDIDATES: Candidate[] = [
   // Cấp Quốc hội
-  { id: 'qh-1', stt: 1, fullName: 'Nguyễn Đại Đồng', gender: 'Ông', dob: '13/10/1979', electionLevel: 'QUOC_HOI', voteCount: 4, votePercentage: 44.44 },
-  { id: 'qh-2', stt: 2, fullName: 'Nguyễn Duy Minh', gender: 'Ông', dob: '26/07/1982', electionLevel: 'QUOC_HOI', voteCount: 4, votePercentage: 44.44 },
-  { id: 'qh-3', stt: 3, fullName: 'Lê Ngọc Quang', gender: 'Ông', dob: '21/01/1978', electionLevel: 'QUOC_HOI', voteCount: 3, votePercentage: 33.33 },
-  { id: 'qh-4', stt: 4, fullName: 'Đặng Thị Thanh Trà', gender: 'Bà', dob: '20/08/1978', electionLevel: 'QUOC_HOI', voteCount: 6, votePercentage: 66.67 },
-  { id: 'qh-5', stt: 5, fullName: 'Phạm Trần Minh Tuyễn', gender: 'Bà', dob: '11/04/1989', electionLevel: 'QUOC_HOI', voteCount: 1, votePercentage: 11.11 },
+  { id: 'qh-1', stt: 1, fullName: 'Nguyễn Đại Đồng', gender: 'Ông', dob: '13/10/1979', electionLevel: 'QUOC_HOI', voteCount: 4, votePercentage: 44.44, votesType3: 3, votesType2: 1, votesType1: 0 },
+  { id: 'qh-2', stt: 2, fullName: 'Nguyễn Duy Minh', gender: 'Ông', dob: '26/07/1982', electionLevel: 'QUOC_HOI', voteCount: 4, votePercentage: 44.44, votesType3: 3, votesType2: 1, votesType1: 0 },
+  { id: 'qh-3', stt: 3, fullName: 'Lê Ngọc Quang', gender: 'Ông', dob: '21/01/1978', electionLevel: 'QUOC_HOI', voteCount: 3, votePercentage: 33.33, votesType3: 3, votesType2: 0, votesType1: 0 },
+  { id: 'qh-4', stt: 4, fullName: 'Đặng Thị Thanh Trà', gender: 'Bà', dob: '20/08/1978', electionLevel: 'QUOC_HOI', voteCount: 6, votePercentage: 66.67, votesType3: 3, votesType2: 2, votesType1: 1 },
+  { id: 'qh-5', stt: 5, fullName: 'Phạm Trần Minh Tuyễn', gender: 'Bà', dob: '11/04/1989', electionLevel: 'QUOC_HOI', voteCount: 1, votePercentage: 11.11, votesType3: 0, votesType2: 0, votesType1: 1 },
 
   // Cấp HĐND Tỉnh
-  { id: 'tinh-1', stt: 1, fullName: 'Vũ Quang Hùng', gender: 'Ông', dob: '06/09/1969', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0 },
-  { id: 'tinh-2', stt: 2, fullName: 'Lê Phú Nguyên', gender: 'Ông', dob: '01/01/1978', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0 },
-  { id: 'tinh-3', stt: 3, fullName: 'Nguyễn Thị Phượng', gender: 'Bà', dob: '14/07/1974', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0 },
-  { id: 'tinh-4', stt: 4, fullName: 'Nguyễn Thị Xuân Sang', gender: 'Bà', dob: '22/01/1992', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0 },
-  { id: 'tinh-5', stt: 5, fullName: 'Châu Thị Thu', gender: 'Bà', dob: '01/04/1988', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0 },
+  { id: 'tinh-1', stt: 1, fullName: 'Vũ Quang Hùng', gender: 'Ông', dob: '06/09/1969', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
+  { id: 'tinh-2', stt: 2, fullName: 'Lê Phú Nguyên', gender: 'Ông', dob: '01/01/1978', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
+  { id: 'tinh-3', stt: 3, fullName: 'Nguyễn Thị Phượng', gender: 'Bà', dob: '14/07/1974', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
+  { id: 'tinh-4', stt: 4, fullName: 'Nguyễn Thị Xuân Sang', gender: 'Bà', dob: '22/01/1992', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
+  { id: 'tinh-5', stt: 5, fullName: 'Châu Thị Thu', gender: 'Bà', dob: '01/04/1988', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
 
-  // Cấp HĐND Xã
-  { id: 'xa-1', stt: 1, fullName: 'Bùi Ngọc Anh', gender: 'Ông', dob: '19/03/1979', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0 },
-  { id: 'xa-2', stt: 2, fullName: 'Nguyễn Cường', gender: 'Ông', dob: '18/12/1975', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0 },
-  { id: 'xa-3', stt: 3, fullName: 'Phạm Điệp', gender: 'Ông', dob: '25/01/1964', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0 },
-  { id: 'xa-4', stt: 4, fullName: 'Nguyễn Ngọc Hải', gender: 'Ông', dob: '20/10/1976', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0 },
-  { id: 'xa-5', stt: 5, fullName: 'Trần Hữu Tuyết', gender: 'Ông', dob: '20/02/1993', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0 },
+  // Cấp HĐND Xã (Theo ảnh mẫu Xã Hòa Tiến)
+  { id: 'xa-1', stt: 1, fullName: 'BÙI NGỌC ANH', gender: 'Ông', dob: '19/03/1979', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
+  { id: 'xa-2', stt: 2, fullName: 'NGUYỄN CƯỜNG', gender: 'Ông', dob: '18/12/1975', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
+  { id: 'xa-3', stt: 3, fullName: 'PHẠM ĐIỆP', gender: 'Ông', dob: '25/01/1964', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
+  { id: 'xa-4', stt: 4, fullName: 'NGUYỄN NGỌC HẢI', gender: 'Ông', dob: '20/10/1976', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
+  { id: 'xa-5', stt: 5, fullName: 'TRẦN HỮU TUYẾT', gender: 'Ông', dob: '20/02/1993', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
 ];
 
-// XÓA DỮ LIỆU CỬ TRI MẪU NẾU NGƯỜI DÙNG CHƯA LƯU HOẶC KHỞI TẠO RỖNG
 const INITIAL_VOTERS: Voter[] = [];
 
 const STORAGE_KEYS = {
@@ -116,8 +115,8 @@ const STORAGE_KEYS = {
   COMMITTEE: 'app_bau_cu_committee',
   WITNESSES: 'app_bau_cu_witnesses',
   CANDIDATES: 'app_bau_cu_candidates',
-  VOTERS: 'app_bau_cu_voters_v2', // Versioned key to reset sample data
-  BALLOTS: 'app_bau_cu_ballots',
+  VOTERS: 'app_bau_cu_voters_v2',
+  BALLOTS: 'app_bau_cu_ballots_v2',
   SETTINGS: 'app_bau_cu_settings',
 };
 
@@ -198,6 +197,8 @@ export function useElectionStore() {
     const levelBallots = ballots.filter(b => b.electionLevel === level);
     const newBallotIndex = levelBallots.length + 1;
 
+    const numElectedCount = result.isValid ? result.electedCandidates.length : 0;
+
     const newRecord: BallotRecord = {
       id: `ballot-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       ballotIndex: newBallotIndex,
@@ -206,6 +207,7 @@ export function useElectionStore() {
       struckOutNumbers: inputStruckOut,
       struckOutCandidateIds: result.struckOutCandidates.map(c => c.id),
       electedCandidateIds: result.electedCandidates.map(c => c.id),
+      numElectedCount,
       createdAt: new Date().toISOString(),
     };
 
@@ -249,9 +251,14 @@ export function useElectionStore() {
     const updatedCandidates = currentCandidates.map(c => {
       if (c.electionLevel !== level) return c;
 
-      const votes = validLevelBallots.filter(b =>
+      const votesBallots = validLevelBallots.filter(b =>
         b.electedCandidateIds.includes(c.id)
-      ).length;
+      );
+
+      const votes = votesBallots.length;
+      const votesType3 = votesBallots.filter(b => b.numElectedCount === 3).length;
+      const votesType2 = votesBallots.filter(b => b.numElectedCount === 2).length;
+      const votesType1 = votesBallots.filter(b => b.numElectedCount === 1).length;
 
       const percentage = totalValidBallotsCount > 0
         ? parseFloat(((votes / totalValidBallotsCount) * 100).toFixed(2))
@@ -261,6 +268,9 @@ export function useElectionStore() {
         ...c,
         voteCount: votes,
         votePercentage: percentage,
+        votesType3,
+        votesType2,
+        votesType1,
       };
     });
 
@@ -318,6 +328,9 @@ export function useElectionStore() {
       stt: nextStt,
       voteCount: 0,
       votePercentage: 0,
+      votesType3: 0,
+      votesType2: 0,
+      votesType1: 0,
     };
 
     const updatedCandidates = [...candidates, newCandidate];

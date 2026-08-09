@@ -43,6 +43,10 @@ export interface Candidate {
   electionLevel: ElectionLevel;
   voteCount: number;
   votePercentage: number;
+  // Phân rã theo loại phiếu bầu 3, 2, 1 đại biểu
+  votesType3?: number;
+  votesType2?: number;
+  votesType1?: number;
 }
 
 export interface ElectionLevelConfig {
@@ -77,6 +81,7 @@ export interface BallotRecord {
   struckOutNumbers: string; // Chuỗi gạch nhập vào, VD '134' hoặc '0'
   struckOutCandidateIds: string[]; // Danh sách ID các ứng cử viên bị gạch
   electedCandidateIds: string[]; // Danh sách ID các ứng cử viên được bầu
+  numElectedCount: number; // Số đại biểu cử tri bầu trên phiếu này (1, 2, 3)
   createdAt: string;
 }
 

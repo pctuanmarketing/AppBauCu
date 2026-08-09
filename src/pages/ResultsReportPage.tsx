@@ -5,9 +5,9 @@ import {
   CheckCircle2,
   AlertTriangle,
   Award,
-  Download,
-  Building,
   Table,
+  Check,
+  RotateCcw,
 } from 'lucide-react';
 import { BallotRecord, Candidate, CommitteeMember, ElectionLevel, ElectionLevelConfig, ElectionUnit, Voter } from '../types';
 import { exportElectionResultsToExcel } from '../lib/excelExporter';
@@ -30,23 +30,58 @@ export const ResultsReportPage: React.FC<ResultsReportPageProps> = ({
   ballots,
   committee,
 }) => {
-  const [selectedLevel, setSelectedLevel] = useState<ElectionLevel>('QUOC_HOI');
+  const [selectedLevel, setSelectedLevel] = useState<ElectionLevel>('HDND_XA');
 
   const config = configs[selectedLevel];
-  const levelCandidates = candidates.filter(c => c.electionLevel === selectedLevel);
+  const levelCandidates = candidates
+    .filter(c => c.electionLevel === selectedLevel)
+    .sort((a, b) => a.stt - b.stt);
   const levelBallots = ballots.filter(b => b.electionLevel === selectedLevel);
 
-  const validBallotsCount = levelBallots.filter(b => b.isValid).length;
-  const invalidBallotsCount = levelBallots.filter(b => !b.isValid).length;
+  const validLevelBallots = levelBallots.filter(b => b.isValid);
+  const invalidLevelBallots = levelBallots.filter(b => !b.isValid);
 
-  // Rank candidates by vote count descending
-  const sortedCandidates = [...levelCandidates].sort((a, b) => b.voteCount - a.voteCount);
+  const validBallotsCount = validLevelBallots.length;
+  const invalidBallotsCount = invalidLevelBallots.length;
+  const totalReturnedBallots = levelBallots.length;
 
-  // Verification Check: Sum of candidate votes vs (Valid ballots * Num Representatives)
-  const totalVotesSum = levelCandidates.reduce((sum, c) => sum + c.voteCount, 0);
-  const totalBallotsCount = levelBallots.length;
+  // Breakdown by ballot type (bầu 3, bầu 2, bầu 1 đại biểu)
+  const countType3 = validLevelBallots.filter(b => b.numElectedCount === 3).length;
+  const countType2 = validLevelBallots.filter(b => b.numElectedCount === 2).length;
+  const countType1 = validLevelBallots.filter(b => b.numElectedCount === 1).length;
 
-  const isBalanced = totalVotesSum <= validBallotsCount * config.numRepresentatives;
+  const totalBallotTypesSum = countType3 + countType2 + countType1;
+  const totalVotesSum = (3 * countType3) + (2 * countType2) + (1 * countType1);
+
+  // Percentages
+  const voterParticipatedPct = config.totalVoters > 0
+    ? ((config.ballotsReturned / config.totalVoters) * 100).toFixed(2)
+    : '0.00';
+
+  const validPct = totalReturnedBallots > 0
+    ? ((validBallotsCount / totalReturnedBallots) * 100).toFixed(2)
+    : '0.00';
+
+  const invalidPct = totalReturnedBallots > 0
+    ? ((invalidBallotsCount / totalReturnedBallots) * 100).toFixed(2)
+    : '0.00';
+
+  // Verification checks (Cảnh báo kiểm tra đối soát)
+  const isVoterMatch = config.ballotsReturned <= config.totalVoters;
+  const isReturnedMatch = validBallotsCount + invalidBallotsCount === totalReturnedBallots;
+  const isBallotTypesMatch = totalBallotTypesSum === validBallotsCount;
+
+  // Check candidate breakdown totals
+  const sumCandType3 = levelCandidates.reduce((s, c) => s + (c.votesType3 || 0), 0);
+  const sumCandType2 = levelCandidates.reduce((s, c) => s + (c.votesType2 || 0), 0);
+  const sumCandType1 = levelCandidates.reduce((s, c) => s + (c.votesType1 || 0), 0);
+
+  const isMatrixMatch =
+    sumCandType3 === countType3 * 3 &&
+    sumCandType2 === countType2 * 2 &&
+    sumCandType1 === countType1 * 1;
+
+  const isAllExact = isVoterMatch && isReturnedMatch && isBallotTypesMatch && isMatrixMatch;
 
   const handleExportExcel = () => {
     exportElectionResultsToExcel(config, levelCandidates, voters, validBallotsCount, invalidBallotsCount);
@@ -57,12 +92,14 @@ export const ResultsReportPage: React.FC<ResultsReportPageProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header & Export Actions */}
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Header & Export Buttons */}
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-bold text-slate-800">KẾT QUẢ KIỂM PHIẾU & BÁO CÁO BẦU CỬ</h1>
-          <p className="text-xs text-slate-500">Tự động tổng hợp kết quả bầu cử, đối soát dữ liệu và xuất báo cáo/biên bản</p>
+          <h1 className="text-lg font-bold text-slate-800">KẾT QUẢ KIỂM PHIẾU & BIÊN BẢN TỔNG HỢP (MẪU CHÍNH THỨC)</h1>
+          <p className="text-xs text-slate-500">
+            Tự động tổng hợp bảng phân rã phiếu bầu theo loại (bầu 3, bầu 2, bầu 1) và đối soát dữ liệu 3 cấp
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -100,116 +137,258 @@ export const ResultsReportPage: React.FC<ResultsReportPageProps> = ({
         ))}
       </div>
 
-      {/* Main Results Container (Matching Specs Page 5 & 6) */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
-        <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-amber-900 text-xs font-bold flex items-center justify-between">
-          <span>*** PHẢI BẤM NÚT CẬP NHẬT TRÊN MENU ĐỂ TỔNG HỢP KẾT QUẢ KIỂM PHIẾU CHÍNH XÁC ***</span>
-          <span className="text-[11px] font-normal text-amber-800">
-            Khu vực bỏ phiếu số {unit.votingAreaNo} - {unit.wardName}
-          </span>
+      {/* OFFICIAL GOVERNMENT PROTOCOL TABLE TEMPLATE (MẪU BẢNG TỔNG HỢP HĐND XÃ HÒA TIẾN) */}
+      <div className="bg-white rounded-xl border-2 border-slate-400 p-6 shadow-md space-y-4">
+        <div className="text-center space-y-1 border-b pb-3">
+          <h2 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
+            TỔNG HỢP KẾT QUẢ KIỂM PHIẾU BẦU CỬ {config.levelName.toUpperCase()} {unit.wardName.toUpperCase()} KHÓA {unit.term}
+          </h2>
+          <p className="text-xs font-bold text-slate-700">
+            TẠI KHU VỰC BỎ PHIẾU SỐ {unit.votingAreaNo} - ĐƠN VỊ BẦU CỬ SỐ {unit.hdndXaUnitNo} ({unit.hdndXaVillages})
+          </p>
+          <p className="text-xs text-rose-600 italic font-semibold">
+            (Lưu ý: Các ô màu vàng đại diện cho dữ liệu kiểm phiếu thực tế từ phần mềm)
+          </p>
         </div>
 
-        {/* Results Tables Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left: Candidates Ranking (Cols 7) */}
-          <div className="lg:col-span-7 space-y-3">
-            <h3 className="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5">
-              <Award className="w-4 h-4 text-amber-500" />
-              KẾT QUẢ KIỂM PHIẾU & XẾP HẠNG TRÚNG CỬ
-            </h3>
+        {/* 2D Grid Layout matching official Excel template */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* Main Protocol Table (Cols 8) */}
+          <div className="lg:col-span-8 overflow-x-auto border-2 border-slate-700">
+            <table className="w-full text-left text-xs border-collapse font-sans">
+              <thead className="bg-emerald-700 text-white font-extrabold uppercase text-center border-b-2 border-slate-700">
+                <tr>
+                  <th className="p-2 border-r border-slate-600">NỘI DUNG</th>
+                  <th className="p-2 w-32 border-r border-slate-600">DỮ LIỆU</th>
+                  <th className="p-2 w-48">GHI CHÚ / ĐỐI SOÁT</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-300 font-medium">
+                {/* Row 1 */}
+                <tr className="hover:bg-slate-50">
+                  <td className="p-2 font-bold text-rose-800 border-r border-slate-300">Tổng số cử tri khu vực bỏ phiếu</td>
+                  <td className="p-2 text-center font-extrabold bg-amber-100 text-slate-900 border-r border-slate-300 text-sm">
+                    {config.totalVoters.toLocaleString('vi-VN')}
+                  </td>
+                  <td rowSpan={9} className="p-4 text-center bg-emerald-50/50 align-middle border-slate-300">
+                    <div className="space-y-2">
+                      <div className="font-extrabold text-sm text-rose-900 uppercase">
+                        BẦU CỬ {config.levelName.toUpperCase()}
+                      </div>
+                      <div className="font-bold text-xs text-sky-900">
+                        ĐƠN VỊ BẦU CỬ SỐ {unit.hdndXaUnitNo}
+                      </div>
+                      <div className="text-[11px] text-slate-600 italic">
+                        ({unit.hdndXaVillages})
+                      </div>
+                    </div>
+                  </td>
+                </tr>
 
-            <div className="overflow-x-auto border border-slate-200 rounded-lg">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100 text-slate-700 font-bold uppercase border-b border-slate-200">
-                  <tr>
-                    <th className="p-3 w-12 text-center">Stt</th>
-                    <th className="p-3">Tên Ứng cử viên</th>
-                    <th className="p-3 w-28 text-center">Số phiếu bầu</th>
-                    <th className="p-3 w-24 text-center">Tỷ lệ %</th>
-                    <th className="p-3 w-24 text-center">Xếp hạng</th>
-                    <th className="p-3 w-28 text-center">Kết quả</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {sortedCandidates.map((c, idx) => {
-                    const rank = idx + 1;
-                    const isElected = rank <= config.numRepresentatives && c.voteCount > 0;
-                    return (
-                      <tr key={c.id} className={isElected ? 'bg-emerald-50/50' : 'hover:bg-slate-50'}>
-                        <td className="p-3 text-center font-bold text-slate-500">{c.stt}</td>
-                        <td className="p-3 font-bold text-slate-800 text-sm">{c.fullName}</td>
-                        <td className="p-3 text-center font-extrabold text-emerald-600 text-sm">{c.voteCount}</td>
-                        <td className="p-3 text-center font-bold text-sky-700">{c.votePercentage}%</td>
-                        <td className="p-3 text-center font-bold text-slate-700">{rank}</td>
-                        <td className="p-3 text-center">
-                          {isElected ? (
-                            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                              TRÚNG CỬ
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 text-[11px]">Không trúng</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot className="bg-slate-100 font-bold border-t border-slate-200">
-                  <tr>
-                    <td colSpan={2} className="p-3 text-right">Tổng cộng:</td>
-                    <td className="p-3 text-center text-emerald-700 font-extrabold">{totalVotesSum}</td>
-                    <td colSpan={3} className="p-3 text-slate-500">
-                      (Tổng số lượt bầu: {totalVotesSum})
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+                {/* Row 2 */}
+                <tr className="hover:bg-slate-50">
+                  <td className="p-2 font-bold text-rose-800 border-r border-slate-300">Cử tri đã tham gia bỏ phiếu</td>
+                  <td className="p-2 text-center font-extrabold bg-amber-100 text-slate-900 border-r border-slate-300 text-sm">
+                    {config.ballotsReturned.toLocaleString('vi-VN')}
+                  </td>
+                </tr>
+
+                {/* Row 3 */}
+                <tr className="hover:bg-slate-50">
+                  <td className="p-2 text-rose-800 border-r border-slate-300">Tỷ lệ cử tri tham gia bỏ phiếu (%)</td>
+                  <td className="p-2 text-center font-bold font-mono border-r border-slate-300">
+                    {voterParticipatedPct}%
+                  </td>
+                </tr>
+
+                {/* Row 4 */}
+                <tr className="hover:bg-slate-50">
+                  <td className="p-2 font-bold text-emerald-800 border-r border-slate-300">Số phiếu phát ra</td>
+                  <td className="p-2 text-center font-extrabold bg-amber-100 text-slate-900 border-r border-slate-300 text-sm">
+                    {config.ballotsIssued.toLocaleString('vi-VN')}
+                  </td>
+                </tr>
+
+                {/* Row 5 */}
+                <tr className="hover:bg-slate-50">
+                  <td className="p-2 font-bold text-emerald-800 border-r border-slate-300">Số phiếu thu vào</td>
+                  <td className="p-2 text-center font-extrabold bg-amber-100 text-slate-900 border-r border-slate-300 text-sm">
+                    {totalReturnedBallots.toLocaleString('vi-VN')}
+                  </td>
+                </tr>
+
+                {/* Row 6 */}
+                <tr className="hover:bg-slate-50">
+                  <td className="p-2 font-bold text-emerald-800 border-r border-slate-300">Số phiếu hợp lệ</td>
+                  <td className="p-2 text-center font-extrabold bg-amber-100 text-emerald-800 border-r border-slate-300 text-sm">
+                    {validBallotsCount.toLocaleString('vi-VN')}
+                  </td>
+                </tr>
+
+                {/* Row 7 */}
+                <tr className="hover:bg-slate-50">
+                  <td className="p-2 text-slate-700 border-r border-slate-300">Tỷ lệ so với tổng số phiếu thu vào (%)</td>
+                  <td className="p-2 text-center font-bold font-mono border-r border-slate-300">
+                    {validPct}%
+                  </td>
+                </tr>
+
+                {/* Row 8 */}
+                <tr className="hover:bg-slate-50">
+                  <td className="p-2 text-slate-700 border-r border-slate-300">Số phiếu không hợp lệ</td>
+                  <td className="p-2 text-center font-extrabold bg-amber-100 text-rose-700 border-r border-slate-300 text-sm">
+                    {invalidBallotsCount.toLocaleString('vi-VN')}
+                  </td>
+                </tr>
+
+                {/* Row 9 */}
+                <tr className="hover:bg-slate-50">
+                  <td className="p-2 text-slate-700 border-r border-slate-300">Tỷ lệ so với tổng số phiếu thu vào (%)</td>
+                  <td className="p-2 text-center font-bold font-mono border-r border-slate-300">
+                    {invalidPct}%
+                  </td>
+                </tr>
+
+                {/* Breakdown Rows */}
+                <tr className="bg-sky-50/60 font-medium">
+                  <td className="p-2 text-sky-900 border-r border-slate-300">Số phiếu bầu cho 3 đại biểu</td>
+                  <td className="p-2 text-center font-bold bg-amber-100 text-slate-900 border-r border-slate-300">
+                    {countType3}
+                  </td>
+                  <td rowSpan={5} className="p-4 text-center bg-sky-600 text-white font-extrabold text-base align-middle">
+                    {isBallotTypesMatch ? 'ĐÃ KHỚP SỐ PHIẾU' : 'KIỂM TRA LẠI'}
+                  </td>
+                </tr>
+                <tr className="bg-sky-50/60 font-medium">
+                  <td className="p-2 text-sky-900 border-r border-slate-300">Số phiếu bầu cho 2 đại biểu</td>
+                  <td className="p-2 text-center font-bold bg-amber-100 text-slate-900 border-r border-slate-300">
+                    {countType2}
+                  </td>
+                </tr>
+                <tr className="bg-sky-50/60 font-medium">
+                  <td className="p-2 text-sky-900 border-r border-slate-300">Số phiếu bầu cho 1 đại biểu</td>
+                  <td className="p-2 text-center font-bold bg-amber-100 text-slate-900 border-r border-slate-300">
+                    {countType1}
+                  </td>
+                </tr>
+
+                <tr className="bg-orange-100 font-extrabold text-rose-900">
+                  <td className="p-2 border-r border-slate-300">Tổng số phiếu bầu các loại</td>
+                  <td className="p-2 text-center text-sm border-r border-slate-300">
+                    {totalBallotTypesSum}
+                  </td>
+                </tr>
+
+                <tr className="bg-emerald-100 font-extrabold text-emerald-950">
+                  <td className="p-2 border-r border-slate-300">Tổng số lượt bầu trên phiếu bầu</td>
+                  <td className="p-2 text-center text-sm border-r border-slate-300">
+                    {totalVotesSum}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
-          {/* Right: Verification Inspection Table (Cols 5) */}
-          <div className="lg:col-span-5 space-y-3">
-            <h3 className="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5">
-              <Table className="w-4 h-4 text-sky-600" />
-              KẾT QUẢ KIỂM TRA ĐỐI SOÁT PHIẾU
-            </h3>
-
-            <div className="overflow-x-auto border border-slate-200 rounded-lg">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100 text-slate-700 font-bold uppercase border-b border-slate-200">
-                  <tr>
-                    <th className="p-3">Loại phiếu bầu</th>
-                    <th className="p-3 text-center">Số phiếu</th>
-                    <th className="p-3 text-center">Số lượt bầu</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  <tr>
-                    <td className="p-3 font-semibold text-emerald-800">:: Phiếu hợp lệ</td>
-                    <td className="p-3 text-center font-bold text-slate-800">{validBallotsCount}</td>
-                    <td className="p-3 text-center font-bold text-emerald-600">{totalVotesSum}</td>
-                  </tr>
-                  <tr>
-                    <td className="p-3 font-semibold text-rose-800">:: Phiếu không hợp lệ</td>
-                    <td className="p-3 text-center font-bold text-rose-600">{invalidBallotsCount}</td>
-                    <td className="p-3 text-center text-slate-400">0</td>
-                  </tr>
-                </tbody>
-                <tfoot className="bg-slate-100 font-bold border-t border-slate-200">
-                  <tr>
-                    <td className="p-3">Tổng cộng:</td>
-                    <td className="p-3 text-center font-bold text-sky-800">{totalBallotsCount}</td>
-                    <td className="p-3 text-center font-extrabold text-emerald-700">{totalVotesSum}</td>
-                  </tr>
-                </tfoot>
-              </table>
+          {/* Verification Alert Cards Panel (Cols 4) */}
+          <div className="lg:col-span-4 space-y-3 flex flex-col justify-between">
+            {/* Status Card 1 */}
+            <div className="p-4 rounded-xl border-2 border-amber-400 bg-amber-50 text-center space-y-1 shadow-sm">
+              <span className="text-xs font-bold text-amber-900">TRẠNG THÁI TIẾN ĐỘ</span>
+              <div className="text-lg font-black text-amber-800 uppercase">TIẾP TỤC KIỂM PHIẾU</div>
             </div>
 
-            {/* Red Alert Rule Specs */}
-            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-              <span>* Phải kiểm tra lại nếu Tổng số lượt bầu cả 2 bảng không bằng nhau.</span>
+            {/* Status Card 2 */}
+            <div className={`p-4 rounded-xl border-2 text-center space-y-1 shadow-sm ${
+              isReturnedMatch ? 'border-emerald-500 bg-emerald-50' : 'border-rose-500 bg-rose-50'
+            }`}>
+              <span className="text-xs font-bold text-slate-700">ĐỐI SOÁT PHIẾU THU VÀO</span>
+              <div className={`text-base font-black ${isReturnedMatch ? 'text-emerald-700' : 'text-rose-700'}`}>
+                {isReturnedMatch ? '✓ ĐÃ KHỚP PHIẾU THU VÀO' : '⚠ KIỂM TRA LẠI PHIẾU'}
+              </div>
             </div>
+
+            {/* Status Card 3 (Big Final Verification Badge) */}
+            <div className={`p-6 rounded-xl border-4 text-center space-y-2 shadow-lg ${
+              isAllExact
+                ? 'border-emerald-600 bg-emerald-600 text-white'
+                : 'border-rose-600 bg-rose-600 text-white animate-pulse'
+            }`}>
+              <span className="text-xs font-bold uppercase tracking-widest opacity-90">KẾT QUẢ ĐỐI SOÁT CẢNH BÁO</span>
+              <div className="text-2xl font-black uppercase tracking-wider">
+                {isAllExact ? 'CHÍNH XÁC' : 'SAI LỆCH! KIỂM TRA LẠI'}
+              </div>
+              <p className="text-[11px] opacity-90">
+                {isAllExact
+                  ? 'Tất cả 2 bảng kiểm đếm đều trùng khớp 100%'
+                  : 'Vui lòng đối soát lại số phiếu bầu các loại và số lượt bầu'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* DETAILED CANDIDATE VOTE DECOMPOSITION MATRIX (BẢNG PHÂN RÃ THEO LOẠI PHIẾU BẦU 3, 2, 1) */}
+        <div className="pt-4 space-y-2">
+          <h3 className="text-xs font-extrabold text-slate-900 uppercase">
+            BẢNG PHÂN BỔ SỐ PHIẾU BẦU CHO TỪNG NGƯỜI ỨNG CỬ THEO LOẠI PHIẾU BẦU (3, 2, 1 ĐẠI BIỂU)
+          </h3>
+
+          <div className="overflow-x-auto border-2 border-slate-700">
+            <table className="w-full text-left text-xs border-collapse font-sans">
+              <thead className="bg-slate-200 text-slate-900 font-extrabold uppercase border-b-2 border-slate-700">
+                <tr>
+                  <th className="p-2 border-r border-slate-400">Số phiếu bầu cho người ứng cử</th>
+                  <th className="p-2 w-32 text-center border-r border-slate-400">Tổng số phiếu bầu</th>
+                  <th className="p-2 w-32 text-center border-r border-slate-400 bg-amber-200">Loại phiếu bầu 3</th>
+                  <th className="p-2 w-32 text-center border-r border-slate-400 bg-amber-200">Loại phiếu bầu 2</th>
+                  <th className="p-2 w-32 text-center border-r border-slate-400 bg-amber-200">Loại phiếu bầu 1</th>
+                  <th className="p-2 w-36 text-center bg-emerald-200">Trạng thái đối soát</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-300 font-medium">
+                {levelCandidates.map(c => (
+                  <tr key={c.id} className="hover:bg-slate-50">
+                    <td className="p-2.5 font-extrabold text-slate-900 uppercase border-r border-slate-300">
+                      {c.fullName}
+                    </td>
+                    <td className="p-2.5 text-center font-extrabold text-emerald-800 text-sm border-r border-slate-300">
+                      {c.voteCount}
+                    </td>
+                    <td className="p-2.5 text-center font-bold bg-amber-100 text-slate-900 border-r border-slate-300">
+                      {c.votesType3 || 0}
+                    </td>
+                    <td className="p-2.5 text-center font-bold bg-amber-100 text-slate-900 border-r border-slate-300">
+                      {c.votesType2 || 0}
+                    </td>
+                    <td className="p-2.5 text-center font-bold bg-amber-100 text-slate-900 border-r border-slate-300">
+                      {c.votesType1 || 0}
+                    </td>
+                    <td rowSpan={levelCandidates.length} className="p-4 text-center bg-emerald-50 text-emerald-800 font-black text-base align-middle hidden first:table-cell">
+                      CHÍNH XÁC
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="bg-sky-900 text-white font-extrabold text-xs">
+                <tr>
+                  <td className="p-2.5 uppercase border-r border-sky-700">TỔNG SỐ PHIẾU BẦU CHO NHỮNG NGƯỜI ỨNG CỬ</td>
+                  <td className="p-2.5 text-center text-amber-300 text-sm border-r border-sky-700">
+                    {totalVotesSum}
+                  </td>
+                  <td className="p-2.5 text-center border-r border-sky-700">
+                    {sumCandType3}
+                  </td>
+                  <td className="p-2.5 text-center border-r border-sky-700">
+                    {sumCandType2}
+                  </td>
+                  <td className="p-2.5 text-center border-r border-sky-700">
+                    {sumCandType1}
+                  </td>
+                  <td className="p-2.5 text-center text-emerald-300">
+                    {isMatrixMatch ? '✓ ĐÃ KHỚP' : 'SAI LỆCH'}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         </div>
       </div>
