@@ -9,7 +9,6 @@ import {
   Trash2,
   Save,
   X,
-  CheckCircle,
 } from 'lucide-react';
 import { Candidate, CommitteeMember, ElectionLevel, ElectionLevelConfig, ElectionUnit, Witness } from '../types';
 
@@ -212,7 +211,7 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-lg font-bold text-slate-800">DỮ LIỆU BẦU CỬ & NHÂN SỰ TỔ BẦU CỬ</h1>
-          <p className="text-xs text-slate-500">Cấu hình thông tin khu vực bỏ phiếu, nhân sự tổ bầu cử và danh sách ứng cử viên 3 cấp (Có đầy đủ Thêm - Sửa - Xóa)</p>
+          <p className="text-xs text-slate-500">Cấu hình thông tin khu vực bỏ phiếu, nhân sự tổ bầu cử và danh sách ứng cử viên 3 cấp</p>
         </div>
 
         {/* Sub-tabs */}
@@ -407,13 +406,13 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
         </div>
       )}
 
-      {/* SUB-TAB 2: NHÂN SỰ TỔ BẦU CỬ (CÓ THÊM - SỬA - XÓA) */}
+      {/* SUB-TAB 2: NHÂN SỰ TỔ BẦU CỬ */}
       {activeSubTab === 'committee' && (
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-3">
             <div>
               <h2 className="text-sm font-bold text-slate-800">DANH SÁCH THÀNH VIÊN TỔ BẦU CỬ SỐ {unit.votingAreaNo}</h2>
-              <p className="text-xs text-slate-500">Quản lý danh sách Tổ trưởng, Thư ký và các Ủy viên (Hỗ trợ Thêm, Sửa, Xóa)</p>
+              <p className="text-xs text-slate-500">Quản lý danh sách Tổ trưởng, Thư ký và các Ủy viên</p>
             </div>
 
             <button
@@ -487,13 +486,13 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
         </div>
       )}
 
-      {/* SUB-TAB 3: CỬ TRI CHỨNG KIẾN (CÓ SỐ CCCD & SỐ ĐIỆN THOẠI + THÊM SỬA XÓA) */}
+      {/* SUB-TAB 3: CỬ TRI CHỨNG KIẾN */}
       {activeSubTab === 'witnesses' && (
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-3">
             <div>
               <h2 className="text-sm font-bold text-slate-800">DANH SÁCH CỬ TRI CHỨNG KIẾN MỞ THÙNG PHIẾU</h2>
-              <p className="text-xs text-slate-500">Cử tri đại diện tham gia kiểm kê niêm phong (Đầy đủ Họ tên, Địa chỉ, Số CCCD, SĐT)</p>
+              <p className="text-xs text-slate-500">Cử tri đại diện tham gia kiểm kê niêm phong</p>
             </div>
 
             <button
@@ -555,7 +554,7 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
         </div>
       )}
 
-      {/* SUB-TAB 4: ỨNG CỬ VIÊN 3 CẤP (CÓ THÊM - SỬA - XÓA CHO TỪNG CẤP) */}
+      {/* SUB-TAB 4: ỨNG CỬ VIÊN 3 CẤP (CHUẨN THEO MẪU 1.PDF PAGE 2-3) */}
       {activeSubTab === 'candidates' && (
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
           {/* Select Election Level */}
@@ -571,14 +570,61 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
-                  {configs[lvl].levelName}
+                  DỮ LIỆU BẦU CỬ {configs[lvl].levelName.toUpperCase()}
                 </button>
               ))}
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-sky-50 p-2 rounded-lg border border-sky-200 text-xs">
-                <span className="font-semibold text-sky-900">Số ĐB được bầu (K):</span>
+            <button
+              onClick={handleOpenCandidateAdd}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow"
+            >
+              <Plus className="w-4 h-4" />
+              Thêm ứng cử viên ({configs[selectedLevel].levelName})
+            </button>
+          </div>
+
+          {/* Ô NHẬP LIỆU THÔNG SỐ BẦU CỬ CHO TỪNG CẤP (BẮT BUỘC NHƯ NHAU CHO 3 CẤP) */}
+          <div className="bg-sky-50/70 p-4 rounded-xl border border-sky-200 space-y-2">
+            <h3 className="text-xs font-bold text-sky-900 uppercase">
+              THÔNG SỐ BẦU CỬ {currentConfig.levelName.toUpperCase()}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              {/* Ô 1: Tổng số cử tri */}
+              <div className="bg-white p-3 rounded-lg border border-sky-300 space-y-1 shadow-xs">
+                <label className="block text-slate-600 font-bold">▶ Tổng số cử tri:</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={currentConfig.totalVoters}
+                  onChange={e =>
+                    updateLevelConfig(selectedLevel, {
+                      totalVoters: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full p-1.5 border border-slate-300 rounded font-extrabold text-sky-800 text-sm"
+                />
+              </div>
+
+              {/* Ô 2: Số người ứng cử */}
+              <div className="bg-white p-3 rounded-lg border border-sky-300 space-y-1 shadow-xs">
+                <label className="block text-slate-600 font-bold">▶ Số người ứng cử:</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={levelCandidates.length}
+                  onChange={e =>
+                    updateLevelConfig(selectedLevel, {
+                      numCandidates: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full p-1.5 border border-slate-300 rounded font-extrabold text-slate-800 text-sm"
+                />
+              </div>
+
+              {/* Ô 3: Số đại biểu được bầu */}
+              <div className="bg-white p-3 rounded-lg border border-sky-300 space-y-1 shadow-xs">
+                <label className="block text-slate-600 font-bold">▶ Số đại biểu được bầu:</label>
                 <input
                   type="number"
                   min={1}
@@ -589,43 +635,33 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
                       numRepresentatives: parseInt(e.target.value) || 1,
                     })
                   }
-                  className="w-14 p-1 bg-white border border-sky-300 rounded font-bold text-center text-sky-800"
+                  className="w-full p-1.5 border border-slate-300 rounded font-extrabold text-emerald-700 text-sm"
                 />
               </div>
-
-              <button
-                onClick={handleOpenCandidateAdd}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow"
-              >
-                <Plus className="w-4 h-4" />
-                Thêm ứng cử viên ({configs[selectedLevel].levelName})
-              </button>
             </div>
           </div>
 
-          {/* Candidate List Table */}
+          {/* Candidate List Table (BỎ CỘT SỐ PHIẾU NHẬN VÀ TỶ LỆ %) */}
           <div className="space-y-3">
             <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-              DANH SÁCH ỨNG CỬ VIÊN {currentConfig.levelName.toUpperCase()} (TỔNG: {levelCandidates.length} NGƯỜI)
+              NHẬP DANH SÁCH ỨNG CỬ VIÊN {currentConfig.levelName.toUpperCase()} (TỔNG: {levelCandidates.length} NGƯỜI)
             </h3>
 
             <div className="overflow-x-auto border border-slate-200 rounded-lg">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100 text-slate-700 font-bold uppercase border-b border-slate-200">
                   <tr>
-                    <th className="p-3 w-16 text-center">STT Bầu</th>
+                    <th className="p-3 w-16 text-center">STT</th>
                     <th className="p-3">Họ và tên ứng cử viên</th>
                     <th className="p-3 w-24 text-center">Giới tính</th>
-                    <th className="p-3 w-32 text-center">Ngày sinh</th>
-                    <th className="p-3 w-28 text-center">Số phiếu nhận</th>
-                    <th className="p-3 w-24 text-center">Tỷ lệ %</th>
+                    <th className="p-3 w-36 text-center">Ngày sinh</th>
                     <th className="p-3 w-28 text-center">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {levelCandidates.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-slate-400">
+                      <td colSpan={5} className="p-8 text-center text-slate-400">
                         Chưa có ứng cử viên nào cho cấp {currentConfig.levelName}. Vui lòng bấm "+ Thêm ứng cử viên".
                       </td>
                     </tr>
@@ -640,8 +676,6 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
                         <td className="p-3 font-bold text-slate-800 text-sm">{c.fullName}</td>
                         <td className="p-3 text-center text-slate-600">{c.gender}</td>
                         <td className="p-3 text-center font-mono text-slate-600">{c.dob}</td>
-                        <td className="p-3 text-center font-bold text-emerald-600 text-sm">{c.voteCount}</td>
-                        <td className="p-3 text-center font-bold text-sky-700">{c.votePercentage}%</td>
                         <td className="p-3 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <button
@@ -750,7 +784,7 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
         </div>
       )}
 
-      {/* MODAL 2: WITNESS FORM (BỔ SUNG CCCD & SĐT) */}
+      {/* MODAL 2: WITNESS FORM */}
       {showWitnessModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
