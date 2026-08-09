@@ -24,6 +24,11 @@ export const getSupabaseConfig = () => {
   };
 };
 
+export const isSupabaseConfigured = (): boolean => {
+  const config = getSupabaseConfig();
+  return config.isConnected;
+};
+
 export const initCustomSupabase = (url: string, key: string): SupabaseClient => {
   localStorage.setItem('app_supabase_url', url);
   localStorage.setItem('app_supabase_key', key);
