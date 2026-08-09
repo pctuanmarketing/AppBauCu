@@ -38,6 +38,15 @@ export const ResultsReportPage: React.FC<ResultsReportPageProps> = ({
     .sort((a, b) => a.stt - b.stt);
   const levelBallots = ballots.filter(b => b.electionLevel === selectedLevel);
 
+  const eligibleVoters = voters.filter(v => {
+    if (selectedLevel === 'QUOC_HOI') return v.eligibleQuocHoi !== false;
+    if (selectedLevel === 'HDND_TINH') return v.eligibleHdndTinh !== false;
+    return v.eligibleHdndXa !== false;
+  });
+
+  const totalVotersCount = eligibleVoters.length;
+  const voterParticipatedCount = eligibleVoters.filter(v => v.hasVoted).length;
+
   const validLevelBallots = levelBallots.filter(b => b.isValid);
   const invalidLevelBallots = levelBallots.filter(b => !b.isValid);
 
@@ -54,8 +63,8 @@ export const ResultsReportPage: React.FC<ResultsReportPageProps> = ({
   const totalVotesSum = (3 * countType3) + (2 * countType2) + (1 * countType1);
 
   // Percentages
-  const voterParticipatedPct = config.totalVoters > 0
-    ? ((config.ballotsReturned / config.totalVoters) * 100).toFixed(2)
+  const voterParticipatedPct = totalVotersCount > 0
+    ? ((voterParticipatedCount / totalVotersCount) * 100).toFixed(2)
     : '0.00';
 
   const validPct = totalReturnedBallots > 0
@@ -66,15 +75,31 @@ export const ResultsReportPage: React.FC<ResultsReportPageProps> = ({
     ? ((invalidBallotsCount / totalReturnedBallots) * 100).toFixed(2)
     : '0.00';
 
-  // Verification checks (Cảnh báo kiểm tra đối soát)
-  const isVoterMatch = config.ballotsReturned <= config.totalVoters;
-  const isReturnedMatch = validBallotsCount + invalidBallotsCount === totalReturnedBallots;
-  const isBallotTypesMatch = totalBallotTypesSum === validBallotsCount;
+  // Compute live candidate vote counts and breakdown per ballot type
+  const candidateStats = levelCandidates.map(c => {
+    const v3 = validLevelBallots.filter(b => b.numElectedCount === 3 && b.electedCandidateIds.includes(c.id)).length;
+    const v2 = validLevelBallots.filter(b => b.numElectedCount === 2 && b.electedCandidateIds.includes(c.id)).length;
+    const v1 = validLevelBallots.filter(b => b.numElectedCount === 1 && b.electedCandidateIds.includes(c.id)).length;
+    const totalV = v3 + v2 + v1;
+
+    return {
+      ...c,
+      voteCount: totalV,
+      votesType3: v3,
+      votesType2: v2,
+      votesType1: v1,
+    };
+  });
 
   // Check candidate breakdown totals
-  const sumCandType3 = levelCandidates.reduce((s, c) => s + (c.votesType3 || 0), 0);
-  const sumCandType2 = levelCandidates.reduce((s, c) => s + (c.votesType2 || 0), 0);
-  const sumCandType1 = levelCandidates.reduce((s, c) => s + (c.votesType1 || 0), 0);
+  const sumCandType3 = candidateStats.reduce((s, c) => s + c.votesType3, 0);
+  const sumCandType2 = candidateStats.reduce((s, c) => s + c.votesType2, 0);
+  const sumCandType1 = candidateStats.reduce((s, c) => s + c.votesType1, 0);
+
+  // Verification checks (Cảnh báo kiểm tra đối soát)
+  const isVoterMatch = voterParticipatedCount <= totalVotersCount;
+  const isReturnedMatch = validBallotsCount + invalidBallotsCount === totalReturnedBallots;
+  const isBallotTypesMatch = totalBallotTypesSum === validBallotsCount;
 
   const isMatrixMatch =
     sumCandType3 === countType3 * 3 &&
@@ -345,7 +370,7 @@ export const ResultsReportPage: React.FC<ResultsReportPageProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-300 font-medium">
-                {levelCandidates.map(c => (
+                {candidateStats.map(c => (
                   <tr key={c.id} className="hover:bg-slate-50">
                     <td className="p-2.5 font-extrabold text-slate-900 uppercase border-r border-slate-300">
                       {c.fullName}
