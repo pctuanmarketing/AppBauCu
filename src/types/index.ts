@@ -33,12 +33,21 @@ export interface VotingUnit {
   hdndXaAreas: string;
 }
 
+export interface ElectionPersonnelMember {
+  stt: number;
+  fullName: string;
+  position: string;
+  idCard?: string;
+  phone?: string;
+}
+
 export interface ElectionPersonnel {
   toTruong: string;
   thuKy: string;
   uyVien1: string;
   uyVien2: string;
   uyVien3: string;
+  members?: ElectionPersonnelMember[];
 }
 
 export interface WitnessVoter {
@@ -46,6 +55,7 @@ export interface WitnessVoter {
   fullName: string;
   address: string;
   idCard: string;
+  phone?: string;
 }
 
 export interface Council {
