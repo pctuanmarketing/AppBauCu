@@ -152,21 +152,18 @@ export const Header: React.FC<HeaderProps> = ({
           <span>{currentTime}</span>
         </div>
 
-        {/* Notifications Bell Dropdown */}
+        {/* Notifications Bell Button & Integrated Dropdown */}
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
-            className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+            className="relative w-9 h-9 rounded-xl bg-slate-100/80 hover:bg-slate-200/80 text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center border border-slate-200/60 shadow-2xs group"
             title="Thông báo biến động hệ thống"
           >
-            <Bell className="w-4 h-4" />
+            <Bell className="w-4.5 h-4.5 text-slate-600 group-hover:scale-110 transition-transform" />
             {unreadCount > 0 && (
-              <>
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping" />
-                <span className="absolute -top-1 -right-1 bg-rose-600 text-white font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center border-2 border-white shadow-2xs">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              </>
+              <span className="absolute -top-1.5 -right-1.5 px-1.5 min-w-[18px] h-4.5 bg-gradient-to-r from-rose-500 to-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-xs leading-none">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
             )}
           </button>
 
@@ -293,7 +290,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Help button */}
         <button
           onClick={onOpenHelp}
-          className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
+          className="h-9 px-3 rounded-xl bg-slate-100/80 hover:bg-slate-200/80 text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5 text-xs font-semibold border border-slate-200/60 shadow-2xs"
           title="Hướng dẫn sử dụng"
         >
           <HelpCircle className="w-4 h-4 text-sky-600" />
