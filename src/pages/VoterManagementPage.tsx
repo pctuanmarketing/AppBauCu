@@ -111,6 +111,9 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
   const votedHdndXa = voters.filter(v => v.hasVoted && (v.eligibleHdndXa !== false)).length;
   const pctHdndXa = totalHdndXa > 0 ? ((votedHdndXa / totalHdndXa) * 100).toFixed(2) : '0.00';
 
+  // Validation Alert Box State
+  const [checkinAlert, setCheckinAlert] = useState<{ title: string; message: string; type: 'success' | 'warning' | 'error' | 'duplicate' } | null>(null);
+
   const showToast = (text: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToastMsg({ text, type });
     setTimeout(() => {
@@ -118,27 +121,56 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
     }, 2500);
   };
 
-  // Quick check-in by card number or STT
+  // Strict quick check-in validation algorithm with clean short alerts
   const handleQuickCheckinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanInput = quickCardNoInput.trim().toUpperCase();
-    if (!cleanInput) return;
+    if (!cleanInput) {
+      setCheckinAlert({
+        title: '⚠️ Chưa nhập mã',
+        message: 'Vui lòng nhập Số thẻ hoặc STT cử tri để điểm danh.',
+        type: 'warning',
+      });
+      return;
+    }
 
+    // Search matching voter by voterCardNo or STT
     const matchedVoter = voters.find(
       v => v.voterCardNo.toUpperCase() === cleanInput || v.stt.toString() === cleanInput
     );
 
-    if (matchedVoter) {
-      if (!matchedVoter.hasVoted) {
-        toggleVoterStatus(matchedVoter.id);
-        showToast(`✅ Đã điểm danh thành công cử tri: ${matchedVoter.fullName}`, 'success');
-      } else {
-        showToast(`ℹ️ Cử tri ${matchedVoter.fullName} đã bỏ phiếu trước đó (${matchedVoter.votedAt || ''})`, 'info');
-      }
-      setQuickCardNoInput('');
-    } else {
-      showToast(`⚠️ Không tìm thấy cử tri có mã thẻ/STT: "${cleanInput}"`, 'error');
+    // Rule 1: CHỈ ĐIỂM DANH KHIN SỐ THẺ CÓ TRONG DANH SÁCH
+    if (!matchedVoter) {
+      setCheckinAlert({
+        title: '⛔ Không tìm thấy cử tri',
+        message: `Mã thẻ/STT "${cleanInput}" không có trong danh sách chính thức!`,
+        type: 'error',
+      });
+      showToast(`⛔ Mã "${cleanInput}" không có trong danh sách!`, 'error');
+      return;
     }
+
+    // Rule 2: KHÔNG ĐƯỢC ĐIỂM DANH TRÙNG LẶP
+    if (matchedVoter.hasVoted) {
+      setCheckinAlert({
+        title: '⛔ Cảnh báo: Đã đi bầu trước đó!',
+        message: `Cử tri ${matchedVoter.fullName} (Thẻ: ${matchedVoter.voterCardNo}) đã điểm danh rồi.`,
+        type: 'duplicate',
+      });
+      showToast(`⛔ Cử tri ${matchedVoter.fullName} đã bỏ phiếu rồi!`, 'error');
+      return;
+    }
+
+    // Rule 3: ĐIỂM DANH THÀNH CÔNG
+    toggleVoterStatus(matchedVoter.id);
+    const nowTime = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    setCheckinAlert({
+      title: '✅ Ghi nhận điểm danh thành công!',
+      message: `Cử tri: ${matchedVoter.fullName} • Mã thẻ: ${matchedVoter.voterCardNo} • Thời gian: ${nowTime}`,
+      type: 'success',
+    });
+    showToast(`✅ Đã điểm danh: ${matchedVoter.fullName}`, 'success');
+    setQuickCardNoInput('');
   };
 
   const handleOpenAddModal = () => {
@@ -454,6 +486,41 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
             XÁC NHẬN BỎ PHIẾU
           </button>
         </form>
+
+        {/* Live Validation Alert Feedback Box */}
+        {checkinAlert && (
+          <div className={`p-3 rounded-xl text-xs flex items-center justify-between shadow-sm transition-all border ${
+            checkinAlert.type === 'success'
+              ? 'bg-emerald-50 text-emerald-950 border-emerald-300'
+              : checkinAlert.type === 'duplicate'
+              ? 'bg-rose-50 text-rose-950 border-rose-300 animate-pulse'
+              : checkinAlert.type === 'error'
+              ? 'bg-amber-50 text-amber-950 border-amber-300'
+              : 'bg-sky-50 text-sky-950 border-sky-300'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className={`p-1.5 rounded-lg shrink-0 ${
+                checkinAlert.type === 'success' ? 'bg-emerald-200/60 text-emerald-800' :
+                checkinAlert.type === 'duplicate' ? 'bg-rose-200/60 text-rose-800' :
+                checkinAlert.type === 'error' ? 'bg-amber-200/60 text-amber-800' : 'bg-sky-200/60 text-sky-800'
+              }`}>
+                {checkinAlert.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> :
+                 checkinAlert.type === 'duplicate' ? <XCircle className="w-4 h-4" /> :
+                 checkinAlert.type === 'error' ? <XCircle className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
+              </div>
+              <div className="space-y-0.5">
+                <div className="font-extrabold text-xs tracking-tight">{checkinAlert.title}</div>
+                <div className="text-[11px] font-medium opacity-90">{checkinAlert.message}</div>
+              </div>
+            </div>
+            <button
+              onClick={() => setCheckinAlert(null)}
+              className="text-slate-400 hover:text-slate-700 text-xs font-black p-1 hover:bg-black/5 rounded-lg transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </div>
 
       {/* THANH THỐNG KÊ THỜI GIAN THỰC (EXCEL SPEC BAR DESIGN) */}
