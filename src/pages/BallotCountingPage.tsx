@@ -13,6 +13,8 @@ import {
   Check,
   X,
   FileSpreadsheet,
+  Zap,
+  Layers,
 } from 'lucide-react';
 import { BallotRecord, Candidate, ElectionLevel, ElectionLevelConfig } from '../types';
 import { BallotValidationResult } from '../lib/ballotCalculator';
@@ -52,6 +54,11 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
   const [enterCount, setEnterCount] = useState(0);
   const [lastSubmittedResult, setLastSubmittedResult] = useState<BallotValidationResult | null>(null);
   const [showLogModal, setShowLogModal] = useState(false);
+
+  // Dual Entry Mode States (Single vs Batch)
+  const [entryMode, setEntryMode] = useState<'SINGLE' | 'BATCH'>('SINGLE');
+  const [batchQuantity, setBatchQuantity] = useState<number>(10);
+  const [batchToast, setBatchToast] = useState<{ count: number; input: string; isValid: boolean; reason?: string } | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -96,20 +103,60 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
     setLastSubmittedResult(res);
     setStruckOutInput('');
     setEnterCount(0);
-    inputRef.current?.focus();
+
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
+  const handleBatchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLastSubmittedResult(null);
+
+    const cleanInput = struckOutInput.trim();
+    if (!cleanInput) {
+      alert('Vui lòng nhập các số thứ tự ứng cử viên bị gạch tên (hoặc 0 cho phiếu không hợp lệ)!');
+      return;
+    }
+
+    if (batchQuantity <= 0) {
+      alert('Số lượng phiếu nạp theo lô phải lớn hơn 0.');
+      return;
+    }
+
+    let lastRes: BallotValidationResult | null = null;
+    for (let i = 0; i < batchQuantity; i++) {
+      lastRes = addBallot(activeLevel, cleanInput);
+    }
+
+    if (lastRes) {
+      setBatchToast({
+        count: batchQuantity,
+        input: cleanInput,
+        isValid: lastRes.isValid,
+        reason: lastRes.reason,
+      });
+      setStruckOutInput('');
+    }
   };
 
   // Keyboard shortcut: Press Enter twice to submit
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (enterCount >= 1 || struckOutInput.trim() === '0') {
+
+      if (!struckOutInput.trim()) return;
+
+      const newEnterCount = enterCount + 1;
+      setEnterCount(newEnterCount);
+
+      if (newEnterCount >= 2) {
         handleSubmitBallot();
-      } else {
-        setEnterCount(prev => prev + 1);
       }
     } else {
-      setEnterCount(0);
+      if (enterCount > 0) {
+        setEnterCount(0);
+      }
     }
   };
 
@@ -217,77 +264,213 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
             </table>
           </div>
 
-          {/* RAPID INPUT PANEL */}
+          {/* DUAL MODE INPUT PANEL (SINGLE VS BATCH) */}
           <div className="bg-gradient-to-r from-rose-50/70 via-sky-50/40 to-slate-50 p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3.5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Mode Switcher Tabs */}
+            <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5 gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-700 uppercase">
-                  Phiếu số:
-                </span>
-                <span className="text-base font-black font-mono text-sky-800 bg-white px-3 py-1 rounded-xl border border-sky-300 shadow-2xs">
-                  #{currentBallotNo}
-                </span>
-              </div>
-
-              <div className="flex-1 flex items-center gap-2 max-w-sm">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={struckOutInput}
-                  onChange={e => setStruckOutInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Gõ số bị gạch..."
-                  className="w-full px-4 py-2 bg-white border-2 border-rose-300 rounded-xl text-center text-lg font-mono font-black text-rose-900 focus:bg-white focus:outline-none focus:border-rose-500 shadow-inner tracking-wider"
-                />
                 <button
-                  onClick={handleSubmitBallot}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all shrink-0 flex items-center gap-1.5"
+                  type="button"
+                  onClick={() => {
+                    setEntryMode('SINGLE');
+                    setLastSubmittedResult(null);
+                    setBatchToast(null);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 ${
+                    entryMode === 'SINGLE'
+                      ? 'bg-sky-600 text-white shadow-2xs font-extrabold'
+                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                  }`}
                 >
-                  <Check className="w-4 h-4" />
-                  <span>Xác nhận</span>
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>⚡ Nhập Từng Phiếu (Gạch tên nhanh)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEntryMode('BATCH');
+                    setLastSubmittedResult(null);
+                    setBatchToast(null);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 ${
+                    entryMode === 'BATCH'
+                      ? 'bg-amber-600 text-white shadow-2xs font-extrabold'
+                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>📦 Nhập Theo Lô Hàng Loạt</span>
                 </button>
               </div>
 
               <button
+                type="button"
                 onClick={() => setShowLogModal(true)}
-                className="bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-3.5 py-2 rounded-xl border border-slate-200 flex items-center gap-1.5 shadow-2xs transition-colors"
+                className="bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-1.5 shadow-2xs transition-colors"
               >
                 <Eye className="w-4 h-4 text-sky-600" />
-                <span>Xem phiếu đã kiểm</span>
+                <span>Xem danh sách phiếu</span>
               </button>
             </div>
 
-            {/* Instruction Guidance Text */}
-            <div className="text-[11px] text-slate-600 space-y-0.5 font-sans leading-relaxed pt-1 bg-white/70 p-3 rounded-xl border border-slate-200/60">
-              <p className="font-semibold text-slate-800">1. Nhập số <strong className="text-rose-600 font-mono">0</strong> cho những phiếu không hợp lệ.</p>
-              <p className="font-semibold text-slate-800">2. Nhập liên tiếp các số thứ tự bị gạch ➔ bấm <strong className="text-sky-700 font-mono">Enter 2 lần</strong>.</p>
-              <p className="text-slate-500 italic">
-                (Ví dụ: gõ <strong className="text-slate-800 font-mono not-italic bg-amber-100 px-1 rounded">134</strong> là những ứng cử viên có số thứ tự 1, 3, 4 bị gạch phiếu)
-              </p>
-            </div>
+            {/* MODE 1: SINGLE BALLOT RAPID ENTRY */}
+            {entryMode === 'SINGLE' ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-700 uppercase">
+                      Phiếu số:
+                    </span>
+                    <span className="text-base font-black font-mono text-sky-800 bg-white px-3 py-1 rounded-xl border border-sky-300 shadow-2xs">
+                      #{currentBallotNo}
+                    </span>
+                  </div>
 
-            {/* Last Submitted Result Toast Alert */}
+                  <div className="flex-1 flex items-center gap-2 max-w-sm">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={struckOutInput}
+                      onChange={e => setStruckOutInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Gõ số bị gạch..."
+                      className="w-full px-4 py-2 bg-white border-2 border-rose-300 rounded-xl text-center text-lg font-mono font-black text-rose-900 focus:bg-white focus:outline-none focus:border-rose-500 shadow-inner tracking-wider"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSubmitBallot}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all shrink-0 flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Xác nhận</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-slate-600 space-y-0.5 font-sans leading-relaxed pt-1 bg-white/70 p-3 rounded-xl border border-slate-200/60">
+                  <p className="font-semibold text-slate-800">1. Nhập số <strong className="text-rose-600 font-mono">0</strong> cho những phiếu không hợp lệ.</p>
+                  <p className="font-semibold text-slate-800">2. Nhập liên tiếp các số thứ tự bị gạch ➔ bấm <strong className="text-sky-700 font-mono">Enter 2 lần</strong>.</p>
+                  <p className="text-slate-500 italic">
+                    (Ví dụ: gõ <strong className="text-slate-800 font-mono not-italic bg-amber-100 px-1 rounded">134</strong> là những ứng cử viên có số thứ tự 1, 3, 4 bị gạch phiếu)
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* MODE 2: BATCH BALLOT ENTRY */
+              <form onSubmit={handleBatchSubmit} className="space-y-3 bg-amber-50/50 p-4 rounded-xl border border-amber-200">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                  <div className="sm:col-span-5 space-y-1">
+                    <label className="block text-xs font-bold text-amber-950 uppercase">
+                      Số lượng phiếu trong lô này:
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={1}
+                        max={1000}
+                        required
+                        value={batchQuantity}
+                        onChange={e => setBatchQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-full px-3 py-2 bg-white border-2 border-amber-400 rounded-xl text-center text-lg font-mono font-black text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      />
+                      <span className="text-xs font-bold text-amber-800 shrink-0">phiếu</span>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-7 space-y-1">
+                    <label className="block text-xs font-bold text-amber-950 uppercase">
+                      Số thứ tự ứng viên bị gạch tên:
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={struckOutInput}
+                      onChange={e => setStruckOutInput(e.target.value)}
+                      placeholder="VD: 2 4 (gạch số 2 và 4) hoặc 0..."
+                      className="w-full px-4 py-2 bg-white border-2 border-rose-300 rounded-xl text-center text-base font-mono font-black text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Quantity Chips */}
+                <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] font-bold">
+                  <span className="text-amber-800 shrink-0">Chọn nhanh số lượng:</span>
+                  {[5, 10, 25, 50, 100].map(qty => (
+                    <button
+                      key={qty}
+                      type="button"
+                      onClick={() => setBatchQuantity(qty)}
+                      className={`px-2.5 py-1 rounded-lg border transition-all ${
+                        batchQuantity === qty
+                          ? 'bg-amber-600 text-white border-amber-700 font-black shadow-2xs'
+                          : 'bg-white text-amber-900 border-amber-300 hover:bg-amber-100'
+                      }`}
+                    >
+                      +{qty} phiếu
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                >
+                  <Layers className="w-4 h-4" />
+                  <span>XÁC NHẬN NẠP LÔ {batchQuantity} PHIẾU BẦU VÀO HỆ THỐNG</span>
+                </button>
+              </form>
+            )}
+
+            {/* Single Entry Toast Alert */}
             {lastSubmittedResult && (
               <div
-                className={`p-3 rounded-xl border text-xs font-bold flex items-center gap-2 shadow-2xs ${
+                className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between shadow-2xs ${
                   lastSubmittedResult.isValid
                     ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
                     : 'bg-rose-50 border-rose-300 text-rose-950 animate-pulse'
                 }`}
               >
                 {lastSubmittedResult.isValid ? (
-                  <>
+                  <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>
                       ✅ <strong>Phiếu hợp lệ:</strong> Đã ghi nhận vote cho [{lastSubmittedResult.electedCandidates.map(c => c.fullName).join(', ')}]
                     </span>
-                  </>
+                  </div>
                 ) : (
-                  <>
+                  <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                     <span>❌ <strong>Phiếu không hợp lệ:</strong> {lastSubmittedResult.reason}</span>
-                  </>
+                  </div>
                 )}
+                <button onClick={() => setLastSubmittedResult(null)} className="text-slate-400 hover:text-slate-700 font-bold ml-2">✕</button>
+              </div>
+            )}
+
+            {/* Batch Entry Toast Alert */}
+            {batchToast && (
+              <div
+                className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between shadow-2xs ${
+                  batchToast.isValid
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                    : 'bg-rose-50 border-rose-300 text-rose-950 animate-pulse'
+                }`}
+              >
+                {batchToast.isValid ? (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>
+                      ✅ <strong>NẠP LÔ THÀNH CÔNG:</strong> Đã nạp thành công <strong>{batchToast.count}</strong> phiếu bầu hợp lệ! (Số bị gạch: [{batchToast.input}])
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>❌ <strong>LÔ PHIẾU KHÔNG HỢP LỆ:</strong> {batchToast.reason}</span>
+                  </div>
+                )}
+                <button onClick={() => setBatchToast(null)} className="text-slate-400 hover:text-slate-700 font-bold ml-2">✕</button>
               </div>
             )}
           </div>
