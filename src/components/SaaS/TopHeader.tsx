@@ -1,128 +1,308 @@
 import React, { useState } from 'react';
-import { User } from '../../types';
-import { Search, Sparkles, Bell, HelpCircle, LogOut, ChevronDown, Award } from 'lucide-react';
+import { User, CouncilId } from '../../types';
+import { LogOut, ChevronDown, Award, Clock, Edit3, Vote, BarChart3, ShieldCheck, Database, HelpCircle, UserCheck } from 'lucide-react';
 
 interface TopHeaderProps {
   currentUser: User | null;
   onLogout: () => void;
   onOpenHelpGuide: () => void;
   onOpenAuthorInfo: () => void;
+  onNavigateToUnitInfo: () => void;
+  onNavigateToCouncilInfo: (councilId: CouncilId) => void;
+  onNavigateToCounting: (councilId: CouncilId) => void;
+  onNavigateToReports: (councilId: CouncilId) => void;
+  onOpenUserManagement: () => void;
+  onOpenSupabaseConfig: () => void;
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({
   currentUser,
   onLogout,
   onOpenHelpGuide,
-  onOpenAuthorInfo
+  onOpenAuthorInfo,
+  onNavigateToUnitInfo,
+  onNavigateToCouncilInfo,
+  onNavigateToCounting,
+  onNavigateToReports,
+  onOpenUserManagement,
+  onOpenSupabaseConfig
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeRibbonTab, setActiveRibbonTab] = useState<'data' | 'counting' | 'stats' | 'system' | 'help'>('data');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   return (
-    <header className="bg-white border-b border-slate-200 text-slate-800 h-16 px-4 flex items-center justify-between shadow-xs sticky top-0 z-20 select-none">
+    <header className="bg-slate-100 border-b border-slate-300 text-slate-800 flex flex-col shadow-xs sticky top-0 z-30 select-none font-sans text-xs">
       
-      {/* Left: Project Branding & Organization */}
-      <div className="flex items-center space-x-3">
-        <div className="flex items-center space-x-2">
-          <span className="font-black text-slate-900 text-sm tracking-wide">KẾT QUẢ BẦU CỬ QUỐC GIA 2026 - 2031</span>
-          <span className="px-2 py-0.5 text-[10px] font-extrabold bg-teal-50 text-teal-700 rounded border border-teal-200">
-            TỔ 21 (ĐH)
-          </span>
+      {/* Ribbon Top Tab Menu Bar (Khớp 100% hình chụp Access) */}
+      <div className="bg-slate-200 border-b border-slate-300 px-3 flex items-center justify-between h-9">
+        <div className="flex items-center space-x-1 font-bold text-xs">
+          <button className="px-3 py-1 bg-slate-300 text-slate-700 hover:bg-slate-400 rounded-t transition">
+            File
+          </button>
+
+          <button
+            onClick={() => setActiveRibbonTab('data')}
+            className={`px-4 py-1.5 rounded-t transition border-b-2 font-extrabold ${
+              activeRibbonTab === 'data'
+                ? 'bg-slate-100 border-red-700 text-red-800 shadow-xs'
+                : 'text-slate-700 hover:bg-slate-300 border-transparent'
+            }`}
+          >
+            1. Dữ liệu Bầu cử
+          </button>
+
+          <button
+            onClick={() => setActiveRibbonTab('counting')}
+            className={`px-4 py-1.5 rounded-t transition border-b-2 font-extrabold ${
+              activeRibbonTab === 'counting'
+                ? 'bg-slate-100 border-red-700 text-red-800 shadow-xs'
+                : 'text-slate-700 hover:bg-slate-300 border-transparent'
+            }`}
+          >
+            2. Kiểm phiếu
+          </button>
+
+          <button
+            onClick={() => setActiveRibbonTab('stats')}
+            className={`px-4 py-1.5 rounded-t transition border-b-2 font-extrabold ${
+              activeRibbonTab === 'stats'
+                ? 'bg-slate-100 border-red-700 text-red-800 shadow-xs'
+                : 'text-slate-700 hover:bg-slate-300 border-transparent'
+            }`}
+          >
+            3. Thống kê kết quả
+          </button>
+
+          <button
+            onClick={() => setActiveRibbonTab('system')}
+            className={`px-4 py-1.5 rounded-t transition border-b-2 font-extrabold ${
+              activeRibbonTab === 'system'
+                ? 'bg-slate-100 border-red-700 text-red-800 shadow-xs'
+                : 'text-slate-700 hover:bg-slate-300 border-transparent'
+            }`}
+          >
+            Hệ Thống
+          </button>
+
+          <button
+            onClick={() => setActiveRibbonTab('help')}
+            className={`px-4 py-1.5 rounded-t transition border-b-2 font-extrabold ${
+              activeRibbonTab === 'help'
+                ? 'bg-slate-100 border-red-700 text-red-800 shadow-xs'
+                : 'text-slate-700 hover:bg-slate-300 border-transparent'
+            }`}
+          >
+            Trợ giúp
+          </button>
         </div>
-      </div>
 
-      {/* Center: Smart Search Bar */}
-      <div className="hidden md:flex items-center space-x-2 bg-slate-100 border border-slate-300 rounded-full px-3 py-1.5 w-96 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20 transition">
-        <Search className="w-4 h-4 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Tìm kiếm thông minh ứng cử viên, số phiếu, biên bản..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          className="bg-transparent text-xs text-slate-800 placeholder-slate-400 focus:outline-none w-full"
-        />
-        <span className="px-1.5 py-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold rounded text-[9px] shadow-xs flex items-center space-x-0.5">
-          <Sparkles className="w-2.5 h-2.5" />
-          <span>AI</span>
-        </span>
-      </div>
-
-      {/* Right: Quick Action Buttons, Notifications & User Profile */}
-      <div className="flex items-center space-x-3">
-        
-        <button
-          onClick={onOpenHelpGuide}
-          className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-xs font-bold transition shadow-sm"
-        >
-          <HelpCircle className="w-4 h-4" />
-          <span className="hidden sm:inline">Hướng dẫn</span>
-        </button>
-
-        <div className="relative cursor-pointer p-2 hover:bg-slate-100 rounded-full transition">
-          <Bell className="w-5 h-5 text-slate-600" />
-          <span className="absolute top-1 right-1 w-4 h-4 bg-red-600 text-white rounded-full text-[9px] font-extrabold flex items-center justify-center border-2 border-white">
-            15
-          </span>
-        </div>
-
+        {/* User Profile dropdown */}
         <div className="relative">
           <div
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center space-x-2 cursor-pointer p-1.5 hover:bg-slate-100 rounded-xl transition"
+            className="flex items-center space-x-2 cursor-pointer px-2 py-0.5 hover:bg-slate-300 rounded transition"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-amber-500 text-white font-bold flex items-center justify-center text-xs shadow">
-              {currentUser?.fullName ? currentUser.fullName.charAt(0) : 'P'}
-            </div>
-            <div className="hidden sm:block text-left">
-              <span className="text-xs font-bold text-slate-900 block leading-none">
-                {currentUser?.fullName || 'Cán Bộ Kiểm Phiếu'}
-              </span>
-              <span className="text-[10px] text-teal-700 font-semibold block mt-0.5">
-                Tác giả: <strong>Phạm Công Tuân</strong>
-              </span>
-            </div>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+            <span className="font-extrabold text-slate-900">{currentUser?.fullName}</span>
+            <span className="px-1.5 py-0.5 bg-red-700 text-white rounded text-[10px] uppercase font-extrabold">
+              {currentUser?.role}
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-600" />
           </div>
 
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl p-3 space-y-2 text-xs z-50 animate-fadeIn">
-              <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
+            <div className="absolute right-0 mt-1 w-64 bg-white border border-slate-300 rounded-lg shadow-2xl p-3 space-y-2 text-xs z-50">
+              <div className="p-2 bg-slate-50 rounded border border-slate-200">
                 <span className="font-bold text-slate-900 block">{currentUser?.fullName}</span>
                 <span className="text-slate-500 text-[11px] block">{currentUser?.email}</span>
-                <span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px] uppercase">
-                  {currentUser?.role === 'admin' ? 'Quản Trị Viên' : 'Tổ Kiểm Phiếu'}
-                </span>
               </div>
-
-              <div className="p-2 bg-gradient-to-r from-red-50 to-amber-50 rounded-xl border border-red-100 text-slate-800 space-y-0.5">
-                <div className="flex items-center space-x-1 text-red-800 font-bold text-[11px]">
-                  <Award className="w-3.5 h-3.5 text-amber-500" />
-                  <span>TÁC GIẢ PHẦN MỀM:</span>
-                </div>
-                <p className="font-bold text-red-900 text-xs">Phạm Công Tuân</p>
-                <p className="text-[11px] text-slate-600">Email: pctuanit@gmail.com</p>
-                <p className="text-[11px] text-slate-600">Điện thoại: 0916 199 945</p>
-              </div>
-
               <button
                 onClick={onOpenAuthorInfo}
-                className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-slate-100 rounded-lg font-semibold transition"
+                className="w-full text-left px-2 py-1.5 hover:bg-slate-100 rounded text-xs font-semibold text-slate-700"
               >
-                Xem chi tiết bản quyền tác giả
+                Bản quyền: <strong>Phạm Công Tuân</strong> (0916 199 945)
               </button>
-
-              <div className="border-t border-slate-100 pt-1">
-                <button
-                  onClick={onLogout}
-                  className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-lg font-bold transition flex items-center space-x-1.5"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Đăng xuất tài khoản</span>
-                </button>
-              </div>
+              <button
+                onClick={onLogout}
+                className="w-full text-left px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded flex items-center space-x-1"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Đăng xuất</span>
+              </button>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Ribbon Action Buttons Sub-bar (Bám sát 100% hình chụp Access) */}
+      <div className="bg-slate-100 px-4 py-2 flex items-center space-x-6 shadow-inner border-b border-slate-300">
+        
+        {/* SUB-BAR FOR TAB 1: Dữ liệu Bầu cử */}
+        {activeRibbonTab === 'data' && (
+          <div className="flex items-center space-x-4">
+            <div className="border-r border-slate-300 pr-4 flex space-x-4 items-center">
+              
+              <button
+                onClick={onNavigateToUnitInfo}
+                className="flex flex-col items-center p-1.5 hover:bg-slate-200 rounded border border-transparent hover:border-slate-400 transition"
+              >
+                <div className="w-8 h-8 rounded-full border-2 border-red-600 flex items-center justify-center bg-white shadow-xs text-red-600">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold text-slate-800 mt-1">Thông tin</span>
+                <span className="text-[10px] text-slate-600">Đơn vị bầu cử</span>
+              </button>
+
+              <button
+                onClick={() => onNavigateToCouncilInfo('quoc_hoi')}
+                className="flex flex-col items-center p-1.5 hover:bg-slate-200 rounded border border-transparent hover:border-slate-400 transition"
+              >
+                <div className="w-8 h-8 rounded border border-sky-600 flex items-center justify-center bg-white shadow-xs text-sky-700">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold text-slate-800 mt-1">Thông tin bầu cử</span>
+                <span className="text-[10px] text-slate-600">cử Quốc Hội</span>
+              </button>
+
+              <button
+                onClick={() => onNavigateToCouncilInfo('hdnd_tinh')}
+                className="flex flex-col items-center p-1.5 hover:bg-slate-200 rounded border border-transparent hover:border-slate-400 transition"
+              >
+                <div className="w-8 h-8 rounded border border-sky-600 flex items-center justify-center bg-white shadow-xs text-sky-700">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold text-slate-800 mt-1">Thông tin bầu cử</span>
+                <span className="text-[10px] text-slate-600">cử HĐND Tỉnh</span>
+              </button>
+
+              <button
+                onClick={() => onNavigateToCouncilInfo('hdnd_xa')}
+                className="flex flex-col items-center p-1.5 hover:bg-slate-200 rounded border border-transparent hover:border-slate-400 transition"
+              >
+                <div className="w-8 h-8 rounded border border-sky-600 flex items-center justify-center bg-white shadow-xs text-sky-700">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold text-slate-800 mt-1">Thông tin bầu cử</span>
+                <span className="text-[10px] text-slate-600">cử HĐND Xã</span>
+              </button>
+
+            </div>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nhập thông tin bầu cử</span>
+          </div>
+        )}
+
+        {/* SUB-BAR FOR TAB 2: Kiểm phiếu */}
+        {activeRibbonTab === 'counting' && (
+          <div className="flex items-center space-x-4">
+            <div className="border-r border-slate-300 pr-4 flex space-x-4 items-center">
+              <button
+                onClick={() => onNavigateToCounting('quoc_hoi')}
+                className="flex items-center space-x-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded shadow-xs"
+              >
+                <Vote className="w-4 h-4" />
+                <span>Kiểm phiếu BC Quốc Hội</span>
+              </button>
+
+              <button
+                onClick={() => onNavigateToCounting('hdnd_tinh')}
+                className="flex items-center space-x-2 px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded shadow-xs"
+              >
+                <Vote className="w-4 h-4" />
+                <span>Kiểm phiếu BC HĐND Tỉnh</span>
+              </button>
+
+              <button
+                onClick={() => onNavigateToCounting('hdnd_xa')}
+                className="flex items-center space-x-2 px-3 py-2 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded shadow-xs"
+              >
+                <Vote className="w-4 h-4" />
+                <span>Kiểm phiếu BC HĐND Xã</span>
+              </button>
+            </div>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tổ kiểm phiếu</span>
+          </div>
+        )}
+
+        {/* SUB-BAR FOR TAB 3: Thống kê kết quả */}
+        {activeRibbonTab === 'stats' && (
+          <div className="flex items-center space-x-4">
+            <div className="border-r border-slate-300 pr-4 flex space-x-4 items-center">
+              <button
+                onClick={() => onNavigateToReports('quoc_hoi')}
+                className="flex items-center space-x-2 px-3 py-2 bg-red-700 hover:bg-red-800 text-white font-bold rounded shadow-xs"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Bầu cử Quốc Hội</span>
+              </button>
+
+              <button
+                onClick={() => onNavigateToReports('hdnd_tinh')}
+                className="flex items-center space-x-2 px-3 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded shadow-xs"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Bầu cử HĐND Tỉnh</span>
+              </button>
+
+              <button
+                onClick={() => onNavigateToReports('hdnd_xa')}
+                className="flex items-center space-x-2 px-3 py-2 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded shadow-xs"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Bầu cử HĐND Xã</span>
+              </button>
+            </div>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Xuất Biên Bản Mẫu 18 & 23</span>
+          </div>
+        )}
+
+        {/* SUB-BAR FOR TAB 4: Hệ Thống */}
+        {activeRibbonTab === 'system' && (
+          <div className="flex items-center space-x-4">
+            <div className="border-r border-slate-300 pr-4 flex space-x-3 items-center">
+              {currentUser?.role === 'admin' && (
+                <button
+                  onClick={onOpenUserManagement}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded shadow-xs"
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>Duyệt tài khoản</span>
+                </button>
+              )}
+
+              <button
+                onClick={onOpenSupabaseConfig}
+                className="flex items-center space-x-1.5 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded shadow-xs"
+              >
+                <Database className="w-4 h-4 text-emerald-400" />
+                <span>Kết nối Supabase</span>
+              </button>
+            </div>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Quản trị hệ thống</span>
+          </div>
+        )}
+
+        {/* SUB-BAR FOR TAB 5: Trợ giúp */}
+        {activeRibbonTab === 'help' && (
+          <div className="flex items-center space-x-4">
+            <div className="border-r border-slate-300 pr-4 flex space-x-3 items-center">
+              <button
+                onClick={onOpenHelpGuide}
+                className="flex items-center space-x-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded shadow-xs"
+              >
+                <HelpCircle className="w-4 h-4" />
+                <span>Hướng dẫn sử dụng</span>
+              </button>
+
+              <button
+                onClick={onOpenAuthorInfo}
+                className="flex items-center space-x-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded shadow-xs"
+              >
+                <Award className="w-4 h-4 text-amber-400" />
+                <span>Tác giả Phạm Công Tuân</span>
+              </button>
+            </div>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Thông tin bản quyền</span>
+          </div>
+        )}
 
       </div>
 

@@ -198,12 +198,25 @@ export const App: React.FC = () => {
       {/* Right Main Column */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
         
-        {/* Enterprise Top Header Bar */}
+        {/* Enterprise Top Header Ribbon Menu Bar */}
         <TopHeader
           currentUser={currentUser}
           onLogout={handleLogout}
           onOpenHelpGuide={() => { setHelpMode('guide'); setIsHelpModalOpen(true); }}
           onOpenAuthorInfo={() => { setHelpMode('author'); setIsHelpModalOpen(true); }}
+          onNavigateToUnitInfo={() => {
+            setActiveModule('data');
+            setActiveSubView('unit_info');
+          }}
+          onNavigateToCouncilInfo={(cId) => {
+            setSelectedCouncilId(cId);
+            setActiveModule('data');
+            setActiveSubView(`council_${cId}`);
+          }}
+          onNavigateToCounting={handleNavigateToCounting}
+          onNavigateToReports={handleNavigateToReports}
+          onOpenUserManagement={() => setIsUserManagementModalOpen(true)}
+          onOpenSupabaseConfig={() => setIsSupabaseModalOpen(true)}
         />
 
         {/* Main Content Workspace Area */}
