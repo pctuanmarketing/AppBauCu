@@ -758,7 +758,8 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                 <th colSpan={2} className="p-2 border-b border-blue-900/60 bg-blue-950/80">
                   Bầu cử đại biểu HĐND
                 </th>
-                <th rowSpan={2} className="p-3 w-32 border-l border-blue-900/60">Trạng thái & Thao tác</th>
+                <th rowSpan={2} className="p-3 w-36 border-r border-blue-900/60 bg-blue-950/90">TRẠNG THÁI BỎ PHIẾU</th>
+                <th rowSpan={2} className="p-3 w-40 border-l border-blue-900/60 bg-blue-950/90">THAO TÁC</th>
               </tr>
               <tr>
                 <th className="p-2 w-24 border-r border-blue-900/60 bg-blue-950/80">TP Đà Nẵng</th>
@@ -768,7 +769,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
             <tbody className="divide-y divide-slate-300 font-medium">
               {filteredVoters.length === 0 ? (
                 <tr>
-                  <td colSpan={13} className="p-12 text-center text-slate-400 font-semibold">
+                  <td colSpan={14} className="p-12 text-center text-slate-400 font-semibold">
                     Chưa có cử tri nào trong danh sách. Vui lòng bấm "+ Thêm cử tri mới" hoặc "Import Excel".
                   </td>
                 </tr>
@@ -847,7 +848,27 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                         </button>
                       </td>
 
-                      {/* Check-in & Actions */}
+                      {/* COL 1: TRẠNG THÁI BỎ PHIẾU (CÓ HIỂN THỊ THỜI GIAN ĐI BẦU) */}
+                      <td className="p-2.5 text-center border-r border-slate-200">
+                        {v.hasVoted ? (
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1 shadow-2xs">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              Đã bỏ phiếu
+                            </span>
+                            <span className="text-[10px] text-slate-600 font-mono font-bold flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded border border-slate-200" title="Thời gian ghi nhận cử tri đi bầu">
+                              <Clock className="w-3 h-3 text-sky-600" />
+                              {v.votedAt || '20:15'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500 border border-slate-200 inline-block">
+                            Chưa bỏ phiếu
+                          </span>
+                        )}
+                      </td>
+
+                      {/* COL 2: THAO TÁC / ĐIỂM DANH */}
                       <td className="p-2.5 text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
@@ -855,21 +876,24 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                               toggleVoterStatus(v.id);
                               if (!v.hasVoted) {
                                 showToast(`✅ Đã điểm danh cử tri: ${v.fullName}`, 'success');
+                              } else {
+                                showToast(`ℹ️ Đã hủy điểm danh cử tri: ${v.fullName}`, 'info');
                               }
                             }}
-                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all shadow-2xs ${
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all shadow-2xs flex items-center gap-1 ${
                               v.hasVoted
-                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300'
+                                ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
                                 : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-xs'
                             }`}
+                            title={v.hasVoted ? 'Bấm để HỦY điểm danh cử tri này' : 'Bấm để XÁC NHẬN điểm danh cử tri này'}
                           >
-                            {v.hasVoted ? 'Đã bầu' : 'Điểm danh'}
+                            {v.hasVoted ? '✕ Hủy' : '✓ Điểm danh'}
                           </button>
 
                           <button
                             onClick={() => handleOpenEditModal(v)}
-                            className="p-1.5 text-sky-600 hover:text-sky-800 hover:bg-sky-50 rounded-lg transition-colors"
-                            title="Sửa cử tri"
+                            className="p-1.5 text-sky-600 hover:text-sky-800 hover:bg-sky-50 rounded-lg transition-colors border border-transparent hover:border-sky-200"
+                            title="Chỉnh sửa cử tri"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
@@ -881,7 +905,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                                 showToast(`✅ Đã xóa cử tri: ${v.fullName}`, 'info');
                               }
                             }}
-                            className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors"
+                            className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200"
                             title="Xóa cử tri"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
