@@ -30,7 +30,7 @@ export const ResultsReportPage: React.FC<ResultsReportPageProps> = ({
   ballots,
   committee,
 }) => {
-  const [selectedLevel, setSelectedLevel] = useState<ElectionLevel>('HDND_XA');
+  const [selectedLevel, setSelectedLevel] = useState<ElectionLevel>('QUOC_HOI');
 
   const config = configs[selectedLevel];
   const levelCandidates = candidates
