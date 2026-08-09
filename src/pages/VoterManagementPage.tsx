@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users,
   Search,
@@ -18,6 +18,7 @@ import {
   Building2,
   ShieldCheck,
   Vote,
+  Clock,
 } from 'lucide-react';
 import { Voter } from '../types';
 import * as XLSX from 'xlsx';
