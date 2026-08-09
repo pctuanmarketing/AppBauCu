@@ -13,6 +13,7 @@ import {
   Trash,
   X,
   Activity,
+  Sparkles,
 } from 'lucide-react';
 import { Voter } from '../types';
 import * as XLSX from 'xlsx';
@@ -41,6 +42,9 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
   const [filterVoted, setFilterVoted] = useState<'ALL' | 'VOTED' | 'NOT_VOTED'>('ALL');
   const [quickCardNoInput, setQuickCardNoInput] = useState('');
 
+  // Non-blocking toast notification state (thay thế cho alert popup)
+  const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
+
   // Add / Edit Voter Modal State
   const [showVoterModal, setShowVoterModal] = useState(false);
   const [editingVoter, setEditingVoter] = useState<Voter | null>(null);
@@ -63,7 +67,14 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
   const votedPct = votedPctNum.toFixed(2);
   const remainingPct = remainingPctNum.toFixed(2);
 
-  // Quick check-in by card number or STT
+  const showToast = (text: string, type: 'success' | 'info' | 'error' = 'success') => {
+    setToastMsg({ text, type });
+    setTimeout(() => {
+      setToastMsg(null);
+    }, 2500);
+  };
+
+  // Quick check-in by card number or STT (KHÔNG CÒN ALERT POPUP CHẶN MÀN HÌNH)
   const handleQuickCheckinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanInput = quickCardNoInput.trim().toUpperCase();
@@ -76,13 +87,13 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
     if (matchedVoter) {
       if (!matchedVoter.hasVoted) {
         toggleVoterStatus(matchedVoter.id);
-        alert(`✅ Đã điểm danh thành công cử tri: ${matchedVoter.fullName} (${matchedVoter.address})`);
+        showToast(`✅ Đã điểm danh thành công cử tri: ${matchedVoter.fullName} (${matchedVoter.address})`, 'success');
       } else {
-        alert(`ℹ️ Cử tri ${matchedVoter.fullName} đã bỏ phiếu trước đó vào lúc ${matchedVoter.votedAt || ''}`);
+        showToast(`ℹ️ Cử tri ${matchedVoter.fullName} đã bỏ phiếu trước đó (${matchedVoter.votedAt || ''})`, 'info');
       }
       setQuickCardNoInput('');
     } else {
-      alert(`⚠️ Không tìm thấy cử tri có mã thẻ hoặc STT: "${cleanInput}"`);
+      showToast(`⚠️ Không tìm thấy cử tri có mã thẻ/STT: "${cleanInput}"`, 'error');
     }
   };
 
@@ -119,6 +130,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
         dob,
         address,
       });
+      showToast(`✅ Đã cập nhật thông tin cử tri: ${fullName}`, 'success');
     } else {
       addVoter({
         voterCardNo,
@@ -128,11 +140,12 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
         address,
         hasVoted: false,
       });
+      showToast(`✅ Đã thêm mới cử tri: ${fullName}`, 'success');
     }
     setShowVoterModal(false);
   };
 
-  // UNIVERSAL SMART EXCEL PARSER FOR VIETNAMESE VOTER LISTS (MULTI-ROW HEADER SCANNER)
+  // EXCEL IMPORT METHOD
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -144,16 +157,13 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
-
-        // 1. Read sheet as 2D array of rows
         const rawRows = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, defval: '' });
 
         if (!rawRows || rawRows.length === 0) {
-          alert('⚠️ Tệp Excel rỗng hoặc không có dữ liệu cử tri.');
+          showToast('⚠️ Tệp Excel rỗng hoặc không có dữ liệu cử tri.', 'error');
           return;
         }
 
-        // 2. Scan first 20 rows to find Header Row
         let headerRowIdx = -1;
         let nameColIdx = -1;
         let cardColIdx = -1;
@@ -177,7 +187,6 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
           }
 
           if (headerRowIdx !== -1) {
-            // Found header row, map remaining columns in this row
             const headerRow = rawRows[headerRowIdx];
             for (let c = 0; c < headerRow.length; c++) {
               const val = headerRow[c]?.toString().toLowerCase().trim() || '';
@@ -197,28 +206,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
           }
         }
 
-        // 3. Fallback: If no explicit header row found, auto-detect column containing full names
-        if (headerRowIdx === -1) {
-          for (let r = 0; r < Math.min(25, rawRows.length); r++) {
-            const row = rawRows[r];
-            if (!Array.isArray(row)) continue;
-
-            for (let c = 0; c < row.length; c++) {
-              const val = row[c]?.toString().trim() || '';
-              // Detect Vietnamese 2-4 word capitalized names
-              if (val.length >= 4 && val.split(' ').length >= 2 && !/\d/.test(val) && !val.toLowerCase().includes('danh sách') && !val.toLowerCase().includes('ủy ban')) {
-                headerRowIdx = Math.max(0, r - 1);
-                nameColIdx = c;
-                break;
-              }
-            }
-            if (headerRowIdx !== -1) break;
-          }
-        }
-
-        // Default fallback if nameColIdx is still not found
-        if (nameColIdx === -1) nameColIdx = 1; // Default to Column B
-
+        if (nameColIdx === -1) nameColIdx = 1;
         const startRow = headerRowIdx !== -1 ? headerRowIdx + 1 : 0;
         const newVotersBatch: Omit<Voter, 'id' | 'stt'>[] = [];
 
@@ -227,15 +215,12 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
           if (!Array.isArray(row) || row.length === 0) continue;
 
           const rawName = row[nameColIdx]?.toString().trim() || '';
-
-          // Filter out header text or empty rows
           if (!rawName || rawName.toLowerCase().includes('họ và tên') || rawName.toLowerCase().includes('danh sách') || rawName.toLowerCase().includes('tổng cộng')) {
             continue;
           }
 
           const rawCard = cardColIdx !== -1 && row[cardColIdx] ? row[cardColIdx].toString().trim() : '';
           const cardNo = rawCard || `TC-21-${(voters.length + newVotersBatch.length + 1).toString().padStart(4, '0')}`;
-
           const sex = genderColIdx !== -1 && row[genderColIdx] ? row[genderColIdx].toString().trim() : 'Nam';
           const birthday = dobColIdx !== -1 && row[dobColIdx] ? row[dobColIdx].toString().trim() : '';
           const addr = addressColIdx !== -1 && row[addressColIdx] ? row[addressColIdx].toString().trim() : 'Thôn An Trạch';
@@ -252,12 +237,12 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
 
         if (newVotersBatch.length > 0) {
           importVotersBatch(newVotersBatch);
-          alert(`✅ Import thành công ${newVotersBatch.length} cử tri từ tệp Excel vào hệ thống!`);
+          showToast(`✅ Import thành công ${newVotersBatch.length} cử tri từ tệp Excel!`, 'success');
         } else {
-          alert('⚠️ Không nạp được dữ liệu cử tri. Vui lòng kiểm tra file Excel.');
+          showToast('⚠️ Không nạp được dữ liệu cử tri. Vui lòng kiểm tra file Excel.', 'error');
         }
       } catch (err) {
-        alert('❌ Có lỗi xảy ra khi đọc tệp Excel. Chi tiết: ' + (err as any)?.message);
+        showToast('❌ Có lỗi xảy ra khi đọc tệp Excel.', 'error');
       }
     };
     reader.readAsBinaryString(file);
@@ -283,6 +268,27 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Non-blocking Toast Banner Notification (Thay thế Popup Alert) */}
+      {toastMsg && (
+        <div
+          className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between shadow-lg transition-all animate-bounce ${
+            toastMsg.type === 'success'
+              ? 'bg-emerald-600 text-white border-emerald-700'
+              : toastMsg.type === 'info'
+              ? 'bg-sky-600 text-white border-sky-700'
+              : 'bg-rose-600 text-white border-rose-700'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            {toastMsg.text}
+          </span>
+          <button onClick={() => setToastMsg(null)} className="text-white hover:opacity-80 font-extrabold ml-4">
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Header & Quick Check-in Bar */}
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-3">
@@ -302,6 +308,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                 onClick={() => {
                   if (confirm(`Bạn có chắc chắn muốn XÓA TẤT CẢ ${voters.length} cử tri hiện tại khỏi danh sách?`)) {
                     clearAllVoters();
+                    showToast('✅ Đã xóa sạch toàn bộ danh sách cử tri.', 'info');
                   }
                 }}
                 className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors"
@@ -516,7 +523,12 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                     <td className="p-3.5 text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
-                          onClick={() => toggleVoterStatus(v.id)}
+                          onClick={() => {
+                            toggleVoterStatus(v.id);
+                            if (!v.hasVoted) {
+                              showToast(`✅ Đã điểm danh cử tri: ${v.fullName}`, 'success');
+                            }
+                          }}
                           className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
                             v.hasVoted
                               ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -538,6 +550,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                           onClick={() => {
                             if (confirm(`Xóa cử tri "${v.fullName}" khỏi danh sách?`)) {
                               deleteVoter(v.id);
+                              showToast(`✅ Đã xóa cử tri: ${v.fullName}`, 'info');
                             }
                           }}
                           className="p-1 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded"
