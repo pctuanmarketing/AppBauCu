@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Be Vietnam Pro"', '"Segoe UI"', 'Inter', 'system-ui', 'sans-serif'],
+      },
       colors: {
         brand: {
           dark: '#131d2a',
