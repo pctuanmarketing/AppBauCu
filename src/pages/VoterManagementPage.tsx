@@ -111,6 +111,20 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
   const votedHdndXa = voters.filter(v => v.hasVoted && (v.eligibleHdndXa !== false)).length;
   const pctHdndXa = totalHdndXa > 0 ? ((votedHdndXa / totalHdndXa) * 100).toFixed(2) : '0.00';
 
+  // Helper to format Excel Serial Date (e.g. 38365 -> 15/01/2005) or normal date strings
+  const formatDobDisplay = (val?: string) => {
+    if (!val) return '';
+    const num = Number(val);
+    if (!isNaN(num) && num > 10000 && num < 100000) {
+      const d = new Date(Math.round((num - 25569) * 86400 * 1000));
+      const day = d.getDate().toString().padStart(2, '0');
+      const month = (d.getMonth() + 1).toString().padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+    return val;
+  };
+
   // Validation Alert Box State
   const [checkinAlert, setCheckinAlert] = useState<{ title: string; message: string; type: 'success' | 'warning' | 'error' | 'duplicate' } | null>(null);
 
@@ -737,40 +751,40 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
         </div>
       </div>
 
-      {/* OFFICIAL VOTER LIST TABLE DESIGN (CHUẨN NGUYÊN MẪU) */}
-      <div className="bg-white rounded-2xl border-2 border-slate-800 shadow-md overflow-hidden">
+      {/* OFFICIAL VOTER LIST TABLE DESIGN (CẢI TIẾN HÀI HÒA & TRANG NHÃ) */}
+      <div className="bg-white rounded-2xl border border-slate-300 shadow-sm overflow-hidden font-sans">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-[#1e3a8a] text-white font-extrabold text-center border-b-2 border-slate-900 uppercase tracking-tight">
+            <thead className="bg-slate-900 text-slate-100 font-semibold text-center border-b border-slate-800 tracking-wide select-none">
               <tr>
-                <th rowSpan={2} className="p-3 w-12 border-r border-blue-900/60">Số TT</th>
-                <th rowSpan={2} className="p-3 w-16 border-r border-blue-900/60">Số thẻ Cử tri</th>
-                <th rowSpan={2} className="p-3 border-r border-blue-900/60 text-left">Họ và Tên</th>
-                <th rowSpan={2} className="p-3 w-28 border-r border-blue-900/60">Ngày tháng năm sinh</th>
-                <th rowSpan={2} className="p-3 w-10 border-r border-blue-900/60">Nam</th>
-                <th rowSpan={2} className="p-3 w-10 border-r border-blue-900/60">Nữ</th>
-                <th rowSpan={2} className="p-3 w-32 border-r border-blue-900/60">Số Căn cước</th>
-                <th rowSpan={2} className="p-3 w-16 border-r border-blue-900/60">Dân tộc</th>
-                <th rowSpan={2} className="p-3 border-r border-blue-900/60 text-left">NƠI CƯ TRÚ (Thường trú)</th>
-                <th rowSpan={2} className="p-3 w-20 border-r border-blue-900/60 bg-blue-950/80">
-                  Bầu cử ĐB Quốc Hội
+                <th rowSpan={2} className="py-2.5 px-2 w-10 border-r border-slate-800 font-semibold">STT</th>
+                <th rowSpan={2} className="py-2.5 px-2 w-14 border-r border-slate-800 font-semibold">Số thẻ</th>
+                <th rowSpan={2} className="py-2.5 px-3 border-r border-slate-800 text-left font-semibold">Họ và Tên</th>
+                <th rowSpan={2} className="py-2.5 px-2 w-24 border-r border-slate-800 font-semibold">Ngày sinh</th>
+                <th rowSpan={2} className="py-2.5 px-2 w-10 border-r border-slate-800 font-semibold">Nam</th>
+                <th rowSpan={2} className="py-2.5 px-2 w-10 border-r border-slate-800 font-semibold">Nữ</th>
+                <th rowSpan={2} className="py-2.5 px-2 w-28 border-r border-slate-800 font-semibold">Số CCCD</th>
+                <th rowSpan={2} className="py-2.5 px-2 w-16 border-r border-slate-800 font-semibold">Dân tộc</th>
+                <th rowSpan={2} className="py-2.5 px-3 border-r border-slate-800 text-left font-semibold min-w-[200px]">Nơi cư trú (Thường trú)</th>
+                <th rowSpan={2} className="py-2.5 px-2 w-20 border-r border-slate-800 bg-slate-950 font-semibold">
+                  ĐB Quốc Hội
                 </th>
-                <th colSpan={2} className="p-2 border-b border-blue-900/60 bg-blue-950/80">
-                  Bầu cử đại biểu HĐND
+                <th colSpan={2} className="py-1.5 px-2 border-b border-slate-800 bg-slate-950 font-semibold">
+                  Đại biểu HĐND
                 </th>
-                <th rowSpan={2} className="p-3 w-36 border-r border-blue-900/60 bg-blue-950/90">TRẠNG THÁI BỎ PHIẾU</th>
-                <th rowSpan={2} className="p-3 w-40 border-l border-blue-900/60 bg-blue-950/90">THAO TÁC</th>
+                <th rowSpan={2} className="py-2.5 px-3 w-36 border-r border-slate-800 bg-slate-950 font-semibold">TRẠNG THÁI</th>
+                <th rowSpan={2} className="py-2.5 px-3 w-36 border-l border-slate-800 bg-slate-950 font-semibold">THAO TÁC</th>
               </tr>
               <tr>
-                <th className="p-2 w-24 border-r border-blue-900/60 bg-blue-950/80">TP Đà Nẵng</th>
-                <th className="p-2 w-24 border-r border-blue-900/60 bg-blue-950/80">Xã Hòa Tiến</th>
+                <th className="py-1.5 px-2 w-24 border-r border-slate-800 bg-slate-950 font-medium text-[11px]">TP Đà Nẵng</th>
+                <th className="py-1.5 px-2 w-24 border-r border-slate-800 bg-slate-950 font-medium text-[11px]">Xã Hòa Tiến</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-300 font-medium">
+            <tbody className="divide-y divide-slate-200 text-slate-700 font-normal">
               {filteredVoters.length === 0 ? (
                 <tr>
-                  <td colSpan={14} className="p-12 text-center text-slate-400 font-semibold">
-                    Chưa có cử tri nào trong danh sách. Vui lòng bấm "+ Thêm cử tri mới" hoặc "Import Excel".
+                  <td colSpan={14} className="p-10 text-center text-slate-400 font-medium">
+                    Chưa có cử tri nào trong danh sách. Bấm "+ Thêm cử tri mới" hoặc "Import Excel".
                   </td>
                 </tr>
               ) : (
@@ -782,95 +796,95 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                   const isXa = v.eligibleHdndXa !== false;
 
                   return (
-                    <tr key={v.id} className="hover:bg-sky-50/40 transition-colors">
-                      <td className="p-2.5 text-center font-bold text-slate-600 border-r border-slate-200">
+                    <tr key={v.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-2 text-center font-mono text-slate-500 text-xs border-r border-slate-100">
                         {v.stt.toString().padStart(2, '0')}
                       </td>
-                      <td className="p-2.5 text-center font-mono font-bold text-sky-900 border-r border-slate-200">
+                      <td className="p-2 text-center font-mono font-bold text-sky-800 text-xs border-r border-slate-100">
                         {v.voterCardNo}
                       </td>
-                      <td className="p-2.5 font-bold text-slate-900 text-xs border-r border-slate-200 uppercase">
+                      <td className="p-2.5 font-semibold text-slate-900 text-xs border-r border-slate-100 uppercase tracking-wide">
                         {v.fullName}
                       </td>
-                      <td className="p-2.5 text-center font-mono text-slate-600 border-r border-slate-200">
-                        {v.dob}
+                      <td className="p-2 text-center font-mono text-slate-600 text-xs border-r border-slate-100 whitespace-nowrap">
+                        {formatDobDisplay(v.dob)}
                       </td>
-                      <td className="p-2.5 text-center font-extrabold text-slate-800 border-r border-slate-200">
-                        {isMale ? 'x' : ''}
+                      <td className="p-2 text-center text-slate-600 text-xs border-r border-slate-100">
+                        {isMale ? '✓' : ''}
                       </td>
-                      <td className="p-2.5 text-center font-extrabold text-slate-800 border-r border-slate-200">
-                        {isFemale ? 'x' : ''}
+                      <td className="p-2 text-center text-slate-600 text-xs border-r border-slate-100">
+                        {isFemale ? '✓' : ''}
                       </td>
-                      <td className="p-2.5 text-center font-mono text-slate-700 text-[11px] border-r border-slate-200">
+                      <td className="p-2 text-center font-mono text-slate-600 text-[11px] border-r border-slate-100">
                         {v.idCard || '048*******888'}
                       </td>
-                      <td className="p-2.5 text-center text-slate-700 border-r border-slate-200">
+                      <td className="p-2 text-center text-slate-600 text-xs border-r border-slate-100">
                         {v.ethnicity || 'Kinh'}
                       </td>
-                      <td className="p-2.5 text-slate-700 text-[11px] border-r border-slate-200">
+                      <td className="p-2.5 text-slate-600 text-[11px] border-r border-slate-100 leading-tight">
                         {v.address}
                       </td>
 
                       {/* Interactive Level Checkboxes */}
-                      <td className="p-2.5 text-center border-r border-slate-200 bg-sky-50/30">
+                      <td className="p-2 text-center border-r border-slate-100">
                         <button
                           onClick={() => handleToggleLevelFlag(v, 'eligibleQuocHoi')}
-                          className={`w-6 h-6 rounded border font-bold text-xs inline-flex items-center justify-center transition-all ${
-                            isQH ? 'bg-sky-600 text-white border-sky-700 shadow-2xs' : 'bg-white text-slate-300 border-slate-300'
+                          className={`w-5 h-5 rounded font-bold text-xs inline-flex items-center justify-center transition-all ${
+                            isQH ? 'bg-sky-500 text-white border border-sky-600 shadow-2xs' : 'bg-slate-100 text-slate-300 border border-slate-200'
                           }`}
-                          title="Tích chọn/Bỏ chọn bầu cử ĐB Quốc hội"
+                          title="Quyền bầu cử ĐB Quốc hội"
                         >
-                          {isQH ? 'x' : ''}
+                          {isQH ? '✓' : ''}
                         </button>
                       </td>
 
-                      <td className="p-2.5 text-center border-r border-slate-200 bg-sky-50/30">
+                      <td className="p-2 text-center border-r border-slate-100">
                         <button
                           onClick={() => handleToggleLevelFlag(v, 'eligibleHdndTinh')}
-                          className={`w-6 h-6 rounded border font-bold text-xs inline-flex items-center justify-center transition-all ${
-                            isTinh ? 'bg-sky-600 text-white border-sky-700 shadow-2xs' : 'bg-white text-slate-300 border-slate-300'
+                          className={`w-5 h-5 rounded font-bold text-xs inline-flex items-center justify-center transition-all ${
+                            isTinh ? 'bg-sky-500 text-white border border-sky-600 shadow-2xs' : 'bg-slate-100 text-slate-300 border border-slate-200'
                           }`}
-                          title="Tích chọn/Bỏ chọn bầu cử ĐB HĐND TP Đà Nẵng"
+                          title="Quyền bầu cử ĐB HĐND TP Đà Nẵng"
                         >
-                          {isTinh ? 'x' : ''}
+                          {isTinh ? '✓' : ''}
                         </button>
                       </td>
 
-                      <td className="p-2.5 text-center border-r border-slate-200 bg-sky-50/30">
+                      <td className="p-2 text-center border-r border-slate-100">
                         <button
                           onClick={() => handleToggleLevelFlag(v, 'eligibleHdndXa')}
-                          className={`w-6 h-6 rounded border font-bold text-xs inline-flex items-center justify-center transition-all ${
-                            isXa ? 'bg-sky-600 text-white border-sky-700 shadow-2xs' : 'bg-white text-slate-300 border-slate-300'
+                          className={`w-5 h-5 rounded font-bold text-xs inline-flex items-center justify-center transition-all ${
+                            isXa ? 'bg-sky-500 text-white border border-sky-600 shadow-2xs' : 'bg-slate-100 text-slate-300 border border-slate-200'
                           }`}
-                          title="Tích chọn/Bỏ chọn bầu cử ĐB HĐND Xã Hòa Tiến"
+                          title="Quyền bầu cử ĐB HĐND Xã Hòa Tiến"
                         >
-                          {isXa ? 'x' : ''}
+                          {isXa ? '✓' : ''}
                         </button>
                       </td>
 
-                      {/* COL 1: TRẠNG THÁI BỎ PHIẾU (CÓ HIỂN THỊ THỜI GIAN ĐI BẦU) */}
-                      <td className="p-2.5 text-center border-r border-slate-200">
+                      {/* CỘT 1: TRẠNG THÁI BỎ PHIẾU (CÓ HIỂN THỊ THỜI GIAN ĐI BẦU) */}
+                      <td className="p-2 text-center border-r border-slate-100">
                         {v.hasVoted ? (
-                          <div className="flex flex-col items-center gap-1">
-                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1 shadow-2xs">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              Đã bỏ phiếu
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80 inline-flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>Đã bỏ phiếu</span>
                             </span>
-                            <span className="text-[10px] text-slate-600 font-mono font-bold flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded border border-slate-200" title="Thời gian ghi nhận cử tri đi bầu">
-                              <Clock className="w-3 h-3 text-sky-600" />
-                              {v.votedAt || '20:15'}
+                            <span className="text-[10px] text-slate-500 font-mono flex items-center gap-0.5">
+                              <Clock className="w-3 h-3 text-sky-500" />
+                              <span>{v.votedAt || '20:15'}</span>
                             </span>
                           </div>
                         ) : (
-                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500 border border-slate-200 inline-block">
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-normal bg-slate-100 text-slate-500 border border-slate-200 inline-block">
                             Chưa bỏ phiếu
                           </span>
                         )}
                       </td>
 
-                      {/* COL 2: THAO TÁC / ĐIỂM DANH */}
-                      <td className="p-2.5 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
+                      {/* CỘT 2: THAO TÁC / ĐIỂM DANH */}
+                      <td className="p-2 text-center">
+                        <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() => {
                               toggleVoterStatus(v.id);
@@ -880,20 +894,20 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                                 showToast(`ℹ️ Đã hủy điểm danh cử tri: ${v.fullName}`, 'info');
                               }
                             }}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all shadow-2xs flex items-center gap-1 ${
+                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
                               v.hasVoted
-                                ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
-                                : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-xs'
+                                ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200'
+                                : 'bg-sky-600 hover:bg-sky-700 text-white shadow-2xs'
                             }`}
-                            title={v.hasVoted ? 'Bấm để HỦY điểm danh cử tri này' : 'Bấm để XÁC NHẬN điểm danh cử tri này'}
+                            title={v.hasVoted ? 'Hủy điểm danh cử tri này' : 'Xác nhận điểm danh cử tri này'}
                           >
                             {v.hasVoted ? '✕ Hủy' : '✓ Điểm danh'}
                           </button>
 
                           <button
                             onClick={() => handleOpenEditModal(v)}
-                            className="p-1.5 text-sky-600 hover:text-sky-800 hover:bg-sky-50 rounded-lg transition-colors border border-transparent hover:border-sky-200"
-                            title="Chỉnh sửa cử tri"
+                            className="p-1 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-md transition-colors"
+                            title="Sửa thông tin"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
@@ -905,7 +919,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                                 showToast(`✅ Đã xóa cử tri: ${v.fullName}`, 'info');
                               }
                             }}
-                            className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200"
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
                             title="Xóa cử tri"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
