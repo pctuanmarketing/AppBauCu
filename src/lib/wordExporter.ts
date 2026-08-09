@@ -4,6 +4,7 @@ interface ExtendedCandidateStats extends Candidate {
   votesType3?: number;
   votesType2?: number;
   votesType1?: number;
+  address?: string;
 }
 
 export function generatePrintProtocol(
@@ -31,13 +32,13 @@ export function generatePrintProtocol(
   const validPct = totalReturned > 0 ? ((validBallotsCount / totalReturned) * 100).toFixed(2) : '0.00';
   const invalidPct = totalReturned > 0 ? ((invalidBallotsCount / totalReturned) * 100).toFixed(2) : '0.00';
 
-  // Committee members breakdown
-  const headMember = committeeMembers.find(m => m.position.toLowerCase().includes('tổ trưởng')) || committeeMembers[0];
-  const secMember = committeeMembers.find(m => m.position.toLowerCase().includes('thư ký')) || committeeMembers[1];
+  // Committee members breakdown using role property
+  const headMember = committeeMembers.find(m => (m.role || '').toLowerCase().includes('tổ trưởng')) || committeeMembers[0];
+  const secMember = committeeMembers.find(m => (m.role || '').toLowerCase().includes('thư ký')) || committeeMembers[1];
   const otherMembers = committeeMembers.filter(m => m !== headMember && m !== secMember);
 
-  // Witness list
-  const witnessNames = witnesses.length > 0 ? witnesses.map(w => `${w.fullName} (${w.representedOrg || 'Cử tri'})`).join(', ') : 'Đại diện cử tri nhân dân';
+  // Witness list using address property
+  const witnessNames = witnesses.length > 0 ? witnesses.map(w => `${w.fullName} (${w.address || 'Cử tri'})`).join(', ') : 'Đại diện cử tri nhân dân';
 
   const currentDate = new Date();
   const dayStr = currentDate.getDate().toString().padStart(2, '0');
@@ -175,7 +176,7 @@ export function generatePrintProtocol(
       <ol style="margin-top: 5px; padding-left: 25px;">
         <li>Ông/Bà: <strong>${headMember ? headMember.fullName : '..........................'}</strong> - Chức vụ: Tổ trưởng Tổ bầu cử</li>
         <li>Ông/Bà: <strong>${secMember ? secMember.fullName : '..........................'}</strong> - Chức vụ: Thư ký Tổ bầu cử</li>
-        ${otherMembers.map((m, i) => `<li>Ông/Bà: <strong>${m.fullName}</strong> - Ủy viên Tổ bầu cử</li>`).join('')}
+        ${otherMembers.map((m, i) => `<li>Ông/Bà: <strong>${m.fullName}</strong> - Ủy viên Tổ bầu cử (${m.role})</li>`).join('')}
         <li>Đại diện cử tri chứng kiến kiểm phiếu: <strong>${witnessNames}</strong></li>
       </ol>
 

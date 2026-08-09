@@ -5,6 +5,7 @@ interface ExtendedCandidateStats extends Candidate {
   votesType3?: number;
   votesType2?: number;
   votesType1?: number;
+  address?: string;
 }
 
 export function exportElectionResultsToExcel(
@@ -47,7 +48,7 @@ export function exportElectionResultsToExcel(
     ['8. Số đại biểu được bầu', config.numRepresentatives, 'đại biểu'],
     [''],
     ['II. KẾT QUẢ BẦU CỬ CHI TIẾT THEO ỨNG CỬ VIÊN'],
-    ['STT', 'Họ và tên người ứng cử', 'Giới tính', 'Ngày sinh', 'Địa chỉ / Thôn', 'Số phiếu bầu', 'Tỷ lệ %', 'Loại phiếu 3', 'Loại phiếu 2', 'Loại phiếu 1', 'Kết quả trúng cử'],
+    ['STT', 'Họ và tên người ứng cử', 'Giới tính', 'Ngày sinh', 'Ghi chú', 'Số phiếu bầu', 'Tỷ lệ %', 'Loại phiếu 3', 'Loại phiếu 2', 'Loại phiếu 1', 'Kết quả trúng cử'],
   ];
 
   const sortedCandidates = [...candidates].sort((a, b) => b.voteCount - a.voteCount);
@@ -113,27 +114,27 @@ export function exportElectionResultsToExcel(
   if (committee && committee.length > 0) {
     const committeeRows = [
       ['THÀNH PHẦN TỔ BẦU CỬ VÀ ĐẠI DIỆN CHỨNG KIẾN'],
-      ['STT', 'Họ và tên', 'Chức vụ / Vai trò trong Tổ bầu cử', 'Đơn vị công tác / Đại diện'],
+      ['STT', 'Họ và tên', 'Chức vụ trong Tổ bầu cử', 'Tổ bầu cử'],
     ];
 
     committee.forEach((m, idx) => {
       committeeRows.push([
         (idx + 1).toString(),
         m.fullName,
-        m.position,
-        m.unit || 'Tổ bầu cử số ' + (unit?.votingAreaNo || '01')
+        m.role,
+        'Tổ bầu cử số ' + (unit?.votingAreaNo || '01')
       ]);
     });
 
     if (witnesses && witnesses.length > 0) {
       committeeRows.push(['']);
       committeeRows.push(['ĐẠI DIỆN CỬ TRI CHỨNG KIẾN KIỂM PHIẾU']);
-      committeeRows.push(['STT', 'Họ và tên', 'Cơ quan / Đại diện cử tri']);
+      committeeRows.push(['STT', 'Họ và tên', 'Địa chỉ / Đại diện cử tri']);
       witnesses.forEach((w, idx) => {
         committeeRows.push([
           (idx + 1).toString(),
           w.fullName,
-          w.representedOrg || 'Đại diện cử tri nhân dân'
+          w.address || 'Đại diện cử tri nhân dân'
         ]);
       });
     }
