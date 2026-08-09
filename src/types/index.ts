@@ -2,25 +2,40 @@ export type ElectionLevel = 'QUOC_HOI' | 'HDND_TINH' | 'HDND_XA';
 
 export type UserRole = 'ADMIN' | 'EDITOR' | 'VIEW';
 
+export type UserAccountStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface UserAccount {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  password?: string;
+  role: UserRole;
+  status: UserAccountStatus;
+  createdAt: string;
+  approvedAt?: string;
+  approvedBy?: string;
+}
+
 export interface ElectionUnit {
   id: string;
-  province: string; // Tỉnh/Thành phố (VD: Thành phố Đà Nẵng)
-  term: string; // Khóa (VD: XVI)
-  quocHoiUnitNo: number; // Đơn vị bầu cử ĐBQH số
-  quocHoiWards: string; // Gồm các Xã/Phường
-  hdndTinhUnitNo: number; // Đơn vị bầu cử HĐND Tỉnh số
-  hdndTinhWards: string; // Gồm các Xã/Phường
-  hdndXaUnitNo: number; // Đơn vị bầu cử HĐND Xã số
-  hdndXaVillages: string; // Gồm các Thôn/Tổ dân phố
-  votingAreaNo: number; // Khu vực bỏ phiếu số (VD: 21)
-  wardName: string; // Xã/Phường (VD: Xã Hòa Tiến)
+  province: string;
+  term: string;
+  quocHoiUnitNo: number;
+  quocHoiWards: string;
+  hdndTinhUnitNo: number;
+  hdndTinhWards: string;
+  hdndXaUnitNo: number;
+  hdndXaVillages: string;
+  votingAreaNo: number;
+  wardName: string;
 }
 
 export interface CommitteeMember {
   id: string;
   stt: number;
   fullName: string;
-  role: string; // Tổ trưởng, Thư ký, Ủy viên
+  role: string;
   idCard: string;
   phone: string;
 }
@@ -38,8 +53,8 @@ export interface Candidate {
   id: string;
   stt: number;
   fullName: string;
-  gender: string; // Ông / Bà
-  dob: string; // Ngày sinh
+  gender: string;
+  dob: string;
   electionLevel: ElectionLevel;
   voteCount: number;
   votePercentage: number;
@@ -50,33 +65,32 @@ export interface Candidate {
 
 export interface ElectionLevelConfig {
   levelCode: ElectionLevel;
-  levelName: string; // ĐẠI BIỂU QUỐC HỘI, ĐẠI BIỂU HĐND TỈNH, ĐẠI BIỂU HĐND XÃ
-  totalVoters: number; // Tổng số cử tri
-  numCandidates: number; // Số người ứng cử
-  numRepresentatives: number; // Số đại biểu được bầu
-  ballotsReceived: number; // Số phiếu nhận vào
-  ballotsIssued: number; // Số phiếu phát ra
-  ballotsDamaged: number; // Số phiếu đổi hỏng
-  ballotsReturned: number; // Số phiếu thu vào
+  levelName: string;
+  totalVoters: number;
+  numCandidates: number;
+  numRepresentatives: number;
+  ballotsReceived: number;
+  ballotsIssued: number;
+  ballotsDamaged: number;
+  ballotsReturned: number;
 }
 
 export interface Voter {
   id: string;
   stt: number;
-  voterCardNo: string; // Số thẻ cử tri (1, 2, 3...)
-  fullName: string; // Họ và Tên
-  gender: string; // Nam / Nữ
-  dob: string; // Ngày tháng năm sinh (13/01/2005)
-  idCard?: string; // Số Căn cước (048*******698)
-  ethnicity?: string; // Dân tộc (Kinh)
-  address: string; // Nơi cư trú / Thường trú
+  voterCardNo: string;
+  fullName: string;
+  gender: string;
+  dob: string;
+  idCard?: string;
+  ethnicity?: string;
+  address: string;
 
-  // Tích chọn 3 cấp bầu cử cử tri tham gia bỏ phiếu
-  eligibleQuocHoi?: boolean; // Bầu cử Đại biểu Quốc Hội
-  eligibleHdndTinh?: boolean; // Bầu cử đại biểu HĐND Thành phố / Tỉnh
-  eligibleHdndXa?: boolean; // Bầu cử đại biểu HĐND Xã / Phường
+  eligibleQuocHoi?: boolean;
+  eligibleHdndTinh?: boolean;
+  eligibleHdndXa?: boolean;
 
-  hasVoted: boolean; // Trạng thái đã đi bầu
+  hasVoted: boolean;
   votedAt?: string;
 }
 

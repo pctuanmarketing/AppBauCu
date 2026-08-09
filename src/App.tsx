@@ -1,14 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useElectionStore } from './store/electionStore';
 import { Layout } from './components/layout/Layout';
+import { LandingPage } from './pages/LandingPage';
+import { AuthModal } from './components/auth/AuthModal';
 import { DashboardPage } from './pages/DashboardPage';
 import { ElectionDataPage } from './pages/ElectionDataPage';
 import { VoterManagementPage } from './pages/VoterManagementPage';
 import { BallotCountingPage } from './pages/BallotCountingPage';
 import { ResultsReportPage } from './pages/ResultsReportPage';
 import { SystemAdminPage } from './pages/SystemAdminPage';
-import { UserRole } from './types';
-import { HelpCircle, Vote, Users, X } from 'lucide-react';
+import { UserAccount, UserRole } from './types';
+import { HelpCircle, Vote, Users, X, LogIn, UserPlus, LogOut, Shield } from 'lucide-react';
+
+const INITIAL_USERS: UserAccount[] = [
+  {
+    id: 'admin-default',
+    fullName: 'Phạm Công Tuân',
+    email: 'pctuanit@gmail.com',
+    phone: '0916199945',
+    password: '123456',
+    role: 'ADMIN',
+    status: 'APPROVED',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'user-demo-1',
+    fullName: 'Nguyễn Văn Đính',
+    email: 'dinh.nguyen@hoatien.danang.gov.vn',
+    phone: '0905628031',
+    password: '123456',
+    role: 'EDITOR',
+    status: 'PENDING',
+    createdAt: new Date().toISOString(),
+  },
+];
 
 export function App() {
   const {
@@ -43,14 +68,118 @@ export function App() {
     updateLevelConfig,
   } = useElectionStore();
 
+  // Navigation & Auth States
+  const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>(() => {
+    const saved = localStorage.getItem('app_bau_cu_users');
+    return saved ? JSON.parse(saved) : INITIAL_USERS;
+  });
+
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
+    const saved = localStorage.getItem('app_bau_cu_current_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [isLandingPage, setIsLandingPage] = useState<boolean>(!currentUser);
+  const [authModalMode, setAuthModalMode] = useState<'LOGIN' | 'REGISTER' | null>(null);
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [showQuickActionModal, setShowQuickActionModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
 
+  // Sync users to LocalStorage
+  useEffect(() => {
+    localStorage.setItem('app_bau_cu_users', JSON.stringify(registeredUsers));
+  }, [registeredUsers]);
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('app_bau_cu_current_user', JSON.stringify(currentUser));
+      setSettings(prev => ({ ...prev, currentRole: currentUser.role }));
+    } else {
+      localStorage.removeItem('app_bau_cu_current_user');
+    }
+  }, [currentUser]);
+
+  // Auth Actions
+  const handleRegisterSubmit = (newUser: Omit<UserAccount, 'id' | 'createdAt' | 'status' | 'role'>) => {
+    const item: UserAccount = {
+      ...newUser,
+      id: `user-${Date.now()}`,
+      role: 'EDITOR',
+      status: 'PENDING',
+      createdAt: new Date().toISOString(),
+    };
+    setRegisteredUsers(prev => [...prev, item]);
+  };
+
+  const handleApproveUser = (userId: string, role: UserRole) => {
+    setRegisteredUsers(prev =>
+      prev.map(u => (u.id === userId ? { ...u, role, status: 'APPROVED', approvedAt: new Date().toISOString() } : u))
+    );
+  };
+
+  const handleRejectUser = (userId: string) => {
+    setRegisteredUsers(prev =>
+      prev.map(u => (u.id === userId ? { ...u, status: 'REJECTED' } : u))
+    );
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    setRegisteredUsers(prev => prev.filter(u => u.id !== userId));
+  };
+
+  const handleLoginSuccess = (user: UserAccount) => {
+    setCurrentUser(user);
+    setIsLandingPage(false);
+    setAuthModalMode(null);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setIsLandingPage(true);
+  };
+
+  const handleEnterDemoApp = () => {
+    setCurrentUser({
+      id: 'demo-guest',
+      fullName: 'Khách Xem Thử Khảo Sát',
+      email: 'demo@hoatien.gov.vn',
+      phone: '0900000000',
+      role: 'VIEW',
+      status: 'APPROVED',
+      createdAt: new Date().toISOString(),
+    });
+    setIsLandingPage(false);
+  };
+
   const handleRoleChange = (role: UserRole) => {
     setSettings(prev => ({ ...prev, currentRole: role }));
   };
+
+  // If in Landing Page View mode
+  if (isLandingPage && !currentUser) {
+    return (
+      <>
+        <LandingPage
+          onOpenLogin={() => setAuthModalMode('LOGIN')}
+          onOpenRegister={() => setAuthModalMode('REGISTER')}
+          onEnterDemoApp={handleEnterDemoApp}
+        />
+
+        {authModalMode && (
+          <AuthModal
+            mode={authModalMode}
+            onClose={() => setAuthModalMode(null)}
+            onSwitchMode={mode => setAuthModalMode(mode)}
+            onLoginSuccess={handleLoginSuccess}
+            registeredUsers={registeredUsers}
+            onRegisterSubmit={handleRegisterSubmit}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <Layout
@@ -64,6 +193,33 @@ export function App() {
       onOpenQuickAction={() => setShowQuickActionModal(true)}
       onOpenHelp={() => setShowHelpModal(true)}
     >
+      {/* Top User Bar inside App */}
+      <div className="bg-slate-800 text-slate-200 px-4 py-2 text-xs flex items-center justify-between border-b border-slate-700 font-medium">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-sky-400" />
+          <span>Tài khoản đang đăng nhập: <strong className="text-white uppercase">{currentUser?.fullName}</strong> ({currentUser?.email})</span>
+          <span className="bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded font-mono font-bold border border-sky-400/30">
+            {settings.currentRole}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsLandingPage(true)}
+            className="hover:text-white underline text-[11px]"
+          >
+            Trang giới thiệu
+          </button>
+          <button
+            onClick={handleLogout}
+            className="bg-rose-600/80 hover:bg-rose-600 text-white font-bold px-2.5 py-1 rounded flex items-center gap-1 transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+
       {/* Tab Pages Switch */}
       {activeTab === 'dashboard' && (
         <DashboardPage
@@ -136,12 +292,28 @@ export function App() {
         <SystemAdminPage
           settings={settings}
           setSettings={setSettings}
+          registeredUsers={registeredUsers}
+          onApproveUser={handleApproveUser}
+          onRejectUser={handleRejectUser}
+          onDeleteUser={handleDeleteUser}
+        />
+      )}
+
+      {/* Auth Modal if triggered inside App */}
+      {authModalMode && (
+        <AuthModal
+          mode={authModalMode}
+          onClose={() => setAuthModalMode(null)}
+          onSwitchMode={mode => setAuthModalMode(mode)}
+          onLoginSuccess={handleLoginSuccess}
+          registeredUsers={registeredUsers}
+          onRegisterSubmit={handleRegisterSubmit}
         />
       )}
 
       {/* Quick Action Modal (+ Thêm Nhanh) */}
       {showQuickActionModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 font-sans">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
@@ -205,7 +377,7 @@ export function App() {
 
       {/* User Help Modal */}
       {showHelpModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 font-sans">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-200 max-h-[85vh] flex flex-col">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
@@ -234,8 +406,8 @@ export function App() {
               <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
                 <h4 className="font-bold text-emerald-900 mb-1">2. Điểm danh cử tri đi bỏ phiếu:</h4>
                 <p>
-                  - Sử dụng ô điểm danh nhanh bằng cách nhập <strong>Mã thẻ cử tri</strong> (VD: <i>TC-21-0001</i>).
-                  <br />- Hoặc tìm kiếm tên cử tri trên danh sách và bấm nút <strong>"Điểm danh ngay"</strong>.
+                  - Sử dụng ô điểm danh nhanh bằng cách nhập <strong>Mã thẻ cử tri</strong> hoặc STT.
+                  <br />- Tích chọn quyền bỏ phiếu cho từng cấp đại biểu (Quốc hội, HĐND Tỉnh, HĐND Xã).
                 </p>
               </div>
 
