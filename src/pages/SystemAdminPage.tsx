@@ -15,8 +15,10 @@ import {
   UserPlus,
   Trash2,
   Sparkles,
+  AlertTriangle,
 } from 'lucide-react';
 import { SystemSettings, UserAccount, UserRole } from '../types';
+import { sendRealEmail, EmailPayload } from '../lib/emailService';
 
 interface SystemAdminPageProps {
   settings: SystemSettings;
@@ -25,6 +27,8 @@ interface SystemAdminPageProps {
   onApproveUser?: (userId: string, role: UserRole) => void;
   onRejectUser?: (userId: string) => void;
   onDeleteUser?: (userId: string) => void;
+  onShowEmailModal?: (emailData: EmailPayload) => void;
+  currentRole?: UserRole;
 }
 
 export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
@@ -34,19 +38,70 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
   onApproveUser,
   onRejectUser,
   onDeleteUser,
+  onShowEmailModal,
+  currentRole = 'ADMIN',
 }) => {
   const [selectedRoleMap, setSelectedRoleMap] = useState<Record<string, UserRole>>({});
-  const [activatedNoticeUser, setActivatedNoticeUser] = useState<UserAccount | null>(null);
+
+  // Block non-admin users from accessing system administration
+  if (currentRole !== 'ADMIN') {
+    return (
+      <div className="max-w-3xl mx-auto my-12 p-8 bg-white rounded-3xl border-2 border-rose-200 shadow-xl text-center space-y-4 font-sans">
+        <div className="w-16 h-16 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-md">
+          <AlertTriangle className="w-8 h-8" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-lg font-black text-slate-900 uppercase">
+            BẠN KHÔNG CÓ QUYỀN TRUY CẬP QUẢN TRỊ HỆ THỐNG
+          </h2>
+          <p className="text-xs text-slate-600 font-medium max-w-md mx-auto">
+            Tài khoản hiện tại của bạn có quyền <strong>{currentRole}</strong>. Phân hệ "Quản trị hệ thống & Phê duyệt cấp quyền" chỉ dành riêng cho tài khoản Quản trị viên tối cao (<strong>ADMIN</strong>).
+          </p>
+        </div>
+        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-700 text-left space-y-2 max-w-md mx-auto">
+          <div className="font-bold text-slate-900">📌 Chi tiết phân quyền hệ thống:</div>
+          <ul className="list-disc list-inside space-y-1 text-[11px]">
+            <li><strong>ADMIN:</strong> Toàn quyền kiểm soát, phê duyệt tài khoản, phân quyền, khóa hệ thống.</li>
+            <li><strong>EDITOR:</strong> Nhập dữ liệu cử tri, điểm danh, kiểm phiếu siêu tốc và xuất báo cáo.</li>
+            <li><strong>VIEW:</strong> Chỉ xem thông tin tổng quan, danh sách cử tri và biên bản kiểm phiếu.</li>
+          </ul>
+        </div>
+      </div>
+    );
+  }
 
   const pendingUsers = registeredUsers.filter(u => u.status === 'PENDING');
   const activeUsers = registeredUsers.filter(u => u.status === 'APPROVED');
-  const rejectedUsers = registeredUsers.filter(u => u.status === 'REJECTED');
 
-  const handleApproveAction = (u: UserAccount) => {
+  const handleApproveAction = async (u: UserAccount) => {
     const assignedRole = selectedRoleMap[u.id] || 'EDITOR';
+
     if (onApproveUser) {
       onApproveUser(u.id, assignedRole);
-      setActivatedNoticeUser({ ...u, role: assignedRole, status: 'APPROVED' });
+    }
+
+    const emailPayload: EmailPayload = {
+      to_name: u.fullName,
+      to_email: u.email,
+      phone: u.phone,
+      subject: `[HỆ THỐNG BẦU CỬ] THÔNG BÁO TÀI KHOẢN ĐÃ ĐƯỢC KÍCH HOẠT QUYỀN ${assignedRole}`,
+      type: 'ACCOUNT_ACTIVATED',
+      message_html: `
+        <p>Chúc mừng! Quản trị viên hệ thống đã phê duyệt và kích hoạt thành công tài khoản của bạn:</p>
+        <ul>
+          <li><strong>Họ và Tên:</strong> ${u.fullName}</li>
+          <li><strong>Email đăng nhập:</strong> ${u.email}</li>
+          <li><strong>Quyền hạn được cấp:</strong> <strong style="color: #0284c7;">${assignedRole}</strong></li>
+          <li><strong>Trạng thái:</strong> <strong style="color: #16a34a;">ĐÃ KÍCH HOẠT SUỐT VỚI HỆ THỐNG</strong></li>
+        </ul>
+        <p>Bây giờ bạn có thể truy cập hệ thống và tiến hành đăng nhập bằng Email <strong>${u.email}</strong> để thực hiện các thao tác theo quyền hạn được phân công.</p>
+      `,
+    };
+
+    await sendRealEmail(emailPayload);
+
+    if (onShowEmailModal) {
+      onShowEmailModal(emailPayload);
     }
   };
 
@@ -58,7 +113,7 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(localStorage));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `BACKUP_BAU_CU_TO_21_${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchor.setAttribute('download', `BACKUP_BAU_CU_${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -66,27 +121,6 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* Activated Email Notification Alert Dialog */}
-      {activatedNoticeUser && (
-        <div className="p-4 bg-emerald-600 text-white rounded-2xl shadow-xl flex items-center justify-between animate-fade-in">
-          <div className="flex items-center gap-3 text-xs">
-            <Mail className="w-5 h-5 text-amber-300 animate-bounce" />
-            <div>
-              <div className="font-extrabold uppercase">ĐÃ GỬI MAIL THÔNG BÁO KÍCH HOẠT TÀI KHOẢN THÀNH CÔNG!</div>
-              <p className="text-[11px] opacity-90">
-                Đã kích hoạt tài khoản cho <strong>{activatedNoticeUser.fullName}</strong> ({activatedNoticeUser.email}) với quyền <strong>{activatedNoticeUser.role}</strong>.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => setActivatedNoticeUser(null)}
-            className="text-white hover:opacity-80 font-extrabold text-sm ml-4"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
       {/* Header */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -95,7 +129,7 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
           </div>
           <div>
             <h1 className="text-lg font-extrabold text-slate-900">QUẢN TRỊ HỆ THỐNG & PHÊ DUYỆT CẤP QUYỀN</h1>
-            <p className="text-xs text-slate-500">Phê duyệt tài khoản đăng ký, phân quyền sử dụng và quản lý khóa dữ liệu</p>
+            <p className="text-xs text-slate-500">Phê duyệt tài khoản đăng ký, gửi mail kích hoạt, phân quyền sử dụng và quản lý khóa dữ liệu</p>
           </div>
         </div>
       </div>
@@ -108,7 +142,7 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
             DANH SÁCH YÊU CẦU ĐĂNG KÝ TÀI KHOẢN CHỜ DUYỆT ({pendingUsers.length})
           </h2>
           <span className="text-xs font-bold text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-200">
-            Cần Quản trị viên duyệt để đăng nhập
+            Duyệt ➔ Tự động phát Mail kích hoạt
           </span>
         </div>
 
@@ -122,10 +156,10 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
               <thead className="bg-slate-100 text-slate-700 font-bold uppercase border-b border-slate-200">
                 <tr>
                   <th className="p-3">Họ và Tên</th>
-                  <th className="p-3">Email</th>
+                  <th className="p-3">Email nhận thông báo</th>
                   <th className="p-3">Điện thoại</th>
-                  <th className="p-3 w-40 text-center">Phân công Quyền hạn</th>
-                  <th className="p-3 w-48 text-center">Thao tác Phê duyệt</th>
+                  <th className="p-3 w-44 text-center">Phân công Quyền hạn</th>
+                  <th className="p-3 w-52 text-center">Thao tác Phê duyệt</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -134,13 +168,13 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
                   return (
                     <tr key={u.id} className="hover:bg-slate-50">
                       <td className="p-3 font-bold text-slate-900 uppercase">{u.fullName}</td>
-                      <td className="p-3 font-mono text-sky-800">{u.email}</td>
+                      <td className="p-3 font-mono text-sky-800 font-bold">{u.email}</td>
                       <td className="p-3 font-mono text-slate-700">{u.phone}</td>
                       <td className="p-3 text-center">
                         <select
                           value={assignedRole}
                           onChange={e => handleRoleChangeForUser(u.id, e.target.value as UserRole)}
-                          className="p-1.5 bg-sky-50 border border-sky-300 rounded-lg font-bold text-sky-900 outline-none text-xs"
+                          className="p-1.5 bg-sky-50 border border-sky-300 rounded-lg font-bold text-sky-900 outline-none text-xs w-full"
                         >
                           <option value="ADMIN">ADMIN (Toàn quyền)</option>
                           <option value="EDITOR">EDITOR (Kiểm phiếu & Nhập liệu)</option>
@@ -154,7 +188,7 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
                             className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs flex items-center gap-1"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
-                            Duyệt & Kích hoạt
+                            Duyệt & Gửi Mail kích hoạt
                           </button>
                           <button
                             onClick={() => onRejectUser && onRejectUser(u.id)}
@@ -204,16 +238,16 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
                   <td className="p-3 text-center">
                     <span className={`px-2.5 py-0.5 rounded-full font-extrabold text-[11px] ${
                       u.role === 'ADMIN'
-                        ? 'bg-rose-100 text-rose-800'
+                        ? 'bg-rose-100 text-rose-800 border border-rose-200'
                         : u.role === 'EDITOR'
-                        ? 'bg-sky-100 text-sky-800'
-                        : 'bg-slate-100 text-slate-700'
+                        ? 'bg-sky-100 text-sky-800 border border-sky-200'
+                        : 'bg-slate-100 text-slate-700 border border-slate-200'
                     }`}>
                       {u.role}
                     </span>
                   </td>
                   <td className="p-3 text-center">
-                    <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">
                       <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                       Đã kích hoạt
                     </span>
@@ -238,7 +272,6 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
 
       {/* SECTION 3: SYSTEM LOCK & BACKUP DATA */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* System Lock */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b pb-3">
             <h3 className="text-sm font-extrabold text-slate-900 uppercase flex items-center gap-2">
@@ -278,7 +311,6 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
           </button>
         </div>
 
-        {/* Data Backup */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
           <div className="border-b pb-3">
             <h3 className="text-sm font-extrabold text-slate-900 uppercase flex items-center gap-2">

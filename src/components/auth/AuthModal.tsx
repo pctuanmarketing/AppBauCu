@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { UserAccount, UserRole } from '../../types';
+import { sendRealEmail, EmailPayload } from '../../lib/emailService';
 
 interface AuthModalProps {
   mode: 'LOGIN' | 'REGISTER';
@@ -22,6 +23,7 @@ interface AuthModalProps {
   onLoginSuccess: (user: UserAccount) => void;
   registeredUsers: UserAccount[];
   onRegisterSubmit: (newUser: Omit<UserAccount, 'id' | 'createdAt' | 'status' | 'role'>) => void;
+  onShowEmailModal: (emailData: EmailPayload) => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -31,6 +33,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onLoginSuccess,
   registeredUsers,
   onRegisterSubmit,
+  onShowEmailModal,
 }) => {
   // Login Form States
   const [loginEmail, setLoginEmail] = useState('');
@@ -45,13 +48,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regError, setRegError] = useState('');
 
-  // Email Confirmation Preview Screen
-  const [emailConfirmationData, setEmailConfirmationData] = useState<{
-    fullName: string;
-    email: string;
-    phone: string;
-  } | null>(null);
-
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
@@ -62,7 +58,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     );
 
     if (!matchedUser) {
-      // Default super-admin shortcut for testing if list is fresh
       if (cleanEmail === 'pctuanit@gmail.com' && loginPassword === '123456') {
         onLoginSuccess({
           id: 'admin-default',
@@ -94,7 +89,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     onClose();
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError('');
 
@@ -138,11 +133,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       password: regPassword,
     });
 
-    setEmailConfirmationData({
-      fullName: regFullName.trim(),
-      email: regEmail.trim(),
+    const emailPayload: EmailPayload = {
+      to_name: regFullName.trim(),
+      to_email: regEmail.trim(),
       phone: regPhone.trim(),
-    });
+      subject: '[HỆ THỐNG BẦU CỬ] XÁC NHẬN ĐÃ TIẾP NHẬN ĐĂNG KÝ TÀI KHOẢN',
+      type: 'REGISTRATION_CONFIRMATION',
+      message_html: `
+        <p>Hệ thống Kiểm phiếu Bầu cử Điện tử đã tiếp nhận thành công yêu cầu đăng ký tài khoản của bạn:</p>
+        <ul>
+          <li><strong>Họ và Tên:</strong> ${regFullName.trim()}</li>
+          <li><strong>Email nhận thông báo:</strong> ${regEmail.trim()}</li>
+          <li><strong>Số điện thoại:</strong> ${regPhone.trim()}</li>
+          <li><strong>Trạng thái:</strong> CHỜ QUẢN TRỊ VIÊN DUYỆT CẤP QUYỀN</li>
+        </ul>
+        <p>Quản trị viên hệ thống sẽ xem xét và phân công quyền truy cập (<strong>ADMIN / EDITOR / VIEW</strong>). Ngay sau khi được phê duyệt, bạn sẽ nhận được Email thông báo kích hoạt để đăng nhập vào phần mềm.</p>
+      `,
+    };
+
+    await sendRealEmail(emailPayload);
+    onClose();
+    onShowEmailModal(emailPayload);
   };
 
   return (
@@ -170,46 +181,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </button>
         </div>
 
-        {/* Email Confirmation Dialog (Sau khi Đăng ký thành công) */}
-        {emailConfirmationData ? (
-          <div className="p-6 space-y-4 text-center">
-            <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-md">
-              <Mail className="w-7 h-7" />
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-base font-black text-slate-900">ĐÃ GỬI XÁC NHẬN ĐĂNG KÝ TÀI KHOẢN!</h3>
-              <p className="text-xs text-slate-600 font-medium">
-                Email xác nhận đã được gửi tự động đến: <strong className="text-sky-700">{emailConfirmationData.email}</strong>
-              </p>
-            </div>
-
-            <div className="p-4 bg-sky-50 rounded-2xl border border-sky-200 text-left text-xs text-slate-700 space-y-2">
-              <div className="font-bold text-sky-950 flex items-center gap-1.5 border-b border-sky-200 pb-1.5">
-                <Clock className="w-4 h-4 text-amber-500" />
-                <span>Trạng thái: CHỜ QUẢN TRỊ VIÊN DUYỆT CẤP QUYỀN</span>
-              </div>
-              <p>
-                - <strong>Họ tên:</strong> {emailConfirmationData.fullName}
-                <br />- <strong>Số điện thoại:</strong> {emailConfirmationData.phone}
-                <br />- <strong>Quyền hạn:</strong> Sẽ được Quản trị phân công (ADMIN / EDITOR / VIEW)
-              </p>
-              <p className="text-[11px] text-slate-500 italic pt-1">
-                📌 Ngay sau khi Quản trị viên phê duyệt, hệ thống sẽ tự động gửi email thông báo kích hoạt tài khoản để bạn đăng nhập!
-              </p>
-            </div>
-
-            <button
-              onClick={() => {
-                setEmailConfirmationData(null);
-                onSwitchMode('LOGIN');
-              }}
-              className="w-full py-3 bg-gradient-to-r from-sky-600 to-blue-600 text-white font-extrabold text-xs rounded-xl shadow-lg hover:opacity-95 transition-all"
-            >
-              Chuyển đến màn hình Đăng nhập ➔
-            </button>
-          </div>
-        ) : mode === 'LOGIN' ? (
+        {mode === 'LOGIN' ? (
           /* LOGIN FORM */
           <form onSubmit={handleLoginSubmit} className="p-6 space-y-4 text-xs">
             {loginError && (
@@ -291,7 +263,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   required
                   value={regFullName}
                   onChange={e => setRegFullName(e.target.value)}
-                  placeholder="Phạm Công Tuân"
+                  placeholder="NGUYỄN ĐÌNH"
                   className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 uppercase outline-none focus:ring-2 focus:ring-sky-500"
                 />
               </div>
@@ -307,7 +279,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={regEmail}
                     onChange={e => setRegEmail(e.target.value)}
-                    placeholder="tuan.pham@email.com"
+                    placeholder="pctuanmarketing@gmail.com"
                     className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
@@ -322,7 +294,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={regPhone}
                     onChange={e => setRegPhone(e.target.value)}
-                    placeholder="0916199945"
+                    placeholder="0905772118"
                     className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>

@@ -3,6 +3,7 @@ import { useElectionStore } from './store/electionStore';
 import { Layout } from './components/layout/Layout';
 import { LandingPage } from './pages/LandingPage';
 import { AuthModal } from './components/auth/AuthModal';
+import { EmailNotificationModal } from './components/common/EmailNotificationModal';
 import { DashboardPage } from './pages/DashboardPage';
 import { ElectionDataPage } from './pages/ElectionDataPage';
 import { VoterManagementPage } from './pages/VoterManagementPage';
@@ -10,6 +11,7 @@ import { BallotCountingPage } from './pages/BallotCountingPage';
 import { ResultsReportPage } from './pages/ResultsReportPage';
 import { SystemAdminPage } from './pages/SystemAdminPage';
 import { UserAccount, UserRole } from './types';
+import { EmailPayload } from './lib/emailService';
 import { HelpCircle, Vote, Users, X, LogIn, UserPlus, LogOut, Shield } from 'lucide-react';
 
 const INITIAL_USERS: UserAccount[] = [
@@ -25,9 +27,9 @@ const INITIAL_USERS: UserAccount[] = [
   },
   {
     id: 'user-demo-1',
-    fullName: 'Nguyễn Văn Đính',
-    email: 'dinh.nguyen@hoatien.danang.gov.vn',
-    phone: '0905628031',
+    fullName: 'NGUYỄN ĐÌNH',
+    email: 'pctuanmarketing@gmail.com',
+    phone: '0905772118',
     password: '123456',
     role: 'EDITOR',
     status: 'PENDING',
@@ -81,6 +83,9 @@ export function App() {
 
   const [isLandingPage, setIsLandingPage] = useState<boolean>(!currentUser);
   const [authModalMode, setAuthModalMode] = useState<'LOGIN' | 'REGISTER' | null>(null);
+
+  // Email Notification Popup Payload State
+  const [activeEmailModalPayload, setActiveEmailModalPayload] = useState<EmailPayload | null>(null);
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
@@ -161,6 +166,14 @@ export function App() {
             onLoginSuccess={handleLoginSuccess}
             registeredUsers={registeredUsers}
             onRegisterSubmit={handleRegisterSubmit}
+            onShowEmailModal={payload => setActiveEmailModalPayload(payload)}
+          />
+        )}
+
+        {activeEmailModalPayload && (
+          <EmailNotificationModal
+            emailData={activeEmailModalPayload}
+            onClose={() => setActiveEmailModalPayload(null)}
           />
         )}
       </>
@@ -282,10 +295,12 @@ export function App() {
           onApproveUser={handleApproveUser}
           onRejectUser={handleRejectUser}
           onDeleteUser={handleDeleteUser}
+          onShowEmailModal={payload => setActiveEmailModalPayload(payload)}
+          currentRole={settings.currentRole}
         />
       )}
 
-      {/* Auth Modal if triggered inside App */}
+      {/* Auth Modal */}
       {authModalMode && (
         <AuthModal
           mode={authModalMode}
@@ -294,6 +309,15 @@ export function App() {
           onLoginSuccess={handleLoginSuccess}
           registeredUsers={registeredUsers}
           onRegisterSubmit={handleRegisterSubmit}
+          onShowEmailModal={payload => setActiveEmailModalPayload(payload)}
+        />
+      )}
+
+      {/* Live Email Notification Box Modal */}
+      {activeEmailModalPayload && (
+        <EmailNotificationModal
+          emailData={activeEmailModalPayload}
+          onClose={() => setActiveEmailModalPayload(null)}
         />
       )}
 
