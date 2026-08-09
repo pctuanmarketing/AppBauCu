@@ -92,6 +92,35 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
   // Auto-calculated Remaining Ballots = Received - Issued - Damaged
   const calculatedRemaining = Math.max(0, config.ballotsReceived - config.ballotsIssued - config.ballotsDamaged);
 
+  // Candidate STT Validation Rule Helper for Active Level
+  const availableCandidateStts = levelCandidates.map(c => c.stt);
+
+  const getInvalidSttsFromInput = (input: string): number[] => {
+    const clean = input.trim();
+    if (!clean || clean === '0') return [];
+
+    const rawTokens = clean.split(/[\s,]+/);
+    const digits: number[] = [];
+
+    for (const token of rawTokens) {
+      if (!token) continue;
+      if (/^\d+$/.test(token)) {
+        if (token.length > 1 && !clean.includes(' ') && !clean.includes(',')) {
+          for (const ch of token) {
+            digits.push(parseInt(ch, 10));
+          }
+        } else {
+          digits.push(parseInt(token, 10));
+        }
+      }
+    }
+
+    const uniqueStts = Array.from(new Set(digits));
+    return uniqueStts.filter(stt => stt !== 0 && !availableCandidateStts.includes(stt));
+  };
+
+  const invalidSttsInInput = getInvalidSttsFromInput(struckOutInput);
+
   // Auto focus input on level switch or submission
   useEffect(() => {
     inputRef.current?.focus();
@@ -100,6 +129,11 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
   // Handle Form Submission
   const handleSubmitBallot = () => {
     if (!struckOutInput.trim()) return;
+
+    if (invalidSttsInInput.length > 0) {
+      alert(`⚠️ CẢNH BÁO: Số thứ tự [${invalidSttsInInput.join(', ')}] không tồn tại trong danh sách ${levelCandidates.length} ứng cử viên cấp này! (Chỉ chấp nhận STT: ${availableCandidateStts.join(', ')})`);
+      return;
+    }
 
     const res = addBallot(activeLevel, struckOutInput.trim());
     setLastSubmittedResult(res);
@@ -118,6 +152,11 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
     const cleanInput = struckOutInput.trim();
     if (!cleanInput) {
       alert('Vui lòng nhập các số thứ tự ứng cử viên bị gạch tên (hoặc 0 cho phiếu không hợp lệ)!');
+      return;
+    }
+
+    if (invalidSttsInInput.length > 0) {
+      alert(`⚠️ CẢNH BÁO: Số thứ tự [${invalidSttsInInput.join(', ')}] không có trong danh sách ${levelCandidates.length} ứng cử viên! (Chỉ chấp nhận STT: ${availableCandidateStts.join(', ')})`);
       return;
     }
 
@@ -336,18 +375,32 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
                       onChange={e => setStruckOutInput(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder="Gõ số bị gạch..."
-                      className="w-full px-4 py-2 bg-white border-2 border-rose-300 rounded-xl text-center text-lg font-mono font-black text-rose-900 focus:bg-white focus:outline-none focus:border-rose-500 shadow-inner tracking-wider"
+                      className={`w-full px-4 py-2 bg-white border-2 rounded-xl text-center text-lg font-mono font-black focus:outline-none tracking-wider ${
+                        invalidSttsInInput.length > 0
+                          ? 'border-rose-600 text-rose-900 bg-rose-50 animate-pulse'
+                          : 'border-rose-300 text-rose-900 focus:border-rose-500'
+                      }`}
                     />
                     <button
                       type="button"
+                      disabled={invalidSttsInInput.length > 0}
                       onClick={handleSubmitBallot}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all shrink-0 flex items-center gap-1.5"
+                      className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all shrink-0 flex items-center gap-1.5"
                     >
                       <Check className="w-4 h-4" />
                       <span>Xác nhận</span>
                     </button>
                   </div>
                 </div>
+
+                {invalidSttsInInput.length > 0 && (
+                  <div className="p-3 bg-rose-100 border-2 border-rose-400 rounded-xl text-rose-950 font-bold text-xs flex items-center gap-2 shadow-2xs">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>
+                      ⚠️ <strong>CẢNH BÁO SỐ THỨ TỰ KHÔNG TỒN TẠI:</strong> Số STT <strong className="font-mono underline">[{invalidSttsInInput.join(', ')}]</strong> không có trong danh sách {levelCandidates.length} ứng viên! (Chấp nhận STT từ <strong>{Math.min(...availableCandidateStts)}</strong> đến <strong>{Math.max(...availableCandidateStts)}</strong>)
+                    </span>
+                  </div>
+                )}
 
                 <div className="text-[11px] text-slate-600 space-y-0.5 font-sans leading-relaxed pt-1 bg-white/70 p-3 rounded-xl border border-slate-200/60">
                   <p className="font-semibold text-slate-800">1. Nhập số <strong className="text-rose-600 font-mono">0</strong> cho những phiếu không hợp lệ.</p>
@@ -389,10 +442,24 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
                       value={struckOutInput}
                       onChange={e => setStruckOutInput(e.target.value)}
                       placeholder="VD: 2 4 (gạch số 2 và 4) hoặc 0..."
-                      className="w-full px-4 py-2 bg-white border-2 border-rose-300 rounded-xl text-center text-base font-mono font-black text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                      className={`w-full px-4 py-2 bg-white border-2 rounded-xl text-center text-base font-mono font-black focus:outline-none ${
+                        invalidSttsInInput.length > 0
+                          ? 'border-rose-600 text-rose-900 bg-rose-50 animate-pulse'
+                          : 'border-rose-300 text-rose-900 focus:ring-2 focus:ring-rose-500'
+                      }`}
                     />
                   </div>
                 </div>
+
+                {/* Real-time Invalid STT Alert Banner */}
+                {invalidSttsInInput.length > 0 && (
+                  <div className="p-3 bg-rose-100 border-2 border-rose-400 rounded-xl text-rose-950 font-bold text-xs flex items-center gap-2 shadow-2xs">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>
+                      ⚠️ <strong>CẢNH BÁO SỐ THỨ TỰ KHÔNG TỒN TẠI:</strong> Số STT <strong className="font-mono underline">[{invalidSttsInInput.join(', ')}]</strong> không có trong danh sách {levelCandidates.length} ứng viên! (Ứng cử viên cùng cấp chỉ có STT từ <strong>{Math.min(...availableCandidateStts)}</strong> đến <strong>{Math.max(...availableCandidateStts)}</strong>)
+                    </span>
+                  </div>
+                )}
 
                 {/* Quick Quantity Chips */}
                 <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] font-bold">

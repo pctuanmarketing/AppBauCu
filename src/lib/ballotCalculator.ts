@@ -38,9 +38,40 @@ export function calculateBallot(
     };
   }
 
-  // 2. Tách chuỗi chữ số thành danh sách STT bị gạch (VD: '134' -> [1, 3, 4])
-  const digits = cleanInput.split('').map(d => parseInt(d, 10)).filter(d => !isNaN(d));
-  const struckOutStts = Array.from(new Set(digits)); // Loại bỏ trùng lặp
+  // 2. Tách chuỗi chữ số thành danh sách STT bị gạch (VD: '134' hoặc '1, 3, 4' -> [1, 3, 4])
+  const rawTokens = cleanInput.split(/[\s,]+/);
+  const digits: number[] = [];
+
+  for (const token of rawTokens) {
+    if (!token) continue;
+    // Nếu token có nhiều chữ số dính nhau (VD: "134"), phân rã thành từng chữ số STT
+    if (/^\d+$/.test(token)) {
+      if (token.length > 1 && !cleanInput.includes(' ') && !cleanInput.includes(',')) {
+        for (const ch of token) {
+          digits.push(parseInt(ch, 10));
+        }
+      } else {
+        digits.push(parseInt(token, 10));
+      }
+    }
+  }
+
+  const struckOutStts = Array.from(new Set(digits));
+
+  // Kiểm tra số STT nhập vào có tồn tại trong danh sách ứng cử viên cùng cấp hay không
+  const availableStts = candidates.map(c => c.stt);
+  const invalidStts = struckOutStts.filter(stt => stt !== 0 && !availableStts.includes(stt));
+
+  if (invalidStts.length > 0) {
+    return {
+      isValid: false,
+      struckOutStts: [],
+      electedStts: [],
+      struckOutCandidates: [],
+      electedCandidates: [],
+      reason: `Số thứ tự [${invalidStts.join(', ')}] không tồn tại trong danh sách ${candidates.length} ứng cử viên (Chấp nhận STT từ ${Math.min(...availableStts)} đến ${Math.max(...availableStts)})`,
+    };
+  }
 
   // Tìm danh sách ứng cử viên bị gạch & được bầu
   const struckOutCandidates: Candidate[] = [];
