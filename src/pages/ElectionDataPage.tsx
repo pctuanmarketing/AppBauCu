@@ -54,10 +54,12 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
   updateCandidate,
   deleteCandidate,
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'unit' | 'committee' | 'witnesses' | 'candidates'>('unit');
+  // Sắp xếp thứ tự sub-tabs theo đúng yêu cầu:
+  // 1. Ứng viên 3 cấp | 2. Đơn vị bầu cử | 3. Tổ bầu cử | 4. Cử tri chứng kiến
+  const [activeSubTab, setActiveSubTab] = useState<'candidates' | 'unit' | 'committee' | 'witnesses'>('candidates');
   const [selectedLevel, setSelectedLevel] = useState<ElectionLevel>('QUOC_HOI');
 
-  // Form state for Unit Setup (matching reference screenshot)
+  // Form state for Unit Setup
   const [formUnit, setFormUnit] = useState<ElectionUnit>(unit);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
 
@@ -231,27 +233,27 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
           </div>
           <div>
             <h1 className="text-lg font-extrabold text-slate-900">THIẾT LẬP DỮ LIỆU BẦU CỬ & NHÂN SỰ</h1>
-            <p className="text-xs text-slate-500">Cấu hình Đơn vị bầu cử, Tổ bầu cử, Cử tri chứng kiến và Danh sách Ứng cử viên 3 cấp</p>
+            <p className="text-xs text-slate-500">Cấu hình Danh sách Ứng cử viên 3 cấp, Đơn vị bầu cử, Tổ bầu cử và Cử tri chứng kiến</p>
           </div>
         </div>
 
-        {/* Sub-tab Switcher */}
+        {/* Sub-tab Switcher: Thứ tự chuẩn: 1. Ứng viên 3 cấp -> 2. Đơn vị bầu cử -> 3. Tổ bầu cử -> 4. Cử tri chứng kiến */}
         <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
-          <button
-            onClick={() => setActiveSubTab('unit')}
-            className={`px-4 py-2 rounded-lg transition-all ${
-              activeSubTab === 'unit' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Đơn vị bầu cử
-          </button>
           <button
             onClick={() => setActiveSubTab('candidates')}
             className={`px-4 py-2 rounded-lg transition-all ${
               activeSubTab === 'candidates' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Ứng cử viên 3 cấp
+            1. Ứng viên 3 cấp
+          </button>
+          <button
+            onClick={() => setActiveSubTab('unit')}
+            className={`px-4 py-2 rounded-lg transition-all ${
+              activeSubTab === 'unit' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            2. Đơn vị bầu cử
           </button>
           <button
             onClick={() => setActiveSubTab('committee')}
@@ -259,7 +261,7 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
               activeSubTab === 'committee' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Tổ bầu cử ({committee.length})
+            3. Tổ bầu cử ({committee.length})
           </button>
           <button
             onClick={() => setActiveSubTab('witnesses')}
@@ -267,193 +269,12 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
               activeSubTab === 'witnesses' ? 'bg-sky-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Cử tri chứng kiến ({witnesses.length})
+            4. Cử tri chứng kiến ({witnesses.length})
           </button>
         </div>
       </div>
 
-      {/* SUB-TAB 1: ELECTION UNIT SETUP (NGUYÊN MẪU 100% THEO ẢNH REFERENCE) */}
-      {activeSubTab === 'unit' && (
-        <div className="bg-slate-50/70 p-6 rounded-2xl border-2 border-slate-300 shadow-md space-y-6">
-          {saveSuccessMsg && (
-            <div className="p-3 bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow animate-fade-in">
-              <Check className="w-4 h-4" />
-              <span>✅ Đã lưu cấu hình Đơn vị bầu cử thành công!</span>
-            </div>
-          )}
-
-          {/* TOP HEADER BAR MATCHING REFERENCE SCREENSHOT */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-slate-200 pb-4">
-            <div className="flex flex-wrap items-center gap-4 text-sm font-extrabold text-slate-900">
-              <div className="flex items-center gap-2">
-                <span className="text-rose-600">***</span>
-                <span>TỈNH/THÀNH PHỐ:</span>
-                <select
-                  value={formUnit.province}
-                  onChange={e => setFormUnit({ ...formUnit, province: e.target.value })}
-                  className="px-3 py-1.5 bg-white border-2 border-sky-300 rounded-lg text-slate-900 font-bold outline-none focus:border-sky-500 shadow-2xs"
-                >
-                  <option value="Thành phố Đà Nẵng">Thành phố Đà Nẵng</option>
-                  <option value="Thành phố Hà Nội">Thành phố Hà Nội</option>
-                  <option value="Thành phố Hồ Chí Minh">Thành phố Hồ Chí Minh</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span>KHÓA:</span>
-                <input
-                  type="text"
-                  value={formUnit.term}
-                  onChange={e => setFormUnit({ ...formUnit, term: e.target.value })}
-                  className="w-24 px-3 py-1.5 bg-white border-2 border-sky-300 rounded-lg text-center font-extrabold text-sky-900 outline-none focus:border-sky-500 shadow-2xs"
-                />
-              </div>
-            </div>
-
-            <button
-              onClick={() => handleSaveUnitForm()}
-              className="bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 font-bold text-xs px-5 py-2 rounded-lg shadow-xs flex items-center justify-center gap-1.5 transition-all"
-            >
-              ✓ Lưu
-            </button>
-          </div>
-
-          {/* SECTION 1: ĐƠN VỊ BẦU CỬ ĐẠI BIỂU QUỐC HỘI */}
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
-              <h2 className="text-xs font-extrabold text-slate-900 uppercase">
-                1. Đơn vị bầu cử Đại biểu Quốc Hội:
-              </h2>
-              <span className="text-[11px] text-purple-800 italic font-sans font-medium">
-                (Ghi đầy đủ Cấp + Tên. Ví dụ: Phường Tân Định, Xã Thạnh An...)
-              </span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 text-xs font-bold text-slate-800">
-              <div className="flex items-center gap-2">
-                <span className="text-rose-600 font-serif">▶</span>
-                <span>Số:</span>
-                <input
-                  type="number"
-                  value={formUnit.quocHoiUnitNo}
-                  onChange={e => setFormUnit({ ...formUnit, quocHoiUnitNo: parseInt(e.target.value) || 1 })}
-                  className="w-20 p-2 bg-white border border-slate-300 rounded text-center font-bold font-mono outline-none focus:border-sky-500 shadow-2xs"
-                />
-              </div>
-
-              <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <span className="text-rose-600 font-serif">▶</span>
-                <span className="shrink-0">Gồm Xã/Phường/Đặc khu:</span>
-                <input
-                  type="text"
-                  value={formUnit.quocHoiWards}
-                  onChange={e => setFormUnit({ ...formUnit, quocHoiWards: e.target.value })}
-                  className="flex-1 p-2 bg-white border border-slate-300 rounded font-medium outline-none focus:border-sky-500 shadow-2xs text-slate-900"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="border-b border-dashed border-slate-400 my-2" />
-
-          {/* SECTION 2: ĐƠN VỊ BẦU CỬ ĐẠI BIỂU HĐND TỈNH */}
-          <div className="space-y-3">
-            <h2 className="text-xs font-extrabold text-slate-900 uppercase">
-              2. Đơn vị bầu cử Đại biểu HĐND Tỉnh:
-            </h2>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 text-xs font-bold text-slate-800">
-              <div className="flex items-center gap-2">
-                <span className="text-rose-600 font-serif">▶</span>
-                <span>Số:</span>
-                <input
-                  type="number"
-                  value={formUnit.hdndTinhUnitNo}
-                  onChange={e => setFormUnit({ ...formUnit, hdndTinhUnitNo: parseInt(e.target.value) || 1 })}
-                  className="w-20 p-2 bg-white border border-slate-300 rounded text-center font-bold font-mono outline-none focus:border-sky-500 shadow-2xs"
-                />
-              </div>
-
-              <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <span className="text-rose-600 font-serif">▶</span>
-                <span className="shrink-0">Gồm Xã/Phường/Đặc khu:</span>
-                <input
-                  type="text"
-                  value={formUnit.hdndTinhWards}
-                  onChange={e => setFormUnit({ ...formUnit, hdndTinhWards: e.target.value })}
-                  className="flex-1 p-2 bg-white border border-slate-300 rounded font-medium outline-none focus:border-sky-500 shadow-2xs text-slate-900"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="border-b border-dashed border-slate-400 my-2" />
-
-          {/* SECTION 3: ĐƠN VỊ BẦU CỬ ĐẠI BIỂU HĐND XÃ */}
-          <div className="space-y-3">
-            <h2 className="text-xs font-extrabold text-slate-900 uppercase">
-              3. Đơn vị bầu cử Đại biểu HĐND Xã:
-            </h2>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 text-xs font-bold text-slate-800">
-              <div className="flex items-center gap-2">
-                <span className="text-rose-600 font-serif">▶</span>
-                <span>Số:</span>
-                <input
-                  type="number"
-                  value={formUnit.hdndXaUnitNo}
-                  onChange={e => setFormUnit({ ...formUnit, hdndXaUnitNo: parseInt(e.target.value) || 1 })}
-                  className="w-20 p-2 bg-white border border-slate-300 rounded text-center font-bold font-mono outline-none focus:border-sky-500 shadow-2xs"
-                />
-              </div>
-
-              <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <span className="text-rose-600 font-serif">▶</span>
-                <span className="shrink-0">Gồm Thôn/Tổ dân phố:</span>
-                <input
-                  type="text"
-                  value={formUnit.hdndXaVillages}
-                  onChange={e => setFormUnit({ ...formUnit, hdndXaVillages: e.target.value })}
-                  className="flex-1 p-2 bg-white border border-slate-300 rounded font-medium outline-none focus:border-sky-500 shadow-2xs text-slate-900"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION 4: TỔ BẦU CỬ CONTAINER CARD */}
-          <div className="mt-4 bg-slate-200/80 p-4 rounded-xl border border-slate-400/80 space-y-3 shadow-inner">
-            <div className="inline-block bg-slate-300 border border-slate-400 px-3 py-1 rounded text-xs font-extrabold text-slate-900">
-              Tổ bầu cử:
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6 text-xs font-bold text-slate-800 pl-2">
-              <div className="flex items-center gap-2">
-                <span className="text-rose-600 font-serif">▶</span>
-                <span className="shrink-0">Khu vực bỏ phiếu số:</span>
-                <input
-                  type="number"
-                  value={formUnit.votingAreaNo}
-                  onChange={e => setFormUnit({ ...formUnit, votingAreaNo: parseInt(e.target.value) || 21 })}
-                  className="w-24 p-2 bg-white border border-slate-300 rounded text-center font-bold font-mono text-sky-900 outline-none focus:border-sky-500 shadow-2xs"
-                />
-              </div>
-
-              <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <span className="text-rose-600 font-serif">▶</span>
-                <span className="shrink-0">Xã/Phường/Đặc khu:</span>
-                <input
-                  type="text"
-                  value={formUnit.wardName}
-                  onChange={e => setFormUnit({ ...formUnit, wardName: e.target.value })}
-                  className="flex-1 p-2 bg-white border border-slate-300 rounded font-medium outline-none focus:border-sky-500 shadow-2xs text-slate-900"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SUB-TAB 2: CANDIDATES SETUP */}
+      {/* SUB-TAB 1: CANDIDATES SETUP (ỨNG VIÊN 3 CẤP) */}
       {activeSubTab === 'candidates' && (
         <div className="space-y-5">
           <div className="flex bg-white p-2 rounded-2xl border border-slate-200 shadow-sm gap-2">
@@ -569,7 +390,183 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
         </div>
       )}
 
-      {/* SUB-TAB 3: COMMITTEE MEMBERS SETUP */}
+      {/* SUB-TAB 2: ELECTION UNIT SETUP (ĐƠN VỊ BẦU CỬ) */}
+      {activeSubTab === 'unit' && (
+        <div className="bg-slate-50/70 p-6 rounded-2xl border-2 border-slate-300 shadow-md space-y-6">
+          {saveSuccessMsg && (
+            <div className="p-3 bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow animate-fade-in">
+              <Check className="w-4 h-4" />
+              <span>✅ Đã lưu cấu hình Đơn vị bầu cử thành công!</span>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-slate-200 pb-4">
+            <div className="flex flex-wrap items-center gap-4 text-sm font-extrabold text-slate-900">
+              <div className="flex items-center gap-2">
+                <span className="text-rose-600">***</span>
+                <span>TỈNH/THÀNH PHỐ:</span>
+                <select
+                  value={formUnit.province}
+                  onChange={e => setFormUnit({ ...formUnit, province: e.target.value })}
+                  className="px-3 py-1.5 bg-white border-2 border-sky-300 rounded-lg text-slate-900 font-bold outline-none focus:border-sky-500 shadow-2xs"
+                >
+                  <option value="Thành phố Đà Nẵng">Thành phố Đà Nẵng</option>
+                  <option value="Thành phố Hà Nội">Thành phố Hà Nội</option>
+                  <option value="Thành phố Hồ Chí Minh">Thành phố Hồ Chí Minh</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span>KHÓA:</span>
+                <input
+                  type="text"
+                  value={formUnit.term}
+                  onChange={e => setFormUnit({ ...formUnit, term: e.target.value })}
+                  className="w-24 px-3 py-1.5 bg-white border-2 border-sky-300 rounded-lg text-center font-extrabold text-sky-900 outline-none focus:border-sky-500 shadow-2xs"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleSaveUnitForm()}
+              className="bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 font-bold text-xs px-5 py-2 rounded-lg shadow-xs flex items-center justify-center gap-1.5 transition-all"
+            >
+              ✓ Lưu
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+              <h2 className="text-xs font-extrabold text-slate-900 uppercase">
+                1. Đơn vị bầu cử Đại biểu Quốc Hội:
+              </h2>
+              <span className="text-[11px] text-purple-800 italic font-sans font-medium">
+                (Ghi đầy đủ Cấp + Tên. Ví dụ: Phường Tân Định, Xã Thạnh An...)
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 text-xs font-bold text-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="text-rose-600 font-serif">▶</span>
+                <span>Số:</span>
+                <input
+                  type="number"
+                  value={formUnit.quocHoiUnitNo}
+                  onChange={e => setFormUnit({ ...formUnit, quocHoiUnitNo: parseInt(e.target.value) || 1 })}
+                  className="w-20 p-2 bg-white border border-slate-300 rounded text-center font-bold font-mono outline-none focus:border-sky-500 shadow-2xs"
+                />
+              </div>
+
+              <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <span className="text-rose-600 font-serif">▶</span>
+                <span className="shrink-0">Gồm Xã/Phường/Đặc khu:</span>
+                <input
+                  type="text"
+                  value={formUnit.quocHoiWards}
+                  onChange={e => setFormUnit({ ...formUnit, quocHoiWards: e.target.value })}
+                  className="flex-1 p-2 bg-white border border-slate-300 rounded font-medium outline-none focus:border-sky-500 shadow-2xs text-slate-900"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-b border-dashed border-slate-400 my-2" />
+
+          <div className="space-y-3">
+            <h2 className="text-xs font-extrabold text-slate-900 uppercase">
+              2. Đơn vị bầu cử Đại biểu HĐND Tỉnh:
+            </h2>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 text-xs font-bold text-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="text-rose-600 font-serif">▶</span>
+                <span>Số:</span>
+                <input
+                  type="number"
+                  value={formUnit.hdndTinhUnitNo}
+                  onChange={e => setFormUnit({ ...formUnit, hdndTinhUnitNo: parseInt(e.target.value) || 1 })}
+                  className="w-20 p-2 bg-white border border-slate-300 rounded text-center font-bold font-mono outline-none focus:border-sky-500 shadow-2xs"
+                />
+              </div>
+
+              <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <span className="text-rose-600 font-serif">▶</span>
+                <span className="shrink-0">Gồm Xã/Phường/Đặc khu:</span>
+                <input
+                  type="text"
+                  value={formUnit.hdndTinhWards}
+                  onChange={e => setFormUnit({ ...formUnit, hdndTinhWards: e.target.value })}
+                  className="flex-1 p-2 bg-white border border-slate-300 rounded font-medium outline-none focus:border-sky-500 shadow-2xs text-slate-900"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-b border-dashed border-slate-400 my-2" />
+
+          <div className="space-y-3">
+            <h2 className="text-xs font-extrabold text-slate-900 uppercase">
+              3. Đơn vị bầu cử Đại biểu HĐND Xã:
+            </h2>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 text-xs font-bold text-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="text-rose-600 font-serif">▶</span>
+                <span>Số:</span>
+                <input
+                  type="number"
+                  value={formUnit.hdndXaUnitNo}
+                  onChange={e => setFormUnit({ ...formUnit, hdndXaUnitNo: parseInt(e.target.value) || 1 })}
+                  className="w-20 p-2 bg-white border border-slate-300 rounded text-center font-bold font-mono outline-none focus:border-sky-500 shadow-2xs"
+                />
+              </div>
+
+              <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <span className="text-rose-600 font-serif">▶</span>
+                <span className="shrink-0">Gồm Thôn/Tổ dân phố:</span>
+                <input
+                  type="text"
+                  value={formUnit.hdndXaVillages}
+                  onChange={e => setFormUnit({ ...formUnit, hdndXaVillages: e.target.value })}
+                  className="flex-1 p-2 bg-white border border-slate-300 rounded font-medium outline-none focus:border-sky-500 shadow-2xs text-slate-900"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 bg-slate-200/80 p-4 rounded-xl border border-slate-400/80 space-y-3 shadow-inner">
+            <div className="inline-block bg-slate-300 border border-slate-400 px-3 py-1 rounded text-xs font-extrabold text-slate-900">
+              Tổ bầu cử:
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6 text-xs font-bold text-slate-800 pl-2">
+              <div className="flex items-center gap-2">
+                <span className="text-rose-600 font-serif">▶</span>
+                <span className="shrink-0">Khu vực bỏ phiếu số:</span>
+                <input
+                  type="number"
+                  value={formUnit.votingAreaNo}
+                  onChange={e => setFormUnit({ ...formUnit, votingAreaNo: parseInt(e.target.value) || 21 })}
+                  className="w-24 p-2 bg-white border border-slate-300 rounded text-center font-bold font-mono text-sky-900 outline-none focus:border-sky-500 shadow-2xs"
+                />
+              </div>
+
+              <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <span className="text-rose-600 font-serif">▶</span>
+                <span className="shrink-0">Xã/Phường/Đặc khu:</span>
+                <input
+                  type="text"
+                  value={formUnit.wardName}
+                  onChange={e => setFormUnit({ ...formUnit, wardName: e.target.value })}
+                  className="flex-1 p-2 bg-white border border-slate-300 rounded font-medium outline-none focus:border-sky-500 shadow-2xs text-slate-900"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUB-TAB 3: COMMITTEE MEMBERS SETUP (TỔ BẦU CỬ) */}
       {activeSubTab === 'committee' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden space-y-4 p-5">
           <div className="flex items-center justify-between border-b pb-3">
@@ -634,7 +631,7 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
         </div>
       )}
 
-      {/* SUB-TAB 4: WITNESSES SETUP */}
+      {/* SUB-TAB 4: WITNESSES SETUP (CỬ TRI CHỨNG KIẾN) */}
       {activeSubTab === 'witnesses' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden space-y-4 p-5">
           <div className="flex items-center justify-between border-b pb-3">
