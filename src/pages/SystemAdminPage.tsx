@@ -331,6 +331,58 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
           </div>
         </div>
       </div>
+
+      {/* SECTION 4: VOTING HOURS CONFIGURATION */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <div className="border-b pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-extrabold text-slate-900 uppercase flex items-center gap-2">
+              <Clock className="w-4 h-4 text-sky-600" />
+              CẤU HÌNH KHUNG GIỜ MỞ / ĐÓNG HÒM PHIẾU BẦU CỬ
+            </h3>
+            <p className="text-xs text-slate-500 font-medium">Giới hạn thời gian cử tri được phép điểm danh bỏ phiếu chính thức</p>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer bg-sky-50 px-3 py-1.5 rounded-xl border border-sky-200">
+            <input
+              type="checkbox"
+              checked={settings.enableVotingTimeCheck !== false}
+              onChange={e => setSettings(prev => ({ ...prev, enableVotingTimeCheck: e.target.checked }))}
+              className="w-4 h-4 text-sky-600 rounded"
+            />
+            <span className="text-xs font-bold text-sky-900">Kích hoạt kiểm tra giờ</span>
+          </label>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-slate-700 uppercase">Giờ mở hòm phiếu (Bắt đầu):</label>
+            <input
+              type="time"
+              value={settings.votingStartTime || '07:00'}
+              onChange={e => setSettings(prev => ({ ...prev, votingStartTime: e.target.value }))}
+              className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-slate-700 uppercase">Giờ đóng hòm phiếu (Kết thúc):</label>
+            <input
+              type="time"
+              value={settings.votingEndTime || '19:00'}
+              onChange={e => setSettings(prev => ({ ...prev, votingEndTime: e.target.value }))}
+              className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-slate-700 uppercase">Ngày tổ chức bầu cử:</label>
+            <input
+              type="date"
+              value={settings.votingDate || new Date().toISOString().split('T')[0]}
+              onChange={e => setSettings(prev => ({ ...prev, votingDate: e.target.value }))}
+              className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

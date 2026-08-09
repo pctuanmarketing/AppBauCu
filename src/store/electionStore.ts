@@ -158,7 +158,16 @@ export function useElectionStore() {
 
   const [settings, setSettings] = useState<SystemSettings>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    return saved ? JSON.parse(saved) : { isLocked: false, currentRole: 'ADMIN', termName: 'Khóa XVI (2026 - 2031)' };
+    const defaultVal: SystemSettings = {
+      isLocked: false,
+      currentRole: 'ADMIN',
+      termName: 'Khóa XVI (2026 - 2031)',
+      votingStartTime: '07:00',
+      votingEndTime: '19:00',
+      votingDate: new Date().toISOString().split('T')[0],
+      enableVotingTimeCheck: true,
+    };
+    return saved ? { ...defaultVal, ...JSON.parse(saved) } : defaultVal;
   });
 
   // Auto-synchronize totalVoters & numCandidates for each level from real lists

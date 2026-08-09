@@ -121,4 +121,8 @@ export interface SystemSettings {
   isLocked: boolean;
   currentRole: UserRole;
   termName: string;
+  votingStartTime?: string; // e.g. "07:00"
+  votingEndTime?: string;   // e.g. "19:00"
+  votingDate?: string;      // e.g. "2026-05-24"
+  enableVotingTimeCheck?: boolean;
 }

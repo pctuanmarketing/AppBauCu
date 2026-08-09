@@ -348,6 +348,9 @@ export function App() {
           deleteVoter={deleteVoter}
           clearAllVoters={clearAllVoters}
           importVotersBatch={importVotersBatch}
+          settings={settings}
+          setSettings={setSettings}
+          onNavigateToCounting={() => setActiveTab('ballot_counting')}
         />
       )}
 

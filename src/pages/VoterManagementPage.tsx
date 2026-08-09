@@ -20,7 +20,7 @@ import {
   Vote,
   Clock,
 } from 'lucide-react';
-import { Voter } from '../types';
+import { SystemSettings, Voter } from '../types';
 import * as XLSX from 'xlsx';
 
 interface VoterManagementPageProps {
@@ -31,6 +31,9 @@ interface VoterManagementPageProps {
   deleteVoter: (id: string) => void;
   clearAllVoters: () => void;
   importVotersBatch: (newVoters: Omit<Voter, 'id' | 'stt'>[]) => void;
+  settings?: SystemSettings;
+  setSettings?: React.Dispatch<React.SetStateAction<SystemSettings>>;
+  onNavigateToCounting?: () => void;
 }
 
 export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
@@ -41,6 +44,9 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
   deleteVoter,
   clearAllVoters,
   importVotersBatch,
+  settings,
+  setSettings,
+  onNavigateToCounting,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVillage, setSelectedVillage] = useState<string>('ALL');
@@ -135,9 +141,65 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
     }, 2500);
   };
 
-  // Strict quick check-in validation algorithm with clean short alerts
+  // Helper to check voting hours status
+  const checkVotingTimeStatus = () => {
+    if (settings?.enableVotingTimeCheck === false) {
+      return { status: 'OPEN', message: '' };
+    }
+
+    const now = new Date();
+    const startTimeStr = settings?.votingStartTime || '07:00';
+    const endTimeStr = settings?.votingEndTime || '19:00';
+
+    const [startH, startM] = startTimeStr.split(':').map(Number);
+    const [endH, endM] = endTimeStr.split(':').map(Number);
+
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+
+    if (nowMinutes < startMinutes) {
+      return {
+        status: 'BEFORE_START',
+        message: `⏰ CHƯA ĐẾN GIỜ BỎ PHIẾU! Giờ mở hòm phiếu: ${startTimeStr}. Vui lòng chờ đến giờ khai mạc!`,
+      };
+    }
+
+    if (nowMinutes > endMinutes) {
+      return {
+        status: 'AFTER_END',
+        message: `🚨 ĐÃ HẾT GIỜ BỎ PHIẾU! Đã đóng hòm phiếu lúc ${endTimeStr}. Hệ thống chốt danh sách để chuyển sang phân hệ KIỂM PHIẾU.`,
+      };
+    }
+
+    return { status: 'OPEN', message: '' };
+  };
+
+  // Strict quick check-in validation algorithm with clean short alerts & time window rule
   const handleQuickCheckinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Time window enforcement rule
+    const timeCheck = checkVotingTimeStatus();
+    if (timeCheck.status === 'BEFORE_START') {
+      setCheckinAlert({
+        title: '⏰ CHƯA ĐẾN GIỜ BỎ PHIẾU!',
+        message: timeCheck.message,
+        type: 'warning',
+      });
+      showToast(`⏰ Chưa đến giờ bỏ phiếu (Mở lúc ${settings?.votingStartTime || '07:00'})`, 'info');
+      return;
+    }
+    if (timeCheck.status === 'AFTER_END') {
+      setCheckinAlert({
+        title: '🚨 ĐÃ HẾT GIỜ BỎ PHIẾU!',
+        message: timeCheck.message,
+        type: 'error',
+      });
+      showToast(`🚨 Đã hết giờ bỏ phiếu (Đóng lúc ${settings?.votingEndTime || '19:00'})`, 'error');
+      return;
+    }
+
     const cleanInput = quickCardNoInput.trim().toUpperCase();
     if (!cleanInput) {
       setCheckinAlert({
@@ -427,6 +489,55 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
           </button>
         </div>
       )}
+
+      {/* Live Voting Time Status Widget */}
+      <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs ${
+        checkVotingTimeStatus().status === 'OPEN'
+          ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950'
+          : checkVotingTimeStatus().status === 'BEFORE_START'
+          ? 'bg-amber-50/80 border-amber-300 text-amber-950'
+          : 'bg-rose-50/80 border-rose-300 text-rose-950 animate-pulse'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-lg shadow-2xs shrink-0 ${
+            checkVotingTimeStatus().status === 'OPEN'
+              ? 'bg-emerald-600 text-white'
+              : checkVotingTimeStatus().status === 'BEFORE_START'
+              ? 'bg-amber-500 text-white'
+              : 'bg-rose-600 text-white'
+          }`}>
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-black text-xs uppercase tracking-wide">
+                {checkVotingTimeStatus().status === 'OPEN'
+                  ? '🟢 ĐANG TRONG GIỜ BỎ PHIẾU CHÍNH THỨC'
+                  : checkVotingTimeStatus().status === 'BEFORE_START'
+                  ? '🟡 CHƯA ĐẾN GIỜ BỎ PHIẾU'
+                  : '🔴 ĐÃ HẾT GIỜ BỎ PHIẾU - MỞ PHÂN HỆ KIỂM PHIẾU'}
+              </span>
+              <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-current font-extrabold shadow-2xs">
+                {settings?.votingStartTime || '07:00'} - {settings?.votingEndTime || '19:00'}
+              </span>
+            </div>
+            <p className="text-xs font-medium opacity-90 mt-0.5">
+              {checkVotingTimeStatus().status === 'OPEN' && 'Hệ thống sẵn sàng tiếp nhận điểm danh cử tri bỏ phiếu.'}
+              {checkVotingTimeStatus().status === 'BEFORE_START' && `Hòm phiếu mở cửa lúc ${settings?.votingStartTime || '07:00'}. Mã cử tri gõ trước giờ này sẽ bị hệ thống cảnh báo chưa đến giờ.`}
+              {checkVotingTimeStatus().status === 'AFTER_END' && `Đã quá giờ đóng hòm phiếu (${settings?.votingEndTime || '19:00'}). Hệ thống chốt danh sách để chuyển sang phân hệ KIỂM PHIẾU BẦU CỬ.`}
+            </p>
+          </div>
+        </div>
+
+        {checkVotingTimeStatus().status === 'AFTER_END' && onNavigateToCounting && (
+          <button
+            onClick={onNavigateToCounting}
+            className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <span>👉 Vào KIỂM PHIẾU BẦU CỬ ngay ➔</span>
+          </button>
+        )}
+      </div>
 
       {/* Modern Header & Quick Check-in Module */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
