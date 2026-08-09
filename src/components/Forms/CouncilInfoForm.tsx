@@ -34,12 +34,13 @@ export const CouncilInfoForm: React.FC<CouncilInfoFormProps> = ({
   const [toElect, setToElect] = useState<number>(council.candidatesToElect || council.electCount || 3);
   const [totalVoters, setTotalVoters] = useState<number>(unit.totalVoters || 1369);
 
-  const [inputStt, setInputStt] = useState<number>(localCandidates.length + 1);
+  const [inputStt, setInputStt] = useState<number | string>(localCandidates.length + 1);
   const [inputFullName, setInputFullName] = useState<string>('');
   const [inputBirthDate, setInputBirthDate] = useState<string>('');
   const [inputGender, setInputGender] = useState<string>('Ông');
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedIdx, setSelectedIdx] = useState<number>(0);
   const [savingMsg, setSavingMsg] = useState('');
 
   const councilTitle = council.id === 'quoc_hoi'
@@ -80,7 +81,7 @@ export const CouncilInfoForm: React.FC<CouncilInfoFormProps> = ({
     setInputFullName('');
     setInputBirthDate('');
     setInputStt(updated.length + 1);
-    setSavingMsg('Đã lưu ứng cử viên thành công!');
+    setSavingMsg('Đã lưu danh sách ứng cử viên thành công!');
     setTimeout(() => setSavingMsg(''), 3000);
   };
 
@@ -99,16 +100,16 @@ export const CouncilInfoForm: React.FC<CouncilInfoFormProps> = ({
   };
 
   return (
-    <div className="bg-slate-100 border-2 border-red-500/80 rounded-sm shadow-xl p-2 font-sans text-xs max-w-5xl mx-auto my-4 text-slate-900">
+    <div className="bg-slate-100 border-2 border-red-500/60 rounded-sm shadow-2xl p-2 font-sans text-xs max-w-5xl mx-auto my-4 text-slate-900 select-none">
       
-      {/* Top Title Banner */}
+      {/* Top Banner Title Bar (Giống 100% hình chụp Access) */}
       <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white px-4 py-2 flex items-center justify-between shadow-md">
         <span className="font-extrabold text-sm tracking-wider uppercase">
           {councilTitle}
         </span>
         <button
           onClick={onClose}
-          className="px-3 py-1 bg-slate-900 hover:bg-red-700 text-white border border-slate-500 rounded text-xs font-bold transition shadow-sm"
+          className="px-4 py-1 bg-slate-900 hover:bg-red-700 text-white border border-slate-500 rounded text-xs font-bold transition shadow-sm"
         >
           Đóng
         </button>
@@ -120,168 +121,240 @@ export const CouncilInfoForm: React.FC<CouncilInfoFormProps> = ({
         </div>
       )}
 
-      {/* Main Section */}
-      <div className="p-3 bg-slate-50 border border-slate-300 mt-2 space-y-4">
+      {/* Main Two-Column Layout (Khớp 100% hình chụp Access) */}
+      <div className="p-3 bg-slate-50 border border-slate-300 mt-2 grid grid-cols-1 md:grid-cols-12 gap-4">
         
-        {/* Top Meta Details Form */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-3 border border-slate-300 rounded shadow-xs">
-          <div>
-            <label className="font-bold text-slate-800 block mb-1">Cấp bầu cử</label>
+        {/* Left Panel: Thông tin số liệu cử tri & ứng cử (Khung xám nhạt) */}
+        <div className="md:col-span-4 bg-slate-200/80 border border-slate-300 rounded p-4 space-y-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-slate-900 text-xs">▶ Tổng số cử tri:</span>
             <input
               type="text"
-              readOnly
-              value={council.name}
-              className="w-full bg-slate-100 border border-slate-300 rounded px-2 py-1 font-bold text-red-800"
+              value={totalVoters.toLocaleString('vi-VN')}
+              onChange={e => setTotalVoters(Number(e.target.value.replace(/\D/g, '')))}
+              className="bg-sky-600 font-black text-white text-right px-2 py-1 rounded w-28 text-xs shadow-inner"
             />
           </div>
 
-          <div>
-            <label className="font-bold text-slate-800 block mb-1">Số đại biểu được bầu (*)</label>
-            <input
-              type="number"
-              value={toElect}
-              onChange={e => setToElect(Number(e.target.value))}
-              className="w-full bg-white border border-slate-300 rounded px-2 py-1 font-bold text-slate-900"
-            />
-          </div>
-
-          <div>
-            <label className="font-bold text-slate-800 block mb-1">Số ứng cử viên trong danh sách</label>
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-slate-900 text-xs">▶ Số người ứng cử:</span>
             <input
               type="number"
               readOnly
               value={localCandidates.length}
-              className="w-full bg-slate-100 border border-slate-300 rounded px-2 py-1 font-bold text-sky-800"
+              className="bg-white border border-slate-400 font-black text-slate-900 text-center px-2 py-1 rounded w-28 text-xs"
             />
           </div>
 
-          <div>
-            <label className="font-bold text-slate-800 block mb-1">Tổng số cử tri đi bầu</label>
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-slate-900 text-xs">▶ Số đại biểu được bầu:</span>
             <input
               type="number"
-              value={totalVoters}
-              onChange={e => setTotalVoters(Number(e.target.value))}
-              className="w-full bg-white border border-slate-300 rounded px-2 py-1 font-bold text-emerald-800"
+              value={toElect}
+              onChange={e => setToElect(Number(e.target.value))}
+              className="bg-white border border-slate-400 font-black text-slate-900 text-center px-2 py-1 rounded w-28 text-xs"
             />
           </div>
         </div>
 
-        {/* Input Candidate Roster Form */}
-        <div className="bg-white p-3 border border-slate-300 rounded shadow-xs space-y-2">
-          <h4 className="font-extrabold text-slate-900 text-xs uppercase">
-            {editingId ? 'Hiệu chỉnh ứng cử viên' : 'Thêm ứng cử viên mới'}
-          </h4>
+        {/* Right Panel: Nhập danh sách ứng cử viên & Bảng dữ liệu */}
+        <div className="md:col-span-8 bg-white border border-slate-300 rounded p-4 space-y-4 shadow-xs">
+          
+          {/* Header Form & Button Lưu */}
+          <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+            <h4 className="font-extrabold text-slate-900 text-xs uppercase">
+              NHẬP DANH SÁCH ỨNG CỬ VIÊN
+            </h4>
+            <button
+              onClick={handleAddOrUpdate}
+              className="px-5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-400 rounded font-bold transition flex items-center space-x-1 shadow-xs"
+            >
+              <Check className="w-4 h-4 text-emerald-700" />
+              <span>{editingId ? 'Cập nhật' : 'Lưu'}</span>
+            </button>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
-            <div className="md:col-span-2">
-              <label className="text-[11px] text-slate-600 block">Số thứ tự</label>
-              <input
-                type="number"
-                value={inputStt}
-                onChange={e => setInputStt(Number(e.target.value))}
-                className="w-full border border-slate-300 rounded px-2 py-1 font-bold text-center"
-              />
-            </div>
-
-            <div className="md:col-span-5">
-              <label className="text-[11px] text-slate-600 block">Họ và tên ứng cử viên (*)</label>
+          {/* Form Input Fields (Giống 100% hình chụp Access) */}
+          <div className="space-y-2.5 font-sans text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-bold text-slate-800 w-20">Stt:</span>
               <input
                 type="text"
-                placeholder="Nhập họ và tên"
+                value={inputStt}
+                onChange={e => setInputStt(e.target.value)}
+                className="border border-slate-400 rounded px-2 py-1 font-bold text-center w-24 bg-white"
+              />
+              <span className="text-[11px] text-red-600 font-semibold italic">
+                (* Phải nhập đúng số thứ tự của ứng viên như trên phiếu bầu)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-slate-800 w-20">Họ và tên:</span>
+              <input
+                type="text"
+                placeholder="Nhập họ và tên ứng cử viên"
                 value={inputFullName}
                 onChange={e => setInputFullName(e.target.value)}
-                className="w-full border border-slate-300 rounded px-2.5 py-1 font-bold uppercase"
+                className="flex-1 border border-slate-400 rounded px-2.5 py-1 font-bold text-slate-900 uppercase bg-white"
               />
             </div>
 
-            <div className="md:col-span-3">
-              <label className="text-[11px] text-slate-600 block">Ngày tháng năm sinh</label>
-              <input
-                type="text"
-                placeholder="Ví dụ: 13/10/1979"
-                value={inputBirthDate}
-                onChange={e => setInputBirthDate(e.target.value)}
-                className="w-full border border-slate-300 rounded px-2 py-1"
-              />
-            </div>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-800 w-20">Ngày sinh:</span>
+                <input
+                  type="text"
+                  placeholder="DD/MM/YYYY"
+                  value={inputBirthDate}
+                  onChange={e => setInputBirthDate(e.target.value)}
+                  className="border border-slate-400 rounded px-2.5 py-1 text-slate-900 w-36 bg-white"
+                />
+              </div>
 
-            <div className="md:col-span-2">
-              <label className="text-[11px] text-slate-600 block">Giới tính</label>
-              <select
-                value={inputGender}
-                onChange={e => setInputGender(e.target.value)}
-                className="w-full border border-slate-300 rounded px-2 py-1 font-semibold"
-              >
-                <option value="Ông">Ông</option>
-                <option value="Bà">Bà</option>
-              </select>
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="font-bold text-slate-800">Giới tính:</span>
+                <select
+                  value={inputGender}
+                  onChange={e => setInputGender(e.target.value)}
+                  className="border border-slate-400 rounded px-2 py-1 font-semibold bg-white w-24"
+                >
+                  <option value="Ông">Ông</option>
+                  <option value="Bà">Bà</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end space-x-2 pt-1">
-            {editingId && (
+          {/* Access Table Design for Candidate Roster */}
+          <div className="border-2 border-slate-400 rounded overflow-x-auto bg-white mt-2">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gradient-to-b from-slate-200 to-slate-300 text-slate-900 font-bold border-b-2 border-slate-400 text-[11px]">
+                  <th className="p-1.5 w-8 text-center border-r border-slate-300"></th>
+                  <th className="p-1.5 w-14 text-center border-r border-slate-300 uppercase">STT</th>
+                  <th className="p-1.5 border-r border-slate-300">Họ và tên ứng cử viên</th>
+                  <th className="p-1.5 w-24 text-center border-r border-slate-300">Giới tính</th>
+                  <th className="p-1.5 w-32 text-center border-r border-slate-300">Ngày sinh</th>
+                  <th className="p-1.5 w-24 text-center">---</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-300 text-xs">
+                {localCandidates.map((cand, idx) => {
+                  const isSelected = idx === selectedIdx;
+                  return (
+                    <tr
+                      key={cand.id}
+                      onClick={() => setSelectedIdx(idx)}
+                      className={`transition ${isSelected ? 'bg-amber-100/90 font-bold' : 'hover:bg-slate-100'}`}
+                    >
+                      <td className="p-1 text-center border-r border-slate-300 font-bold text-slate-800 w-8">
+                        {isSelected ? '▶' : ''}
+                      </td>
+                      <td className="p-1.5 text-center font-extrabold border-r border-slate-300 text-slate-900 w-14">
+                        {cand.stt}
+                      </td>
+                      <td className="p-1.5 font-bold uppercase text-slate-900 border-r border-slate-300">
+                        {cand.fullName}
+                      </td>
+                      <td className="p-1.5 text-center border-r border-slate-300">
+                        {cand.gender || 'Ông'}
+                      </td>
+                      <td className="p-1.5 text-center border-r border-slate-300 font-mono">
+                        {cand.birthDate || cand.yearOfBirth || '-'}
+                      </td>
+                      <td className="p-1 text-center space-x-1 w-24">
+                        <button
+                          onClick={() => handleDelete(cand.id)}
+                          className="px-1.5 py-0.5 bg-white border border-red-400 hover:bg-red-100 text-red-700 rounded font-extrabold text-[11px]"
+                          title="Xóa"
+                        >
+                          X
+                        </button>
+                        <button
+                          onClick={() => handleEdit(cand)}
+                          className="px-1.5 py-0.5 bg-white border border-sky-400 hover:bg-sky-100 text-sky-800 rounded font-extrabold text-[11px]"
+                          title="Sửa"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={handleAddOrUpdate}
+                          className="px-1.5 py-0.5 bg-white border border-purple-400 hover:bg-purple-100 text-purple-800 rounded font-extrabold text-[11px]"
+                          title="Lưu"
+                        >
+                          💾
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Access Bottom Navigation Bar (Giống 100% hình chụp Access) */}
+          <div className="bg-slate-200 border border-slate-300 p-1.5 rounded flex items-center justify-between text-[11px] font-mono text-slate-800">
+            <div className="flex items-center space-x-2">
+              <span className="font-sans font-bold">Record:</span>
+              <button
+                onClick={() => setSelectedIdx(0)}
+                className="p-1 hover:bg-slate-300 rounded font-bold"
+                title="Đầu tiên"
+              >
+                |◄
+              </button>
+              <button
+                onClick={() => setSelectedIdx(Math.max(0, selectedIdx - 1))}
+                className="p-1 hover:bg-slate-300 rounded font-bold"
+                title="Trước đó"
+              >
+                ◄
+              </button>
+
+              <span className="px-2 py-0.5 bg-white border border-slate-400 rounded font-bold text-center">
+                {localCandidates.length > 0 ? selectedIdx + 1 : 0} of {localCandidates.length}
+              </span>
+
+              <button
+                onClick={() => setSelectedIdx(Math.min(localCandidates.length - 1, selectedIdx + 1))}
+                className="p-1 hover:bg-slate-300 rounded font-bold"
+                title="Tiếp theo"
+              >
+                ►
+              </button>
+              <button
+                onClick={() => setSelectedIdx(Math.max(0, localCandidates.length - 1))}
+                className="p-1 hover:bg-slate-300 rounded font-bold"
+                title="Cuối cùng"
+              >
+                ►|
+              </button>
               <button
                 onClick={() => {
                   setEditingId(null);
+                  setInputStt(localCandidates.length + 1);
                   setInputFullName('');
                   setInputBirthDate('');
-                  setInputStt(localCandidates.length + 1);
                 }}
-                className="px-3 py-1 bg-slate-300 hover:bg-slate-400 text-slate-800 rounded font-bold"
+                className="p-1 text-amber-700 font-bold hover:bg-slate-300 rounded"
+                title="Thêm mới"
               >
-                Hủy bỏ
+                ✹
               </button>
-            )}
+            </div>
 
-            <button
-              onClick={handleAddOrUpdate}
-              className="px-4 py-1 bg-sky-700 hover:bg-sky-800 text-white rounded font-bold flex items-center space-x-1 shadow-xs"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{editingId ? 'Cập nhật' : 'Lưu vào danh sách'}</span>
-            </button>
+            <div className="flex items-center space-x-3">
+              <span className="px-2 py-0.5 bg-slate-300 text-slate-700 rounded font-sans text-[10px]">
+                Y No Filter
+              </span>
+              <div className="flex items-center space-x-1 bg-white border border-slate-400 rounded px-2 py-0.5">
+                <span className="font-sans text-[10px] text-slate-500">Search:</span>
+                <input type="text" className="w-24 border-none text-[11px] focus:outline-none" />
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Candidate List Table */}
-        <div className="bg-white border border-slate-300 rounded overflow-hidden shadow-xs">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-200 text-slate-800 font-extrabold text-xs border-b border-slate-300">
-                <th className="p-2 w-14 text-center">STT</th>
-                <th className="p-2">HỌ VÀ TÊN ỨNG CỬ VIÊN</th>
-                <th className="p-2 w-32 text-center">GIỚI TÍNH</th>
-                <th className="p-2 w-36 text-center">NĂM SINH</th>
-                <th className="p-2 w-28 text-center">THAO TÁC</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 text-xs">
-              {localCandidates.map(cand => (
-                <tr key={cand.id} className="hover:bg-slate-50">
-                  <td className="p-2 text-center font-bold">{cand.stt}</td>
-                  <td className="p-2 font-bold uppercase text-slate-900">{cand.fullName}</td>
-                  <td className="p-2 text-center">{cand.gender || 'Ông'}</td>
-                  <td className="p-2 text-center">{cand.birthDate || cand.yearOfBirth || '-'}</td>
-                  <td className="p-2 text-center space-x-1">
-                    <button
-                      onClick={() => handleEdit(cand)}
-                      className="p-1 bg-slate-100 hover:bg-sky-100 text-sky-800 rounded border border-slate-300"
-                      title="Sửa"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(cand.id)}
-                      className="p-1 bg-slate-100 hover:bg-red-100 text-red-700 rounded border border-slate-300"
-                      title="Xóa"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
 
       </div>
