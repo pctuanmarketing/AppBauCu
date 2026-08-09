@@ -216,11 +216,9 @@ export function useElectionStore() {
       createdAt: new Date().toISOString(),
     };
 
-    // Update ballot list
     const updatedBallots = [...ballots, newRecord];
     setBallots(updatedBallots);
 
-    // Recalculate vote counts for level candidates
     recalculateCandidateVotes(level, updatedBallots, candidates);
 
     return result;
@@ -276,6 +274,93 @@ export function useElectionStore() {
     setCandidates(updatedCandidates);
   };
 
+  // CRUD FOR COMMITTEE MEMBERS
+  const addCommitteeMember = (member: Omit<CommitteeMember, 'id' | 'stt'>) => {
+    const newMember: CommitteeMember = {
+      ...member,
+      id: `cm-${Date.now()}`,
+      stt: committee.length + 1,
+    };
+    setCommittee([...committee, newMember]);
+  };
+
+  const updateCommitteeMember = (updated: CommitteeMember) => {
+    setCommittee(committee.map(m => (m.id === updated.id ? updated : m)));
+  };
+
+  const deleteCommitteeMember = (id: string) => {
+    const filtered = committee.filter(m => m.id !== id);
+    const reindexed = filtered.map((m, idx) => ({ ...m, stt: idx + 1 }));
+    setCommittee(reindexed);
+  };
+
+  // CRUD FOR WITNESSES
+  const addWitness = (witness: Omit<Witness, 'id' | 'stt'>) => {
+    const newWitness: Witness = {
+      ...witness,
+      id: `w-${Date.now()}`,
+      stt: witnesses.length + 1,
+    };
+    setWitnesses([...witnesses, newWitness]);
+  };
+
+  const updateWitness = (updated: Witness) => {
+    setWitnesses(witnesses.map(w => (w.id === updated.id ? updated : w)));
+  };
+
+  const deleteWitness = (id: string) => {
+    const filtered = witnesses.filter(w => w.id !== id);
+    const reindexed = filtered.map((w, idx) => ({ ...w, stt: idx + 1 }));
+    setWitnesses(reindexed);
+  };
+
+  // CRUD FOR CANDIDATES (3 LEVELS)
+  const addCandidate = (candidate: Omit<Candidate, 'id' | 'stt' | 'voteCount' | 'votePercentage'>) => {
+    const levelCandidates = candidates.filter(c => c.electionLevel === candidate.electionLevel);
+    const nextStt = levelCandidates.length + 1;
+
+    const newCandidate: Candidate = {
+      ...candidate,
+      id: `cand-${Date.now()}`,
+      stt: nextStt,
+      voteCount: 0,
+      votePercentage: 0,
+    };
+
+    const updatedCandidates = [...candidates, newCandidate];
+    setCandidates(updatedCandidates);
+
+    // Update numCandidates config
+    updateLevelConfig(candidate.electionLevel, {
+      numCandidates: levelCandidates.length + 1,
+    });
+  };
+
+  const updateCandidate = (updatedCandidate: Candidate) => {
+    setCandidates(candidates.map(c => (c.id === updatedCandidate.id ? updatedCandidate : c)));
+  };
+
+  const deleteCandidate = (id: string) => {
+    const target = candidates.find(c => c.id === id);
+    if (!target) return;
+
+    const remaining = candidates.filter(c => c.id !== id);
+    // Reindex stt for that level
+    const levelCandidates = remaining.filter(c => c.electionLevel === target.electionLevel);
+    const reindexedLevelCandidates = levelCandidates.map((c, idx) => ({ ...c, stt: idx + 1 }));
+
+    const updated = [
+      ...remaining.filter(c => c.electionLevel !== target.electionLevel),
+      ...reindexedLevelCandidates,
+    ];
+
+    setCandidates(updated);
+
+    updateLevelConfig(target.electionLevel, {
+      numCandidates: reindexedLevelCandidates.length,
+    });
+  };
+
   const addVoter = (newVoter: Omit<Voter, 'id' | 'stt'>) => {
     const nextStt = voters.length + 1;
     const item: Voter = {
@@ -284,10 +369,6 @@ export function useElectionStore() {
       stt: nextStt,
     };
     setVoters([...voters, item]);
-  };
-
-  const updateCandidate = (updatedCandidate: Candidate) => {
-    setCandidates(candidates.map(c => (c.id === updatedCandidate.id ? updatedCandidate : c)));
   };
 
   const updateUnit = (newUnit: ElectionUnit) => {
@@ -316,7 +397,15 @@ export function useElectionStore() {
     undoLastBallot,
     resetBallotsForLevel,
     addVoter,
+    addCommitteeMember,
+    updateCommitteeMember,
+    deleteCommitteeMember,
+    addWitness,
+    updateWitness,
+    deleteWitness,
+    addCandidate,
     updateCandidate,
+    deleteCandidate,
     updateUnit,
     updateLevelConfig,
     setCommittee,

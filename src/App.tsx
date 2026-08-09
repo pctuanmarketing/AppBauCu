@@ -26,11 +26,17 @@ export function App() {
     undoLastBallot,
     resetBallotsForLevel,
     addVoter,
+    addCommitteeMember,
+    updateCommitteeMember,
+    deleteCommitteeMember,
+    addWitness,
+    updateWitness,
+    deleteWitness,
+    addCandidate,
     updateCandidate,
+    deleteCandidate,
     updateUnit,
     updateLevelConfig,
-    setCommittee,
-    setWitnesses,
   } = useElectionStore();
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -73,11 +79,17 @@ export function App() {
           configs={configs}
           updateLevelConfig={updateLevelConfig}
           committee={committee}
-          setCommittee={setCommittee}
+          addCommitteeMember={addCommitteeMember}
+          updateCommitteeMember={updateCommitteeMember}
+          deleteCommitteeMember={deleteCommitteeMember}
           witnesses={witnesses}
-          setWitnesses={setWitnesses}
+          addWitness={addWitness}
+          updateWitness={updateWitness}
+          deleteWitness={deleteWitness}
           candidates={candidates}
+          addCandidate={addCandidate}
           updateCandidate={updateCandidate}
+          deleteCandidate={deleteCandidate}
         />
       )}
 
@@ -126,7 +138,7 @@ export function App() {
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                 <Vote className="w-5 h-5 text-sky-600" />
-                THAO TÁC NHAU CHỌN NHANH
+                THAO TÁC CHỌN NHANH
               </h3>
               <button
                 onClick={() => setShowQuickActionModal(false)}
