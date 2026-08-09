@@ -7,7 +7,7 @@ export interface EmailPayload {
   phone?: string;
   subject: string;
   message_html: string;
-  type: 'REGISTRATION_CONFIRMATION' | 'ACCOUNT_ACTIVATED' | 'ACCOUNT_REJECTED';
+  type: 'REGISTRATION_CONFIRMATION' | 'ACCOUNT_ACTIVATED' | 'ACCOUNT_REJECTED' | 'PASSWORD_RESET_OTP';
 }
 
 export const sendRealEmail = async (payload: EmailPayload): Promise<{ success: boolean; message: string }> => {

@@ -64,6 +64,10 @@ export const EmailNotificationModal: React.FC<EmailNotificationModalProps> = ({
                 <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold text-[11px] border border-emerald-200">
                   ✓ ĐÃ KÍCH HOẠT
                 </span>
+              ) : emailData.type === 'PASSWORD_RESET_OTP' ? (
+                <span className="text-sky-700 bg-sky-50 px-2 py-0.5 rounded font-bold text-[11px] border border-sky-200">
+                  🔑 MÃ OTP KHÔI PHỤC
+                </span>
               ) : (
                 <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-bold text-[11px] border border-amber-200">
                   ⏳ ĐANG XEM XÉT
