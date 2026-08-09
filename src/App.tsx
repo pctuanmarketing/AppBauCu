@@ -26,6 +26,10 @@ export function App() {
     undoLastBallot,
     resetBallotsForLevel,
     addVoter,
+    updateVoter,
+    deleteVoter,
+    clearAllVoters,
+    importVotersBatch,
     addCommitteeMember,
     updateCommitteeMember,
     deleteCommitteeMember,
@@ -98,6 +102,10 @@ export function App() {
           voters={voters}
           toggleVoterStatus={toggleVoterStatus}
           addVoter={addVoter}
+          updateVoter={updateVoter}
+          deleteVoter={deleteVoter}
+          clearAllVoters={clearAllVoters}
+          importVotersBatch={importVotersBatch}
         />
       )}
 

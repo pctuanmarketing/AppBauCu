@@ -13,7 +13,7 @@ import {
 import { calculateBallot } from '../lib/ballotCalculator';
 
 // ---------------------------------------------------------
-// INITIAL REALISTIC DATASETS (Dựa theo tài liệu 1.pdf & Excel)
+// INITIAL REALISTIC DATASETS (Dựa theo tài liệu 1.pdf)
 // ---------------------------------------------------------
 
 const INITIAL_UNIT: ElectionUnit = {
@@ -107,15 +107,8 @@ const INITIAL_CANDIDATES: Candidate[] = [
   { id: 'xa-5', stt: 5, fullName: 'Trần Hữu Tuyết', gender: 'Ông', dob: '20/02/1993', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0 },
 ];
 
-const INITIAL_VOTERS: Voter[] = [
-  { id: 'v1', stt: 1, voterCardNo: 'TC-21-0001', fullName: 'Phạm Công Thành', gender: 'Nam', dob: '15/05/1980', address: 'Thôn An Trạch', hasVoted: true, votedAt: '07:30' },
-  { id: 'v2', stt: 2, voterCardNo: 'TC-21-0002', fullName: 'Nguyễn Thị Hồng', gender: 'Nữ', dob: '20/11/1985', address: 'Thôn An Trạch', hasVoted: true, votedAt: '07:45' },
-  { id: 'v3', stt: 3, voterCardNo: 'TC-21-0003', fullName: 'Lê Văn Hoàng', gender: 'Nam', dob: '12/03/1972', address: 'Thôn Lệ Sơn 2', hasVoted: true, votedAt: '08:10' },
-  { id: 'v4', stt: 4, voterCardNo: 'TC-21-0004', fullName: 'Trần Thị Mai', gender: 'Nữ', dob: '04/09/1990', address: 'Thôn Lệ Sơn 2', hasVoted: false },
-  { id: 'v5', stt: 5, voterCardNo: 'TC-21-0005', fullName: 'Đặng Văn Hùng', gender: 'Nam', dob: '30/01/1965', address: 'Thôn Nam Sơn', hasVoted: true, votedAt: '09:00' },
-  { id: 'v6', stt: 6, voterCardNo: 'TC-21-0006', fullName: 'Bùi Thị Lan', gender: 'Nữ', dob: '18/08/1995', address: 'Thôn Nam Sơn', hasVoted: false },
-  { id: 'v7', stt: 7, voterCardNo: 'TC-21-0007', fullName: 'Vũ Quốc Bảo', gender: 'Nam', dob: '25/12/1988', address: 'Thôn An Trạch', hasVoted: false },
-];
+// XÓA DỮ LIỆU CỬ TRI MẪU NẾU NGƯỜI DÙNG CHƯA LƯU HOẶC KHỞI TẠO RỖNG
+const INITIAL_VOTERS: Voter[] = [];
 
 const STORAGE_KEYS = {
   UNIT: 'app_bau_cu_unit',
@@ -123,7 +116,7 @@ const STORAGE_KEYS = {
   COMMITTEE: 'app_bau_cu_committee',
   WITNESSES: 'app_bau_cu_witnesses',
   CANDIDATES: 'app_bau_cu_candidates',
-  VOTERS: 'app_bau_cu_voters',
+  VOTERS: 'app_bau_cu_voters_v2', // Versioned key to reset sample data
   BALLOTS: 'app_bau_cu_ballots',
   SETTINGS: 'app_bau_cu_settings',
 };
@@ -330,7 +323,6 @@ export function useElectionStore() {
     const updatedCandidates = [...candidates, newCandidate];
     setCandidates(updatedCandidates);
 
-    // Update numCandidates config
     updateLevelConfig(candidate.electionLevel, {
       numCandidates: levelCandidates.length + 1,
     });
@@ -345,7 +337,6 @@ export function useElectionStore() {
     if (!target) return;
 
     const remaining = candidates.filter(c => c.id !== id);
-    // Reindex stt for that level
     const levelCandidates = remaining.filter(c => c.electionLevel === target.electionLevel);
     const reindexedLevelCandidates = levelCandidates.map((c, idx) => ({ ...c, stt: idx + 1 }));
 
@@ -361,14 +352,45 @@ export function useElectionStore() {
     });
   };
 
+  // CRUD FOR VOTERS
   const addVoter = (newVoter: Omit<Voter, 'id' | 'stt'>) => {
-    const nextStt = voters.length + 1;
-    const item: Voter = {
-      ...newVoter,
-      id: `v-${Date.now()}`,
-      stt: nextStt,
-    };
-    setVoters([...voters, item]);
+    setVoters(prev => {
+      const nextStt = prev.length + 1;
+      const item: Voter = {
+        ...newVoter,
+        id: `v-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        stt: nextStt,
+      };
+      return [...prev, item];
+    });
+  };
+
+  const updateVoter = (updated: Voter) => {
+    setVoters(prev => prev.map(v => (v.id === updated.id ? updated : v)));
+  };
+
+  const deleteVoter = (id: string) => {
+    setVoters(prev => {
+      const filtered = prev.filter(v => v.id !== id);
+      return filtered.map((v, idx) => ({ ...v, stt: idx + 1 }));
+    });
+  };
+
+  const clearAllVoters = () => {
+    setVoters([]);
+  };
+
+  // BATCH IMPORT EXCEL VOTERS
+  const importVotersBatch = (newVotersList: Omit<Voter, 'id' | 'stt'>[]) => {
+    setVoters(prev => {
+      let currentStt = prev.length + 1;
+      const items: Voter[] = newVotersList.map(v => ({
+        ...v,
+        id: `v-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        stt: currentStt++,
+      }));
+      return [...prev, ...items];
+    });
   };
 
   const updateUnit = (newUnit: ElectionUnit) => {
@@ -397,6 +419,10 @@ export function useElectionStore() {
     undoLastBallot,
     resetBallotsForLevel,
     addVoter,
+    updateVoter,
+    deleteVoter,
+    clearAllVoters,
+    importVotersBatch,
     addCommitteeMember,
     updateCommitteeMember,
     deleteCommitteeMember,
