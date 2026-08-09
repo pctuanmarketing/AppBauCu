@@ -132,7 +132,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
     setShowVoterModal(false);
   };
 
-  // EXCEL IMPORT METHOD (BATCH UPDATE)
+  // UNIVERSAL SMART EXCEL PARSER FOR VIETNAMESE VOTER LISTS (MULTI-ROW HEADER SCANNER)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -144,51 +144,120 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json<any>(ws, { defval: '' });
 
-        if (!data || data.length === 0) {
-          alert('⚠️ File Excel rỗng hoặc không có dữ liệu cử tri.');
+        // 1. Read sheet as 2D array of rows
+        const rawRows = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, defval: '' });
+
+        if (!rawRows || rawRows.length === 0) {
+          alert('⚠️ Tệp Excel rỗng hoặc không có dữ liệu cử tri.');
           return;
         }
 
-        const newVotersBatch: Omit<Voter, 'id' | 'stt'>[] = [];
+        // 2. Scan first 20 rows to find Header Row
+        let headerRowIdx = -1;
+        let nameColIdx = -1;
+        let cardColIdx = -1;
+        let genderColIdx = -1;
+        let dobColIdx = -1;
+        let addressColIdx = -1;
 
-        data.forEach((row, idx) => {
-          const getVal = (possibleKeys: string[]) => {
-            for (const k of Object.keys(row)) {
-              if (possibleKeys.some(pk => k.toLowerCase().includes(pk.toLowerCase()))) {
-                return row[k];
+        for (let r = 0; r < Math.min(25, rawRows.length); r++) {
+          const row = rawRows[r];
+          if (!Array.isArray(row)) continue;
+
+          for (let c = 0; c < row.length; c++) {
+            const cellVal = row[c]?.toString().toLowerCase().trim() || '';
+            if (cellVal.includes('họ') && cellVal.includes('tên')) {
+              headerRowIdx = r;
+              nameColIdx = c;
+            } else if (cellVal === 'họ và tên' || cellVal === 'họ tên' || cellVal === 'cử tri' || cellVal === 'tên') {
+              headerRowIdx = r;
+              nameColIdx = c;
+            }
+          }
+
+          if (headerRowIdx !== -1) {
+            // Found header row, map remaining columns in this row
+            const headerRow = rawRows[headerRowIdx];
+            for (let c = 0; c < headerRow.length; c++) {
+              const val = headerRow[c]?.toString().toLowerCase().trim() || '';
+              if (c !== nameColIdx) {
+                if (val.includes('mã') || val.includes('thẻ') || val === 'stt' || val.includes('card')) {
+                  cardColIdx = c;
+                } else if (val.includes('giới') || val.includes('tính') || val === 'nam/nữ') {
+                  genderColIdx = c;
+                } else if (val.includes('sinh') || val.includes('dob')) {
+                  dobColIdx = c;
+                } else if (val.includes('địa chỉ') || val.includes('thôn') || val.includes('tổ') || val.includes('đơn vị') || val.includes('khu vực')) {
+                  addressColIdx = c;
+                }
               }
             }
-            return '';
-          };
-
-          const cardNo = getVal(['mã thẻ', 'số thẻ', 'card', 'stt', 'mã cử tri']) || `TC-21-${(voters.length + idx + 1).toString().padStart(4, '0')}`;
-          const name = getVal(['họ tên', 'họ và tên', 'cử tri', 'tên', 'full name', 'name']);
-          const sex = getVal(['giới tính', 'nam/nữ', 'gender']) || 'Nam';
-          const birthday = getVal(['ngày sinh', 'năm sinh', 'dob']) || '';
-          const addr = getVal(['địa chỉ', 'thôn', 'tổ', 'đơn vị', 'khu vực']) || 'Thôn An Trạch';
-
-          if (name && name.toString().trim()) {
-            newVotersBatch.push({
-              voterCardNo: cardNo.toString().trim(),
-              fullName: name.toString().trim(),
-              gender: sex.toString().trim(),
-              dob: birthday.toString().trim(),
-              address: addr.toString().trim(),
-              hasVoted: false,
-            });
+            break;
           }
-        });
+        }
+
+        // 3. Fallback: If no explicit header row found, auto-detect column containing full names
+        if (headerRowIdx === -1) {
+          for (let r = 0; r < Math.min(25, rawRows.length); r++) {
+            const row = rawRows[r];
+            if (!Array.isArray(row)) continue;
+
+            for (let c = 0; c < row.length; c++) {
+              const val = row[c]?.toString().trim() || '';
+              // Detect Vietnamese 2-4 word capitalized names
+              if (val.length >= 4 && val.split(' ').length >= 2 && !/\d/.test(val) && !val.toLowerCase().includes('danh sách') && !val.toLowerCase().includes('ủy ban')) {
+                headerRowIdx = Math.max(0, r - 1);
+                nameColIdx = c;
+                break;
+              }
+            }
+            if (headerRowIdx !== -1) break;
+          }
+        }
+
+        // Default fallback if nameColIdx is still not found
+        if (nameColIdx === -1) nameColIdx = 1; // Default to Column B
+
+        const startRow = headerRowIdx !== -1 ? headerRowIdx + 1 : 0;
+        const newVotersBatch: Omit<Voter, 'id' | 'stt'>[] = [];
+
+        for (let r = startRow; r < rawRows.length; r++) {
+          const row = rawRows[r];
+          if (!Array.isArray(row) || row.length === 0) continue;
+
+          const rawName = row[nameColIdx]?.toString().trim() || '';
+
+          // Filter out header text or empty rows
+          if (!rawName || rawName.toLowerCase().includes('họ và tên') || rawName.toLowerCase().includes('danh sách') || rawName.toLowerCase().includes('tổng cộng')) {
+            continue;
+          }
+
+          const rawCard = cardColIdx !== -1 && row[cardColIdx] ? row[cardColIdx].toString().trim() : '';
+          const cardNo = rawCard || `TC-21-${(voters.length + newVotersBatch.length + 1).toString().padStart(4, '0')}`;
+
+          const sex = genderColIdx !== -1 && row[genderColIdx] ? row[genderColIdx].toString().trim() : 'Nam';
+          const birthday = dobColIdx !== -1 && row[dobColIdx] ? row[dobColIdx].toString().trim() : '';
+          const addr = addressColIdx !== -1 && row[addressColIdx] ? row[addressColIdx].toString().trim() : 'Thôn An Trạch';
+
+          newVotersBatch.push({
+            voterCardNo: cardNo,
+            fullName: rawName,
+            gender: sex,
+            dob: birthday,
+            address: addr,
+            hasVoted: false,
+          });
+        }
 
         if (newVotersBatch.length > 0) {
           importVotersBatch(newVotersBatch);
-          alert(`✅ Import thành công ${newVotersBatch.length} cử tri từ file Excel vào hệ thống!`);
+          alert(`✅ Import thành công ${newVotersBatch.length} cử tri từ tệp Excel vào hệ thống!`);
         } else {
-          alert('⚠️ Không tìm thấy cột Họ Tên cử tri phù hợp trong tệp Excel.');
+          alert('⚠️ Không nạp được dữ liệu cử tri. Vui lòng kiểm tra file Excel.');
         }
       } catch (err) {
-        alert('❌ Có lỗi xảy ra khi đọc tệp Excel.');
+        alert('❌ Có lỗi xảy ra khi đọc tệp Excel. Chi tiết: ' + (err as any)?.message);
       }
     };
     reader.readAsBinaryString(file);
@@ -279,7 +348,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
         </form>
       </div>
 
-      {/* THANH THỐNG KÊ THỜI GIAN THỰC ĐÚNG THEO ẢNH MẪU (EXCEL REPORT BAR STYLE) */}
+      {/* THANH THỐNG KÊ THỜI GIAN THỰC ĐÚNG THEO ẢNH MẪU */}
       <div className="bg-white p-5 rounded-xl border-2 border-sky-300 shadow-md space-y-3">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
           <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">

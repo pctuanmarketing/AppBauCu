@@ -5,9 +5,8 @@ import {
   Undo2,
   AlertTriangle,
   CheckCircle,
-  HelpCircle,
-  Hash,
   Eye,
+  ChevronRight,
 } from 'lucide-react';
 import { BallotRecord, Candidate, ElectionLevel, ElectionLevelConfig } from '../types';
 import { BallotValidationResult } from '../lib/ballotCalculator';
@@ -49,22 +48,25 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
 
   const validBallotsCount = levelBallots.filter(b => b.isValid).length;
   const invalidBallotsCount = levelBallots.filter(b => !b.isValid).length;
+  const totalReturnedBallots = levelBallots.length; // Số phiếu thu vào
 
-  const totalReturnedBallots = levelBallots.length;
+  // Percentage calculations matching specs screenshot exactly
   const returnedPct = config.ballotsIssued > 0
-    ? ((totalReturnedBallots / config.ballotsIssued) * 100).toFixed(1)
-    : '0';
+    ? Math.round((totalReturnedBallots / config.ballotsIssued) * 100)
+    : 0;
 
   const validPct = totalReturnedBallots > 0
-    ? ((validBallotsCount / totalReturnedBallots) * 100).toFixed(1)
-    : '0';
+    ? Math.round((validBallotsCount / totalReturnedBallots) * 100)
+    : 0;
 
-  // Calculate sum of votes for verification
-  const totalVotesSum = levelCandidates.reduce((sum, c) => sum + c.voteCount, 0);
-  const expectedMaxVotes = validBallotsCount * config.numRepresentatives;
-  const isVerificationBalanced = totalVotesSum <= expectedMaxVotes;
+  const invalidPct = totalReturnedBallots > 0
+    ? Math.round((invalidBallotsCount / totalReturnedBallots) * 100)
+    : 0;
 
-  // Auto focus input on level switch or render
+  // Auto-calculated Remaining Ballots = Received - Issued - Damaged
+  const calculatedRemaining = Math.max(0, config.ballotsReceived - config.ballotsIssued - config.ballotsDamaged);
+
+  // Auto focus input on level switch or submission
   useEffect(() => {
     inputRef.current?.focus();
   }, [activeLevel, currentBallotNo]);
@@ -95,24 +97,20 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Header & Level Selector */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <Vote className="w-5 h-5 text-sky-600" />
-            PHÂN HỆ KIỂM PHIẾU BẦU CỬ SIÊU TỐC
+    <div className="space-y-4 max-w-7xl mx-auto">
+      {/* Top Header & Level Switcher Tabs */}
+      <div className="bg-slate-800 text-white p-3.5 rounded-t-xl shadow flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-amber-400">
+        <div className="flex items-center gap-2">
+          <Vote className="w-5 h-5 text-amber-400" />
+          <h1 className="text-base font-extrabold uppercase tracking-wide">
+            KIỂM PHIẾU BẦU CỬ {config.levelName.toUpperCase()}
           </h1>
-          <p className="text-xs text-slate-500">
-            Hỗ trợ nhập số thứ tự ứng cử viên bị gạch và tự động tính toán phiếu hợp lệ / không hợp lệ
-          </p>
         </div>
 
-        {/* Level Switcher */}
-        <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-bold">
+        {/* Level Switcher Buttons */}
+        <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-700 text-xs font-bold">
           {(['QUOC_HOI', 'HDND_TINH', 'HDND_XA'] as ElectionLevel[]).map(lvl => {
             const isSelected = activeLevel === lvl;
-            const lvlName = configs[lvl].levelName;
             return (
               <button
                 key={lvl}
@@ -121,211 +119,253 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
                   setStruckOutInput('');
                   setLastSubmittedResult(null);
                 }}
-                className={`px-4 py-2 rounded-md transition-all ${
+                className={`px-3.5 py-1.5 rounded transition-all ${
                   isSelected
-                    ? 'bg-sky-600 text-white shadow-md'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-sky-600 text-white font-extrabold shadow'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
-                {lvlName}
+                {configs[lvl].levelName}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Main Grid: Left Candidate Vote Ranking + Right Ballot Input Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Candidate Votes Leaderboard (Cols 7) */}
-        <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h2 className="text-sm font-bold text-slate-800 uppercase">
-              BẢNG KẾT QUẢ KIỂM PHIẾU {config.levelName.toUpperCase()}
-            </h2>
-            <span className="text-xs font-bold text-sky-700 bg-sky-50 px-2.5 py-1 rounded border border-sky-200">
-              Đã kiểm: {levelBallots.length} phiếu
-            </span>
-          </div>
-
-          <div className="overflow-x-auto border border-slate-200 rounded-lg">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 text-slate-700 font-bold uppercase border-b border-slate-200">
+      {/* MAIN TWO-COLUMN LAYOUT MATCHING SPECS SCREENSHOT EXACTLY */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* LEFT COLUMN: CANDIDATE TABLE + RAPID INPUT BOX (Cols 7) */}
+        <div className="lg:col-span-7 bg-white rounded-b-xl border border-slate-300 p-4 shadow-sm space-y-4">
+          {/* Candidate Table */}
+          <div className="overflow-x-auto border border-slate-300 rounded">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-slate-100 text-slate-800 font-extrabold border-b border-slate-300">
                 <tr>
-                  <th className="p-3 w-14 text-center">STT</th>
-                  <th className="p-3">Họ và tên</th>
-                  <th className="p-3 w-24 text-center">Ngày sinh</th>
-                  <th className="p-3 w-28 text-center">Số phiếu bầu</th>
-                  <th className="p-3 w-24 text-center">Tỷ lệ %</th>
+                  <th className="p-2.5 w-12 text-center border-r border-slate-300">STT</th>
+                  <th className="p-2.5 border-r border-slate-300">Họ và tên</th>
+                  <th className="p-2.5 w-28 text-center border-r border-slate-300">Ngày sinh</th>
+                  <th className="p-2.5 w-24 text-center border-r border-slate-300">Số phiếu bầu</th>
+                  <th className="p-2.5 w-20 text-center">Tỷ lệ %</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {levelCandidates.map(c => (
-                  <tr key={c.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-3 text-center">
-                      <span className="w-7 h-7 rounded-full bg-slate-100 font-bold text-slate-800 text-xs inline-flex items-center justify-center border">
+              <tbody className="divide-y divide-slate-200">
+                {levelCandidates.map(c => {
+                  const pctVal = validBallotsCount > 0
+                    ? ((c.voteCount / validBallotsCount) * 100).toFixed(2)
+                    : '0.00';
+                  return (
+                    <tr key={c.id} className="hover:bg-slate-50">
+                      <td className="p-2.5 text-center font-bold text-slate-700 border-r border-slate-200">
                         {c.stt}
-                      </span>
-                    </td>
-                    <td className="p-3 font-bold text-slate-800 text-sm">{c.fullName}</td>
-                    <td className="p-3 text-center font-mono text-slate-500">{c.dob}</td>
-                    <td className="p-3 text-center font-extrabold text-emerald-600 text-base">{c.voteCount}</td>
-                    <td className="p-3 text-center font-bold text-sky-700">{c.votePercentage}%</td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="p-2.5 font-bold text-slate-900 text-sm border-r border-slate-200">
+                        {c.fullName}
+                      </td>
+                      <td className="p-2.5 text-center font-mono text-slate-600 border-r border-slate-200">
+                        {c.dob}
+                      </td>
+                      <td className="p-2.5 text-center font-extrabold text-slate-900 text-sm border-r border-slate-200">
+                        {c.voteCount}
+                      </td>
+                      <td className="p-2.5 text-center font-bold text-sky-800 font-mono">
+                        {pctVal}%
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
-          {/* Verification Alert Footer */}
-          <div
-            className={`p-3 rounded-lg border text-xs flex items-center justify-between font-semibold ${
-              isVerificationBalanced
-                ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
-                : 'bg-rose-50 text-rose-900 border-rose-200'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {isVerificationBalanced ? (
-                <CheckCircle className="w-4 h-4 text-emerald-600" />
-              ) : (
-                <AlertTriangle className="w-4 h-4 text-rose-600" />
-              )}
-              <span>
-                Tổng số lượt bầu các ứng cử viên: <strong>{totalVotesSum}</strong> lượt.
+          {/* RAPID INPUT PANEL (SPECS LAYOUT) */}
+          <div className="pt-2 space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs font-bold text-slate-700">
+                Phiếu số: <span className="text-sm font-extrabold text-sky-700">{currentBallotNo}</span>
               </span>
-            </div>
-            <span className="text-[11px] font-mono">
-              (Tối đa cho phép: {expectedMaxVotes} lượt)
-            </span>
-          </div>
-        </div>
 
-        {/* Right Column: Ballot Entry & Stats (Cols 5) */}
-        <div className="lg:col-span-5 space-y-4">
-          {/* Level Stats Summary Card */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-xs space-y-2">
-            <div className="flex justify-between text-slate-600">
-              <span>Tổng số cử tri: <strong>{config.totalVoters}</strong></span>
-              <span>Số ứng cử viên: <strong>{config.numCandidates}</strong></span>
-            </div>
-            <div className="flex justify-between text-slate-600 border-t pt-2">
-              <span>Số đại biểu được bầu: <strong className="text-sky-700 font-bold">{config.numRepresentatives}</strong></span>
-              <span>Số phiếu nhận vào: <strong>{config.ballotsReceived}</strong></span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200 mt-2">
-              <div>
-                <span className="text-slate-500">Số phiếu phát ra:</span>
-                <div className="font-bold text-slate-800 text-sm">{config.ballotsIssued}</div>
-              </div>
-              <div>
-                <span className="text-slate-500">Số phiếu thu vào:</span>
-                <div className="font-bold text-sky-800 text-sm">
-                  {totalReturnedBallots} ({returnedPct}%)
-                </div>
-              </div>
-              <div>
-                <span className="text-slate-500">Số phiếu hợp lệ:</span>
-                <div className="font-bold text-emerald-600 text-sm">
-                  {validBallotsCount} ({validPct}%)
-                </div>
-              </div>
-              <div>
-                <span className="text-slate-500">Số phiếu không hợp lệ:</span>
-                <div className="font-bold text-rose-600 text-sm">{invalidBallotsCount}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* RAPID BALLOT INPUT BOX (GIAO DIỆN CHÍNH THỨC SPECS PAGE 4-5) */}
-          <div className="bg-white rounded-xl border-2 border-sky-400 p-5 shadow-lg space-y-4">
-            <div className="flex items-center justify-between border-b border-sky-100 pb-2">
-              <span className="text-xs font-bold text-sky-900 uppercase">
-                PHIẾU SỐ: <span className="text-base font-extrabold text-sky-600">{currentBallotNo}</span>
-              </span>
-              <button
-                onClick={() => setShowLogModal(true)}
-                className="text-[11px] text-sky-700 hover:text-sky-800 font-bold bg-sky-50 px-2 py-1 rounded border border-sky-200 flex items-center gap-1"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                Xem phiếu đã kiểm
-              </button>
-            </div>
-
-            {/* Input Field */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-700">
-                NHẬP SỐ THỨ TỰ BỊ GẠCH:
-              </label>
-              <div className="flex gap-2">
+              <div className="flex-1 flex items-center gap-2 max-w-xs">
                 <input
                   ref={inputRef}
                   type="text"
                   value={struckOutInput}
                   onChange={e => setStruckOutInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Gõ '134' hoặc '0'..."
-                  className="flex-1 p-2.5 bg-slate-50 border-2 border-sky-300 rounded-lg text-lg font-mono font-bold text-sky-900 focus:bg-white focus:outline-none focus:border-sky-600 tracking-widest shadow-inner"
+                  placeholder=""
+                  className="w-full p-2 bg-pink-50/40 border-2 border-rose-300 rounded text-center text-lg font-mono font-bold text-rose-900 focus:bg-white focus:outline-none focus:border-rose-500 shadow-inner"
                 />
                 <button
                   onClick={handleSubmitBallot}
-                  className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs px-4 rounded-lg shadow flex items-center justify-center gap-1"
+                  className="bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 font-bold text-xs px-3 py-2 rounded shadow-xs flex items-center gap-1"
                 >
                   ✓ Xác nhận
                 </button>
               </div>
 
-              {/* Instructions Specs */}
-              <div className="bg-slate-50 p-2.5 rounded-md border text-[11px] text-slate-600 space-y-1">
-                <p>1. Nhập <strong>0</strong> cho những phiếu không hợp lệ.</p>
-                <p>
-                  2. Nhập liên tiếp các số thứ tự bị gạch $\rightarrow$ bấm <strong>Enter 2 lần</strong> (Ví dụ: gõ <strong>134</strong> là ứng cử viên số 1, 3, 4 bị gạch).
-                </p>
-              </div>
+              <button
+                onClick={() => setShowLogModal(true)}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3 py-2 rounded border border-slate-300 flex items-center gap-1 ml-auto"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                Xem phiếu đã kiểm
+              </button>
             </div>
 
-            {/* Last Submitted Result Feedback */}
+            {/* Sub-label explanation text */}
+            <div className="text-[11px] text-slate-600 space-y-0.5 font-sans italic pt-1">
+              <p>1. Nhập số 0 cho những phiếu không hợp lệ.</p>
+              <p>2. Nhập liên tiếp các số thứ tự bị gạch ➔ bấm Enter 2 lần.</p>
+              <p className="not-italic text-slate-500">
+                (Ví dụ: gõ <strong>134</strong> là những ứng cử viên có số thứ tự 1, 3, 4 là bị gạch)
+              </p>
+            </div>
+
+            {/* Last Submitted Result Alert */}
             {lastSubmittedResult && (
               <div
-                className={`p-3 rounded-lg border text-xs space-y-1 ${
+                className={`p-2.5 rounded border text-xs font-semibold ${
                   lastSubmittedResult.isValid
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                    : 'bg-rose-50 border-rose-200 text-rose-900'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                    : 'bg-rose-50 border-rose-300 text-rose-900'
                 }`}
               >
-                <div className="font-bold flex items-center gap-1.5">
-                  {lastSubmittedResult.isValid ? '✅ Phiếu Hợp lệ' : '❌ Phiếu Không hợp lệ'}
-                </div>
-                <p>{lastSubmittedResult.reason}</p>
-                {lastSubmittedResult.isValid && (
-                  <p className="text-[11px]">
-                    Đã cộng vote cho: {lastSubmittedResult.electedCandidates.map(c => c.fullName).join(', ')}
-                  </p>
+                {lastSubmittedResult.isValid ? (
+                  <span>
+                    ✅ <strong>Phiếu hợp lệ:</strong> Đã ghi nhận vote cho [{lastSubmittedResult.electedCandidates.map(c => c.fullName).join(', ')}]
+                  </span>
+                ) : (
+                  <span>❌ <strong>Phiếu không hợp lệ:</strong> {lastSubmittedResult.reason}</span>
                 )}
               </div>
             )}
+          </div>
+        </div>
 
-            {/* Action Buttons: Reset & Undo */}
-            <div className="flex gap-2 pt-2 border-t border-slate-100">
-              <button
-                onClick={() => {
-                  if (confirm(`Bạn có chắc chắn muốn xóa toàn bộ ${levelBallots.length} phiếu đã kiểm của ${config.levelName}?`)) {
-                    resetBallotsForLevel(activeLevel);
-                  }
-                }}
-                className="flex-1 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs rounded-lg flex items-center justify-center gap-1 transition-colors"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                Kiểm phiếu lại
-              </button>
-              <button
-                onClick={() => undoLastBallot(activeLevel)}
-                disabled={levelBallots.length === 0}
-                className="flex-1 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs rounded-lg flex items-center justify-center gap-1 disabled:opacity-50 transition-colors"
-              >
-                <Undo2 className="w-3.5 h-3.5" />
-                Xóa phiếu cuối cùng
-              </button>
+        {/* RIGHT COLUMN: 3 STATS CARDS + RESET/UNDO BUTTONS (Cols 5) */}
+        <div className="lg:col-span-5 space-y-3">
+          {/* CARD 1: GENERAL ELECTION SETUP */}
+          <div className="bg-white p-3.5 rounded-xl border border-slate-300 shadow-sm text-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 font-bold">▶ Tổng số cử tri:</span>
+              <input
+                type="number"
+                value={config.totalVoters}
+                onChange={e => updateLevelConfig(activeLevel, { totalVoters: parseInt(e.target.value) || 0 })}
+                className="w-24 p-1 bg-slate-50 border border-slate-300 rounded font-bold text-center text-slate-800"
+              />
             </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 font-bold">▶ Số người ứng cử:</span>
+              <input
+                type="number"
+                value={levelCandidates.length}
+                onChange={e => updateLevelConfig(activeLevel, { numCandidates: parseInt(e.target.value) || 0 })}
+                className="w-24 p-1 bg-slate-50 border border-slate-300 rounded font-bold text-center text-slate-800"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 font-bold">▶ Số đại biểu được bầu:</span>
+              <input
+                type="number"
+                value={config.numRepresentatives}
+                onChange={e => updateLevelConfig(activeLevel, { numRepresentatives: parseInt(e.target.value) || 1 })}
+                className="w-24 p-1 bg-slate-50 border border-slate-300 rounded font-bold text-center text-sky-800"
+              />
+            </div>
+          </div>
+
+          {/* CARD 2: BALLOT INVENTORY SETUP */}
+          <div className="bg-white p-3.5 rounded-xl border border-slate-300 shadow-sm text-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 font-bold">▶ Số phiếu nhận vào:</span>
+              <input
+                type="number"
+                value={config.ballotsReceived}
+                onChange={e => updateLevelConfig(activeLevel, { ballotsReceived: parseInt(e.target.value) || 0 })}
+                className="w-24 p-1 bg-slate-50 border border-slate-300 rounded font-bold text-center text-slate-800"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 font-bold">▶ Số phiếu đổi hỏng:</span>
+              <input
+                type="number"
+                value={config.ballotsDamaged}
+                onChange={e => updateLevelConfig(activeLevel, { ballotsDamaged: parseInt(e.target.value) || 0 })}
+                className="w-24 p-1 bg-slate-50 border border-slate-300 rounded font-bold text-center text-rose-700"
+              />
+            </div>
+            <div className="flex items-center justify-between border-t pt-1.5">
+              <span className="text-slate-700 font-bold">▶ Số phiếu còn lại:</span>
+              <div className="w-24 p-1 bg-slate-100 border border-slate-300 rounded font-bold text-center text-slate-800">
+                {calculatedRemaining}
+              </div>
+            </div>
+          </div>
+
+          {/* CARD 3: COUNTING METRICS & PERCENTAGES */}
+          <div className="bg-white p-3.5 rounded-xl border border-slate-300 shadow-sm text-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 font-bold">▶ Số phiếu phát ra:</span>
+              <input
+                type="number"
+                value={config.ballotsIssued}
+                onChange={e => updateLevelConfig(activeLevel, { ballotsIssued: parseInt(e.target.value) || 0 })}
+                className="w-24 p-1 bg-slate-50 border border-slate-300 rounded font-bold text-center text-slate-800"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 font-bold">▶ Số phiếu thu vào:</span>
+              <div className="flex items-center gap-3">
+                <div className="w-24 p-1 bg-slate-100 border border-slate-300 rounded font-bold text-center text-sky-900">
+                  {totalReturnedBallots}
+                </div>
+                <span className="w-12 text-right font-bold text-slate-700">{returnedPct}%</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 font-bold">▶ Số phiếu hợp lệ:</span>
+              <div className="flex items-center gap-3">
+                <div className="w-24 p-1 bg-emerald-50 border border-emerald-300 rounded font-bold text-center text-emerald-800">
+                  {validBallotsCount}
+                </div>
+                <span className="w-12 text-right font-bold text-emerald-700">{validPct}%</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 font-bold">▶ Số phiếu không hợp lệ:</span>
+              <div className="flex items-center gap-3">
+                <div className="w-24 p-1 bg-rose-50 border border-rose-300 rounded font-bold text-center text-rose-800">
+                  {invalidBallotsCount}
+                </div>
+                <span className="w-12 text-right font-bold text-rose-700">{invalidPct}%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* BOTTOM ACTION BUTTONS */}
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={() => {
+                if (confirm(`Bạn có chắc chắn muốn xóa toàn bộ ${levelBallots.length} phiếu đã kiểm của cấp ${config.levelName}?`)) {
+                  resetBallotsForLevel(activeLevel);
+                }
+              }}
+              className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-400 font-bold text-xs rounded flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-slate-600" />
+              Kiểm phiếu lại
+            </button>
+            <button
+              onClick={() => undoLastBallot(activeLevel)}
+              disabled={levelBallots.length === 0}
+              className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-rose-700 border border-slate-400 font-bold text-xs rounded flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-xs transition-colors"
+            >
+              <Undo2 className="w-3.5 h-3.5 text-rose-600" />
+              Xóa phiếu cuối cùng
+            </button>
           </div>
         </div>
       </div>
