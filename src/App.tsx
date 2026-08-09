@@ -12,7 +12,7 @@ import { ElectionResultsPage } from './pages/ElectionResultsPage';
 import { ResultsReportPage } from './pages/ResultsReportPage';
 import { SystemAdminPage } from './pages/SystemAdminPage';
 import { UserProfilePage } from './pages/UserProfilePage';
-import { SystemNotification, UserAccount, UserRole } from './types';
+import { ElectionLevel, SystemNotification, UserAccount, UserRole } from './types';
 import { EmailPayload } from './lib/emailService';
 import { HelpCircle, Vote, Users, X } from 'lucide-react';
 
