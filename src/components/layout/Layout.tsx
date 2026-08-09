@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { ScrollToTopButton } from '../common/ScrollToTopButton';
-import { ElectionUnit, UserAccount, UserRole } from '../../types';
+import { ElectionUnit, SystemNotification, UserAccount, UserRole } from '../../types';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,6 +19,11 @@ interface LayoutProps {
   onNavigateToProfile: () => void;
   onNavigateToLanding: () => void;
   onLogout: () => void;
+
+  notifications?: SystemNotification[];
+  onMarkAsRead?: (id: string) => void;
+  onMarkAllAsRead?: () => void;
+  onClearNotifications?: () => void;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -36,6 +41,10 @@ export const Layout: React.FC<LayoutProps> = ({
   onNavigateToProfile,
   onNavigateToLanding,
   onLogout,
+  notifications = [],
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onClearNotifications,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
@@ -65,6 +74,10 @@ export const Layout: React.FC<LayoutProps> = ({
           onNavigateToProfile={onNavigateToProfile}
           onNavigateToLanding={onNavigateToLanding}
           onLogout={onLogout}
+          notifications={notifications}
+          onMarkAsRead={onMarkAsRead}
+          onMarkAllAsRead={onMarkAllAsRead}
+          onClearNotifications={onClearNotifications}
         />
 
         <main ref={mainRef} className="flex-1 overflow-y-auto p-6 min-h-0 bg-slate-50/80 scroll-smooth">

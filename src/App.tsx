@@ -11,7 +11,7 @@ import { BallotCountingPage } from './pages/BallotCountingPage';
 import { ResultsReportPage } from './pages/ResultsReportPage';
 import { SystemAdminPage } from './pages/SystemAdminPage';
 import { UserProfilePage } from './pages/UserProfilePage';
-import { UserAccount, UserRole } from './types';
+import { SystemNotification, UserAccount, UserRole } from './types';
 import { EmailPayload } from './lib/emailService';
 import { HelpCircle, Vote, Users, X } from 'lucide-react';
 
@@ -35,6 +35,41 @@ const INITIAL_USERS: UserAccount[] = [
     role: 'EDITOR',
     status: 'PENDING',
     createdAt: new Date().toISOString(),
+  },
+];
+
+const INITIAL_NOTIFICATIONS: SystemNotification[] = [
+  {
+    id: 'notif-1',
+    title: 'Ghi nhận phiếu bầu mới',
+    message: 'Phiếu bầu số #1 cấp Đại biểu Quốc hội đã được ghi nhận thành công.',
+    timestamp: 'Vừa xong',
+    type: 'VOTE',
+    isRead: false,
+  },
+  {
+    id: 'notif-2',
+    title: 'Cử tri điểm danh bỏ phiếu',
+    message: 'Cử tri Nguyễn Văn An (Mã thẻ: 001) đã hoàn tất thủ tục điểm danh.',
+    timestamp: '5 phút trước',
+    type: 'VOTER',
+    isRead: false,
+  },
+  {
+    id: 'notif-3',
+    title: 'Xác nhận đăng ký tài khoản',
+    message: 'Yêu cầu đăng ký từ NGUYỄN ĐÌNH đã được tiếp nhận và chờ phê duyệt.',
+    timestamp: '15 phút trước',
+    type: 'USER',
+    isRead: false,
+  },
+  {
+    id: 'notif-4',
+    title: 'Cập nhật cấu hình Đơn vị',
+    message: 'Đơn vị bầu cử HĐND Xã Hòa Tiến đã được cập nhật thông số đại biểu.',
+    timestamp: '1 giờ trước',
+    type: 'SYSTEM',
+    isRead: true,
   },
 ];
 
@@ -82,6 +117,12 @@ export function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
+  // System Notifications State
+  const [notifications, setNotifications] = useState<SystemNotification[]>(() => {
+    const saved = localStorage.getItem('app_bau_cu_notifications');
+    return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
+  });
+
   const [isLandingPage, setIsLandingPage] = useState<boolean>(!currentUser);
   const [authModalMode, setAuthModalMode] = useState<'LOGIN' | 'REGISTER' | null>(null);
 
@@ -99,6 +140,10 @@ export function App() {
   }, [registeredUsers]);
 
   useEffect(() => {
+    localStorage.setItem('app_bau_cu_notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
+  useEffect(() => {
     if (currentUser) {
       localStorage.setItem('app_bau_cu_current_user', JSON.stringify(currentUser));
       setSettings(prev => ({ ...prev, currentRole: currentUser.role }));
@@ -106,6 +151,33 @@ export function App() {
       localStorage.removeItem('app_bau_cu_current_user');
     }
   }, [currentUser]);
+
+  // Notification Actions
+  const handleMarkAsRead = (id: string) => {
+    setNotifications(prev =>
+      prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
+    );
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const handleClearNotifications = () => {
+    setNotifications([]);
+  };
+
+  const pushNotification = (title: string, message: string, type: SystemNotification['type']) => {
+    const newNotif: SystemNotification = {
+      id: `notif-${Date.now()}`,
+      title,
+      message,
+      timestamp: 'Vừa xong',
+      type,
+      isRead: false,
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+  };
 
   // Auth Actions
   const handleRegisterSubmit = (newUser: Omit<UserAccount, 'id' | 'createdAt' | 'status' | 'role'>) => {
@@ -117,12 +189,17 @@ export function App() {
       createdAt: new Date().toISOString(),
     };
     setRegisteredUsers(prev => [...prev, item]);
+    pushNotification('Đăng ký tài khoản mới', `Tài khoản ${newUser.fullName} đã gửi yêu cầu cấp quyền.`, 'USER');
   };
 
   const handleApproveUser = (userId: string, role: UserRole) => {
+    const targetUser = registeredUsers.find(u => u.id === userId);
     setRegisteredUsers(prev =>
       prev.map(u => (u.id === userId ? { ...u, role, status: 'APPROVED', approvedAt: new Date().toISOString() } : u))
     );
+    if (targetUser) {
+      pushNotification('Tài khoản đã kích hoạt', `Tài khoản ${targetUser.fullName} đã được duyệt cấp quyền ${role}.`, 'USER');
+    }
   };
 
   const handleRejectUser = (userId: string) => {
@@ -138,6 +215,7 @@ export function App() {
   const handleUpdateProfile = (updatedUser: UserAccount) => {
     setCurrentUser(updatedUser);
     setRegisteredUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+    pushNotification('Cập nhật hồ sơ', `Hồ sơ cá nhân của ${updatedUser.fullName} đã được cập nhật thành công.`, 'SYSTEM');
   };
 
   const handleLoginSuccess = (user: UserAccount) => {
@@ -153,6 +231,27 @@ export function App() {
 
   const handleRoleChange = (role: UserRole) => {
     setSettings(prev => ({ ...prev, currentRole: role }));
+  };
+
+  // Wrapped voter toggle with notification
+  const handleToggleVoterStatus = (id: string) => {
+    const targetVoter = voters.find(v => v.id === id);
+    toggleVoterStatus(id);
+    if (targetVoter) {
+      const actionText = !targetVoter.hasVoted ? 'đã điểm danh bỏ phiếu' : 'hủy điểm danh';
+      pushNotification('Biến động cử tri', `Cử tri ${targetVoter.fullName} (STT ${targetVoter.stt}) ${actionText}.`, 'VOTER');
+    }
+  };
+
+  // Wrapped ballot submit with notification
+  const handleAddBallot = (level: any, inputStruckOut: string) => {
+    const res = addBallot(level, inputStruckOut);
+    if (res.isValid) {
+      pushNotification('Ghi nhận phiếu bầu', `Đã nhập thành công phiếu bầu hợp lệ cấp ${configs[level]?.levelName || level}.`, 'VOTE');
+    } else {
+      pushNotification('Cảnh báo phiếu bầu', `Đã ghi nhận 01 phiếu không hợp lệ cấp ${configs[level]?.levelName || level}.`, 'VOTE');
+    }
+    return res;
   };
 
   // If in Landing Page View mode
@@ -201,6 +300,10 @@ export function App() {
       onNavigateToProfile={() => setActiveTab('profile')}
       onNavigateToLanding={() => setIsLandingPage(true)}
       onLogout={handleLogout}
+      notifications={notifications}
+      onMarkAsRead={handleMarkAsRead}
+      onMarkAllAsRead={handleMarkAllAsRead}
+      onClearNotifications={handleClearNotifications}
     >
       {/* Tab Pages Switch */}
       {activeTab === 'dashboard' && (
@@ -238,7 +341,7 @@ export function App() {
       {activeTab === 'voters' && (
         <VoterManagementPage
           voters={voters}
-          toggleVoterStatus={toggleVoterStatus}
+          toggleVoterStatus={handleToggleVoterStatus}
           addVoter={addVoter}
           updateVoter={updateVoter}
           deleteVoter={deleteVoter}
@@ -253,7 +356,7 @@ export function App() {
           updateLevelConfig={updateLevelConfig}
           candidates={candidates}
           ballots={ballots}
-          addBallot={addBallot}
+          addBallot={handleAddBallot}
           undoLastBallot={undoLastBallot}
           resetBallotsForLevel={resetBallotsForLevel}
         />
@@ -362,7 +465,7 @@ export function App() {
                     👥
                   </div>
                   <div className="text-left">
-                    <div className="text-sm font-extrabold">ĐIỂM DANH THẺ CỬ TRI</div>
+                    <div className="text-sm font-extrabold">QUẢN LÝ CỬ TRI</div>
                     <div className="text-[11px] font-normal text-emerald-100">
                       Cập nhật trạng thái cử tri đi bầu
                     </div>

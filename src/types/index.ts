@@ -17,6 +17,17 @@ export interface UserAccount {
   approvedBy?: string;
 }
 
+export type NotificationType = 'VOTE' | 'VOTER' | 'USER' | 'SYSTEM';
+
+export interface SystemNotification {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  type: NotificationType;
+  isRead: boolean;
+}
+
 export interface ElectionUnit {
   id: string;
   province: string;
