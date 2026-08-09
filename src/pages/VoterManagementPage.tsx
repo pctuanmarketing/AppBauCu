@@ -49,6 +49,16 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
   // Non-blocking toast notification state
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
+  const [liveTime, setLiveTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setLiveTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const timeString = liveTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const dateString = liveTime.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
   // Add / Edit Voter Modal State
   const [showVoterModal, setShowVoterModal] = useState(false);
   const [editingVoter, setEditingVoter] = useState<Voter | null>(null);
@@ -447,14 +457,26 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
 
       {/* THANH THỐNG KÊ THỜI GIAN THỰC (EXCEL SPEC BAR DESIGN) */}
       <div className="bg-white p-5 rounded-2xl border-2 border-sky-300 shadow-md space-y-3.5">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-          <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-            <Activity className="w-4 h-4 text-sky-600" />
-            BÁO CÁO THỐNG KÊ CỬ TRI THEO THỜI GIAN THỰC (REAL-TIME PROGRESS)
-          </h2>
-          <span className="text-[11px] font-bold text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-200/80 shadow-2xs">
-            Tổ Bầu Cử Số 21 - Thôn An Trạch
-          </span>
+        <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-100 pb-3 gap-2">
+          <div className="space-y-0.5">
+            <h2 className="text-xs font-extrabold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+              <Activity className="w-4 h-4 text-sky-600 animate-pulse" />
+              <span>BÁO CÁO THỐNG KÊ CỬ TRI THEO THỜI GIAN THỰC (REAL-TIME PROGRESS)</span>
+            </h2>
+            <div className="text-[11px] text-slate-500 font-medium flex items-center gap-2">
+              <span className="flex items-center gap-1 font-mono text-sky-800 font-bold">
+                <Clock className="w-3.5 h-3.5 text-sky-600" />
+                Cập nhật thời gian thực: {timeString} - {dateString}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-emerald-800 bg-emerald-50 border border-emerald-300 px-3.5 py-1.5 rounded-xl shadow-2xs flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>ĐÃ ĐI BẦU ĐẾN THỜI ĐIỂM HIỆN TẠI: {votedCount.toLocaleString('vi-VN')} / {totalCount.toLocaleString('vi-VN')} CỬ TRI ({votedPct}%)</span>
+            </span>
+          </div>
         </div>
 
         <div className="space-y-2.5 text-xs font-bold font-sans">
