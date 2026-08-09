@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { ScrollToTopButton } from '../common/ScrollToTopButton';
-import { ElectionUnit, UserRole } from '../../types';
+import { ElectionUnit, UserAccount, UserRole } from '../../types';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,6 +15,10 @@ interface LayoutProps {
   setSearchTerm: (term: string) => void;
   onOpenQuickAction: () => void;
   onOpenHelp: () => void;
+  currentUser: UserAccount | null;
+  onNavigateToProfile: () => void;
+  onNavigateToLanding: () => void;
+  onLogout: () => void;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -28,6 +32,10 @@ export const Layout: React.FC<LayoutProps> = ({
   setSearchTerm,
   onOpenQuickAction,
   onOpenHelp,
+  currentUser,
+  onNavigateToProfile,
+  onNavigateToLanding,
+  onLogout,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
@@ -53,6 +61,10 @@ export const Layout: React.FC<LayoutProps> = ({
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           onOpenHelp={onOpenHelp}
+          currentUser={currentUser}
+          onNavigateToProfile={onNavigateToProfile}
+          onNavigateToLanding={onNavigateToLanding}
+          onLogout={onLogout}
         />
 
         <main ref={mainRef} className="flex-1 overflow-y-auto p-6 min-h-0 bg-slate-50/80 scroll-smooth">

@@ -10,9 +10,10 @@ import { VoterManagementPage } from './pages/VoterManagementPage';
 import { BallotCountingPage } from './pages/BallotCountingPage';
 import { ResultsReportPage } from './pages/ResultsReportPage';
 import { SystemAdminPage } from './pages/SystemAdminPage';
+import { UserProfilePage } from './pages/UserProfilePage';
 import { UserAccount, UserRole } from './types';
 import { EmailPayload } from './lib/emailService';
-import { HelpCircle, Vote, Users, X, LogIn, UserPlus, LogOut, Shield } from 'lucide-react';
+import { HelpCircle, Vote, Users, X } from 'lucide-react';
 
 const INITIAL_USERS: UserAccount[] = [
   {
@@ -134,6 +135,11 @@ export function App() {
     setRegisteredUsers(prev => prev.filter(u => u.id !== userId));
   };
 
+  const handleUpdateProfile = (updatedUser: UserAccount) => {
+    setCurrentUser(updatedUser);
+    setRegisteredUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+  };
+
   const handleLoginSuccess = (user: UserAccount) => {
     setCurrentUser(user);
     setIsLandingPage(false);
@@ -191,34 +197,11 @@ export function App() {
       setSearchTerm={setSearchTerm}
       onOpenQuickAction={() => setShowQuickActionModal(true)}
       onOpenHelp={() => setShowHelpModal(true)}
+      currentUser={currentUser}
+      onNavigateToProfile={() => setActiveTab('profile')}
+      onNavigateToLanding={() => setIsLandingPage(true)}
+      onLogout={handleLogout}
     >
-      {/* Top User Bar inside App */}
-      <div className="bg-slate-800 text-slate-200 px-4 py-2 text-xs flex items-center justify-between border-b border-slate-700 font-medium">
-        <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4 text-sky-400" />
-          <span>Tài khoản đang đăng nhập: <strong className="text-white uppercase">{currentUser?.fullName}</strong> ({currentUser?.email})</span>
-          <span className="bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded font-mono font-bold border border-sky-400/30">
-            {settings.currentRole}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsLandingPage(true)}
-            className="hover:text-white underline text-[11px]"
-          >
-            Trang giới thiệu
-          </button>
-          <button
-            onClick={handleLogout}
-            className="bg-rose-600/80 hover:bg-rose-600 text-white font-bold px-2.5 py-1 rounded flex items-center gap-1 transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            Đăng xuất
-          </button>
-        </div>
-      </div>
-
       {/* Tab Pages Switch */}
       {activeTab === 'dashboard' && (
         <DashboardPage
@@ -297,6 +280,13 @@ export function App() {
           onDeleteUser={handleDeleteUser}
           onShowEmailModal={payload => setActiveEmailModalPayload(payload)}
           currentRole={settings.currentRole}
+        />
+      )}
+
+      {activeTab === 'profile' && (
+        <UserProfilePage
+          currentUser={currentUser}
+          onUpdateProfile={handleUpdateProfile}
         />
       )}
 
@@ -424,7 +414,7 @@ export function App() {
               <div className="p-3 bg-slate-100 rounded-lg border border-slate-200">
                 <h4 className="font-bold text-slate-900 mb-1">3. Xuất Báo cáo & Biên bản:</h4>
                 <p>
-                  - Vào phân hệ <strong>"Kết quả & Báo cáo"</strong>.
+                  - Vào phân hệ <strong>"KẾT QUẢ"</strong>.
                   <br />- Bấm nút <strong>"Xuất báo cáo Excel (.xlsx)"</strong> để tải file dữ liệu chi tiết.
                   <br />- Bấm nút <strong>"In Biên bản kiểm phiếu (Word)"</strong> để mở trang in biên bản đúng mẫu quốc gia.
                 </p>
