@@ -17,6 +17,7 @@ import {
   Mail,
   Phone,
   Building2,
+  Eye,
 } from 'lucide-react';
 
 interface LandingPageProps {
