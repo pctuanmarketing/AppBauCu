@@ -124,10 +124,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    // Default admin fallback match
-    if ((cleanInput === 'pctuanit@gmail.com' || cleanInput === '0916199945') && loginPassword === '123456') {
-      setFailedAttempts(0);
-      onLoginSuccess({
+    // Find registered user by Email or Phone (supports updated passwords)
+    let matchedUser = registeredUsers.find(
+      u => (u.email.toLowerCase() === cleanInput || u.phone.trim() === cleanInput) && u.password === loginPassword
+    );
+
+    // Default admin fallback match if not yet customized in registeredUsers
+    if (!matchedUser && (cleanInput === 'pctuanit@gmail.com' || cleanInput === '0916199945') && loginPassword === '123456') {
+      matchedUser = {
         id: 'admin-default',
         fullName: 'Phạm Công Tuân (Admin)',
         email: 'pctuanit@gmail.com',
@@ -135,15 +139,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         role: 'ADMIN',
         status: 'APPROVED',
         createdAt: new Date().toISOString(),
-      });
-      onClose();
-      return;
+      };
     }
-
-    // Find registered user by Email or Phone
-    const matchedUser = registeredUsers.find(
-      u => (u.email.toLowerCase() === cleanInput || u.phone.trim() === cleanInput) && u.password === loginPassword
-    );
 
     if (!matchedUser) {
       const nextFail = failedAttempts + 1;

@@ -111,7 +111,18 @@ export function App() {
   // Navigation & Auth States
   const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>(() => {
     const saved = localStorage.getItem('app_bau_cu_users');
-    return saved ? JSON.parse(saved) : INITIAL_USERS;
+    if (saved) {
+      try {
+        const parsed: UserAccount[] = JSON.parse(saved);
+        if (!parsed.some(u => u.id === 'admin-default')) {
+          return [INITIAL_USERS[0], ...parsed];
+        }
+        return parsed;
+      } catch (err) {
+        return INITIAL_USERS;
+      }
+    }
+    return INITIAL_USERS;
   });
 
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
@@ -281,15 +292,35 @@ export function App() {
 
   const handleResetPassword = (emailOrPhone: string, newPassword: string) => {
     const clean = emailOrPhone.trim().toLowerCase();
-    setRegisteredUsers(prev =>
-      prev.map(u => {
-        if (u.email.toLowerCase() === clean || u.phone.trim() === clean) {
-          return { ...u, password: newPassword };
-        }
-        return u;
-      })
-    );
-    pushNotification('Đổi mật khẩu', `Tài khoản (${emailOrPhone}) đã khôi phục mật khẩu thành công.`, 'USER');
+    setRegisteredUsers(prev => {
+      const exists = prev.some(u => u.email.toLowerCase() === clean || u.phone.trim() === clean);
+      if (exists) {
+        return prev.map(u => {
+          if (u.email.toLowerCase() === clean || u.phone.trim() === clean) {
+            return { ...u, password: newPassword };
+          }
+          return u;
+        });
+      } else {
+        const defaultAdmin: UserAccount = {
+          id: 'admin-default',
+          fullName: 'Phạm Công Tuân',
+          email: 'pctuanit@gmail.com',
+          phone: '0916199945',
+          password: newPassword,
+          role: 'ADMIN',
+          status: 'APPROVED',
+          createdAt: new Date().toISOString(),
+        };
+        return [...prev, defaultAdmin];
+      }
+    });
+
+    if (currentUser && (currentUser.email.toLowerCase() === clean || currentUser.phone.trim() === clean)) {
+      setCurrentUser(prev => prev ? { ...prev, password: newPassword } : null);
+    }
+
+    pushNotification('Đổi mật khẩu', `Tài khoản (${emailOrPhone}) đã khôi phục mật khẩu mới thành công.`, 'USER');
   };
 
   // If in Landing Page View mode
