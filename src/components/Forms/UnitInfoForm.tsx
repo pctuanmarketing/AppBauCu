@@ -42,16 +42,16 @@ export const UnitInfoForm: React.FC<UnitInfoFormProps> = ({
   };
 
   return (
-    <div className="bg-slate-100 border-2 border-red-500/80 rounded-sm shadow-xl p-2 font-sans text-xs max-w-5xl mx-auto my-4 text-slate-900">
+    <div className="bg-slate-100 border-2 border-red-500/60 rounded-sm shadow-2xl p-2 font-sans text-xs max-w-5xl mx-auto my-4 text-slate-900">
       
-      {/* Top Banner Title "THÔNG TIN ĐƠN VỊ BẦU CỬ" */}
+      {/* Top Banner Title "THÔNG TIN ĐƠN VỊ BẦU CỬ" (Giống 100% hình chụp Access) */}
       <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white px-4 py-2 flex items-center justify-between shadow-md">
         <span className="font-extrabold text-sm tracking-wider uppercase">
           THÔNG TIN ĐƠN VỊ BẦU CỬ
         </span>
         <button
           onClick={onClose}
-          className="px-3 py-1 bg-slate-900 hover:bg-red-700 text-white border border-slate-500 rounded text-xs font-bold transition shadow-sm"
+          className="px-4 py-1 bg-slate-900 hover:bg-red-700 text-white border border-slate-500 rounded text-xs font-bold transition shadow-sm"
         >
           Đóng
         </button>
@@ -63,13 +63,13 @@ export const UnitInfoForm: React.FC<UnitInfoFormProps> = ({
         </div>
       )}
 
-      {/* 3 Main Tabs */}
-      <div className="flex border-b border-slate-300 mt-2 bg-slate-200">
+      {/* 3 Main Tabs (Giống 100% hình chụp Access) */}
+      <div className="flex border-b border-sky-400 mt-2 bg-slate-200">
         <button
           onClick={() => setActiveSubTab('don_vi')}
-          className={`px-4 py-2 font-bold transition border-t-2 ${
+          className={`px-5 py-2 font-bold transition border-t-2 ${
             activeSubTab === 'don_vi'
-              ? 'bg-slate-100 border-red-700 text-red-700 shadow-xs'
+              ? 'bg-slate-100 border-sky-700 text-sky-900 shadow-xs'
               : 'border-transparent text-slate-700 hover:bg-slate-300'
           }`}
         >
@@ -77,9 +77,9 @@ export const UnitInfoForm: React.FC<UnitInfoFormProps> = ({
         </button>
         <button
           onClick={() => setActiveSubTab('nhan_su')}
-          className={`px-4 py-2 font-bold transition border-t-2 ${
+          className={`px-5 py-2 font-bold transition border-t-2 ${
             activeSubTab === 'nhan_su'
-              ? 'bg-slate-100 border-red-700 text-red-700 shadow-xs'
+              ? 'bg-slate-100 border-sky-700 text-sky-900 shadow-xs'
               : 'border-transparent text-slate-700 hover:bg-slate-300'
           }`}
         >
@@ -87,9 +87,9 @@ export const UnitInfoForm: React.FC<UnitInfoFormProps> = ({
         </button>
         <button
           onClick={() => setActiveSubTab('cu_tri')}
-          className={`px-4 py-2 font-bold transition border-t-2 ${
+          className={`px-5 py-2 font-bold transition border-t-2 ${
             activeSubTab === 'cu_tri'
-              ? 'bg-slate-100 border-red-700 text-red-700 shadow-xs'
+              ? 'bg-slate-100 border-sky-700 text-sky-900 shadow-xs'
               : 'border-transparent text-slate-700 hover:bg-slate-300'
           }`}
         >
@@ -97,154 +97,152 @@ export const UnitInfoForm: React.FC<UnitInfoFormProps> = ({
         </button>
       </div>
 
-      {/* Tab 1 Content: Đơn vị bầu cử */}
+      {/* Tab 1 Content: Đơn vị bầu cử (Khớp 100% hình chụp Access) */}
       {activeSubTab === 'don_vi' && (
-        <div className="p-4 bg-slate-50 border-x border-b border-slate-300 space-y-4">
+        <div className="p-4 bg-slate-50 border-x border-b border-sky-300 space-y-4 font-sans text-xs">
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="font-bold text-slate-800 block mb-1">Tên Tổ bầu cử (*)</label>
-              <input
-                type="text"
-                value={formData.unitName}
-                onChange={e => setFormData({ ...formData, unitName: e.target.value })}
-                className="w-full bg-white border border-slate-400 rounded px-2.5 py-1.5 font-semibold focus:outline-none focus:border-red-600"
-              />
-            </div>
+          {/* Top Line: *** TỈNH/THÀNH PHỐ, KHÓA, Button Lưu */}
+          <div className="flex flex-wrap items-center gap-3 bg-slate-100 p-2.5 rounded border border-slate-300">
+            <span className="font-extrabold text-red-700 text-sm">*** TỈNH/THÀNH PHỐ:</span>
+            <input
+              type="text"
+              value={formData.province}
+              onChange={e => setFormData({ ...formData, province: e.target.value })}
+              className="bg-white border border-slate-400 rounded px-2.5 py-1 font-bold text-slate-900 w-60"
+            />
 
-            <div>
-              <label className="font-bold text-slate-800 block mb-1">Khu vực bỏ phiếu (*)</label>
-              <input
-                type="text"
-                value={formData.votingArea}
-                onChange={e => setFormData({ ...formData, votingArea: e.target.value })}
-                className="w-full bg-white border border-slate-400 rounded px-2.5 py-1.5 font-semibold focus:outline-none focus:border-red-600"
-              />
-            </div>
-          </div>
+            <span className="font-extrabold text-slate-900 text-sm ml-4">KHÓA:</span>
+            <input
+              type="text"
+              value={formData.term}
+              onChange={e => setFormData({ ...formData, term: e.target.value })}
+              className="bg-white border border-slate-400 rounded px-2.5 py-1 font-extrabold text-sky-900 text-center w-20"
+            />
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div>
-              <label className="font-bold text-slate-800 block mb-1">Tỉnh / Thành phố</label>
-              <input
-                type="text"
-                value={formData.province}
-                onChange={e => setFormData({ ...formData, province: e.target.value })}
-                className="w-full bg-white border border-slate-400 rounded px-2 py-1 font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-800 block mb-1">Huyện / Quận</label>
-              <input
-                type="text"
-                value={formData.district}
-                onChange={e => setFormData({ ...formData, district: e.target.value })}
-                className="w-full bg-white border border-slate-400 rounded px-2 py-1 font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-800 block mb-1">Xã / Phường</label>
-              <input
-                type="text"
-                value={formData.commune}
-                onChange={e => setFormData({ ...formData, commune: e.target.value })}
-                className="w-full bg-white border border-slate-400 rounded px-2 py-1 font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-800 block mb-1">Tổng số cử tri (*)</label>
-              <input
-                type="number"
-                value={formData.totalVoters}
-                onChange={e => setFormData({ ...formData, totalVoters: Number(e.target.value) })}
-                className="w-full bg-white border border-slate-400 rounded px-2 py-1 font-black text-red-800"
-              />
-            </div>
-          </div>
-
-          <div className="border-t border-slate-300 pt-3 space-y-3">
-            <h4 className="font-extrabold text-red-800 uppercase">Khai báo đơn vị bầu cử các Cấp</h4>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="bg-white p-3 border border-slate-300 rounded space-y-2">
-                <span className="font-extrabold text-slate-900 block text-[11px] uppercase">1. Bầu cử ĐBQH</span>
-                <div>
-                  <label className="text-[11px] text-slate-600 block">Đơn vị số:</label>
-                  <input
-                    type="text"
-                    value={formData.quocHoiUnitNo}
-                    onChange={e => setFormData({ ...formData, quocHoiUnitNo: e.target.value })}
-                    className="w-full border border-slate-300 rounded px-2 py-0.5 font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-slate-600 block">Địa bàn bầu cử:</label>
-                  <textarea
-                    rows={2}
-                    value={formData.quocHoiAreas}
-                    onChange={e => setFormData({ ...formData, quocHoiAreas: e.target.value })}
-                    className="w-full border border-slate-300 rounded px-2 py-1 text-[11px]"
-                  />
-                </div>
-              </div>
-
-              <div className="bg-white p-3 border border-slate-300 rounded space-y-2">
-                <span className="font-extrabold text-slate-900 block text-[11px] uppercase">2. Bầu cử HĐND Tỉnh</span>
-                <div>
-                  <label className="text-[11px] text-slate-600 block">Đơn vị số:</label>
-                  <input
-                    type="text"
-                    value={formData.hdndTinhUnitNo}
-                    onChange={e => setFormData({ ...formData, hdndTinhUnitNo: e.target.value })}
-                    className="w-full border border-slate-300 rounded px-2 py-0.5 font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-slate-600 block">Địa bàn bầu cử:</label>
-                  <textarea
-                    rows={2}
-                    value={formData.hdndTinhAreas}
-                    onChange={e => setFormData({ ...formData, hdndTinhAreas: e.target.value })}
-                    className="w-full border border-slate-300 rounded px-2 py-1 text-[11px]"
-                  />
-                </div>
-              </div>
-
-              <div className="bg-white p-3 border border-slate-300 rounded space-y-2">
-                <span className="font-extrabold text-slate-900 block text-[11px] uppercase">3. Bầu cử HĐND Xã</span>
-                <div>
-                  <label className="text-[11px] text-slate-600 block">Đơn vị số:</label>
-                  <input
-                    type="text"
-                    value={formData.hdndXaUnitNo}
-                    onChange={e => setFormData({ ...formData, hdndXaUnitNo: e.target.value })}
-                    className="w-full border border-slate-300 rounded px-2 py-0.5 font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-slate-600 block">Địa bàn bầu cử:</label>
-                  <textarea
-                    rows={2}
-                    value={formData.hdndXaAreas}
-                    onChange={e => setFormData({ ...formData, hdndXaAreas: e.target.value })}
-                    className="w-full border border-slate-300 rounded px-2 py-1 text-[11px]"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-2 border-t border-slate-300">
             <button
               onClick={handleSave}
-              className="px-5 py-1.5 bg-red-700 hover:bg-red-800 text-white rounded font-bold transition flex items-center space-x-1 shadow-sm"
+              className="ml-auto px-5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-400 rounded font-bold transition flex items-center space-x-1 shadow-xs"
             >
-              <Check className="w-4 h-4" />
-              <span>Lưu thông tin</span>
+              <Check className="w-4 h-4 text-emerald-700" />
+              <span>Lưu</span>
             </button>
+          </div>
+
+          {/* Item 1: Đơn vị bầu cử Đại biểu Quốc Hội */}
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center space-x-2">
+              <span className="font-extrabold text-slate-900 text-xs">1. Đơn vị bầu cử Đại biểu Quốc Hội:</span>
+              <span className="text-[11px] text-purple-700 italic font-semibold">(Ghi đầy đủ Cấp + Tên. Ví dụ: Phường Tân Định, Xã Thạnh An...)</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center pl-4">
+              <div className="md:col-span-3 flex items-center space-x-1">
+                <span className="text-red-700 font-bold text-xs">▶ Số:</span>
+                <input
+                  type="text"
+                  value={formData.quocHoiUnitNo}
+                  onChange={e => setFormData({ ...formData, quocHoiUnitNo: e.target.value })}
+                  className="bg-white border border-slate-400 rounded px-2 py-1 font-bold text-center w-16"
+                />
+              </div>
+
+              <div className="md:col-span-9 flex items-center space-x-1">
+                <span className="text-red-700 font-bold text-xs whitespace-nowrap">▶ Gồm Xã/Phường/Đặc khu:</span>
+                <input
+                  type="text"
+                  value={formData.quocHoiAreas}
+                  onChange={e => setFormData({ ...formData, quocHoiAreas: e.target.value })}
+                  className="bg-white border border-slate-400 rounded px-2.5 py-1 font-medium w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Dashed Separator Line */}
+          <div className="border-b-2 border-dashed border-slate-300 my-2"></div>
+
+          {/* Item 2: Đơn vị bầu cử Đại biểu HĐND Tỉnh */}
+          <div className="space-y-2">
+            <span className="font-extrabold text-slate-900 text-xs">2. Đơn vị bầu cử Đại biểu HĐND Tỉnh:</span>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center pl-4">
+              <div className="md:col-span-3 flex items-center space-x-1">
+                <span className="text-red-700 font-bold text-xs">▶ Số:</span>
+                <input
+                  type="text"
+                  value={formData.hdndTinhUnitNo}
+                  onChange={e => setFormData({ ...formData, hdndTinhUnitNo: e.target.value })}
+                  className="bg-white border border-slate-400 rounded px-2 py-1 font-bold text-center w-16"
+                />
+              </div>
+
+              <div className="md:col-span-9 flex items-center space-x-1">
+                <span className="text-red-700 font-bold text-xs whitespace-nowrap">▶ Gồm Xã/Phường/Đặc khu:</span>
+                <input
+                  type="text"
+                  value={formData.hdndTinhAreas}
+                  onChange={e => setFormData({ ...formData, hdndTinhAreas: e.target.value })}
+                  className="bg-white border border-slate-400 rounded px-2.5 py-1 font-medium w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Dashed Separator Line */}
+          <div className="border-b-2 border-dashed border-slate-300 my-2"></div>
+
+          {/* Item 3: Đơn vị bầu cử Đại biểu HĐND Xã */}
+          <div className="space-y-2">
+            <span className="font-extrabold text-slate-900 text-xs">3. Đơn vị bầu cử Đại biểu HĐND Xã:</span>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center pl-4">
+              <div className="md:col-span-3 flex items-center space-x-1">
+                <span className="text-red-700 font-bold text-xs">▶ Số:</span>
+                <input
+                  type="text"
+                  value={formData.hdndXaUnitNo}
+                  onChange={e => setFormData({ ...formData, hdndXaUnitNo: e.target.value })}
+                  className="bg-white border border-slate-400 rounded px-2 py-1 font-bold text-center w-16"
+                />
+              </div>
+
+              <div className="md:col-span-9 flex items-center space-x-1">
+                <span className="text-red-700 font-bold text-xs whitespace-nowrap">▶ Gồm Thôn/Tổ dân phố:</span>
+                <input
+                  type="text"
+                  value={formData.hdndXaAreas}
+                  onChange={e => setFormData({ ...formData, hdndXaAreas: e.target.value })}
+                  className="bg-white border border-slate-400 rounded px-2.5 py-1 font-medium w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Container: Tổ bầu cử */}
+          <div className="bg-slate-200/80 border border-slate-300 rounded p-3 space-y-2 mt-4">
+            <span className="font-extrabold text-slate-900 text-xs uppercase block border-b border-slate-300 pb-1">Tổ bầu cử:</span>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
+              <div className="md:col-span-4 flex items-center space-x-1">
+                <span className="text-red-700 font-bold text-xs whitespace-nowrap">▶ Khu vực bỏ phiếu số:</span>
+                <input
+                  type="text"
+                  value={formData.unitName.replace(/\D/g, '') || '21'}
+                  onChange={e => setFormData({ ...formData, unitName: `Khu vực bỏ phiếu số ${e.target.value}` })}
+                  className="bg-white border border-slate-400 rounded px-2 py-1 font-bold text-center w-20"
+                />
+              </div>
+
+              <div className="md:col-span-8 flex items-center space-x-1">
+                <span className="text-red-700 font-bold text-xs whitespace-nowrap">▶ Xã/Phường/Đặc khu:</span>
+                <input
+                  type="text"
+                  value={formData.commune}
+                  onChange={e => setFormData({ ...formData, commune: e.target.value })}
+                  className="bg-white border border-slate-400 rounded px-2.5 py-1 font-medium w-full"
+                />
+              </div>
+            </div>
           </div>
 
         </div>
