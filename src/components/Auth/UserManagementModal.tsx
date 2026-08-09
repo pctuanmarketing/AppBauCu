@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, Role, UserStatus } from '../../types';
+import { User, Role } from '../../types';
 import { getUsers, approveUser, rejectUser, updateUserRole } from '../../lib/storage';
-import { ShieldCheck, UserCheck, UserX, UserPlus, X, Award, CheckCircle, Clock, Lock, Shield } from 'lucide-react';
+import { ShieldCheck, UserX, X, CheckCircle, Clock } from 'lucide-react';
 
 interface UserManagementModalProps {
   isOpen: boolean;
@@ -141,19 +141,16 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
               {filteredUsers.map(user => (
                 <tr key={user.id} className="hover:bg-slate-50 transition">
                   
-                  {/* Name & Username */}
                   <td className="p-3 font-semibold text-slate-900">
                     <div>{user.fullName}</div>
                     <div className="text-[10px] text-slate-400 font-mono">@{user.username}</div>
                   </td>
 
-                  {/* Email & Phone */}
                   <td className="p-3 text-slate-600">
                     <div>{user.email}</div>
                     {user.phone && <div className="text-[10px] text-emerald-700 font-mono">{user.phone}</div>}
                   </td>
 
-                  {/* Status Badge */}
                   <td className="p-3">
                     {user.status === 'pending_approval' && (
                       <span className="px-2.5 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded-full text-[10px] font-bold inline-flex items-center space-x-1">
@@ -175,7 +172,6 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     )}
                   </td>
 
-                  {/* Role Selector */}
                   <td className="p-3">
                     <select
                       value={user.role}
@@ -188,7 +184,6 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     </select>
                   </td>
 
-                  {/* Action Buttons */}
                   <td className="p-3 text-right space-x-2">
                     {user.status === 'pending_approval' && (
                       <>

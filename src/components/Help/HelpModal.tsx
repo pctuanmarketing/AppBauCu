@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Globe, FileText, ExternalLink, Award, Mail, Phone } from 'lucide-react';
+import { X, FileText, ExternalLink, Award, Mail, Phone } from 'lucide-react';
 
 interface HelpModalProps {
   isOpen: boolean;

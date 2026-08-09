@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User, Role } from '../../types';
 import { getUsers, registerUser, activateUserCode } from '../../lib/storage';
-import { Vote, Lock, User as UserIcon, Mail, Phone, KeyRound, ShieldCheck, CheckCircle2, Clock, Award } from 'lucide-react';
+import { Vote, Lock, User as UserIcon } from 'lucide-react';
 
 interface AuthModalProps {
   onLoginSuccess: (user: User) => void;

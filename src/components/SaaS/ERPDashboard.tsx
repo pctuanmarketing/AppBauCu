@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Council, CouncilId, User, VoteRecord, VotingUnit } from '../../types';
-import { CheckCircle2, TrendingUp, Users, Vote, ShieldCheck, ArrowRight, Play, X, Edit3, Award, FileSpreadsheet, FileText } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, ArrowRight, Play, X, Edit3 } from 'lucide-react';
 
 interface ERPDashboardProps {
   unit: VotingUnit;
@@ -32,7 +32,7 @@ export const ERPDashboard: React.FC<ERPDashboardProps> = ({
   return (
     <div className="space-y-6 select-none">
       
-      {/* Soft Mint Green Welcome Banner (Bám sát 100% hình chụp MISA/AVA ERP) */}
+      {/* Soft Mint Green Welcome Banner */}
       {showWelcomeBanner && (
         <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border border-emerald-200/80 rounded-2xl p-5 shadow-sm relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start space-x-4">
@@ -68,7 +68,7 @@ export const ERPDashboard: React.FC<ERPDashboardProps> = ({
         </div>
       )}
 
-      {/* Metric Summary Cards Row (AVA Kế toán / ERP Style) */}
+      {/* Metric Summary Cards Row */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-black text-slate-900 tracking-tight">
@@ -81,7 +81,6 @@ export const ERPDashboard: React.FC<ERPDashboardProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           
-          {/* Card 1: Doanh thu / Cử tri */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:shadow-md transition space-y-3">
             <div className="flex justify-between items-start">
               <span className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">CỬ TRI & TIẾN ĐỘ ĐI BẦU</span>
@@ -103,7 +102,6 @@ export const ERPDashboard: React.FC<ERPDashboardProps> = ({
             </div>
           </div>
 
-          {/* Card 2: Chi phí / Phiếu bầu */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:shadow-md transition space-y-3">
             <div className="flex justify-between items-start">
               <span className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">PHIẾU BẦU THU VÀO & HỢP LỆ</span>
@@ -125,7 +123,6 @@ export const ERPDashboard: React.FC<ERPDashboardProps> = ({
             </div>
           </div>
 
-          {/* Card 3: Lợi nhuận / Đại biểu trúng cử */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:shadow-md transition space-y-3">
             <div className="flex justify-between items-start">
               <span className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">ỨNG CỬ VIÊN & KẾT QUẢ</span>
@@ -150,10 +147,9 @@ export const ERPDashboard: React.FC<ERPDashboardProps> = ({
         </div>
       </div>
 
-      {/* Bottom Main Content Cards (Tình hình Bầu cử 4 Cấp) */}
+      {/* Bottom Main Content Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Left Column: Tình hình bầu cử 4 Cấp */}
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
             <h3 className="font-extrabold text-slate-900 text-sm flex items-center space-x-2">
@@ -209,7 +205,6 @@ export const ERPDashboard: React.FC<ERPDashboardProps> = ({
           </div>
         </div>
 
-        {/* Right Column: Bảng Hướng dẫn Nhanh & Trạng Thái */}
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
             <h3 className="font-extrabold text-slate-900 text-sm">TRẠNG THÁI NGHIỆM THU</h3>
@@ -235,7 +230,7 @@ export const ERPDashboard: React.FC<ERPDashboardProps> = ({
 
       </div>
 
-      {/* Floating Action Button (FAB) - Floating Pencil Icon on Bottom Right */}
+      {/* Floating Action Button */}
       <button
         onClick={() => onNavigateToCounting('quoc_hoi')}
         title="Mở Bảng Kiểm Phiếu Nhanh"

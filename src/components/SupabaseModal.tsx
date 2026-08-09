@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Database, Check, X, Key, ExternalLink, HelpCircle } from 'lucide-react';
+import { Database, X, HelpCircle } from 'lucide-react';
 import { initCustomSupabase } from '../lib/supabase';
 
 interface SupabaseModalProps {
@@ -40,13 +40,13 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 font-sans text-xs">
         
         <div className="flex justify-between items-center border-b border-slate-700 pb-3">
           <div className="flex items-center space-x-2">
             <Database className="w-5 h-5 text-emerald-400" />
-            <h3 className="text-lg font-bold text-white">Cấu Hình Kết Nối Supabase Cloud</h3>
+            <h3 className="text-sm font-bold text-white uppercase">Cấu Hình Kết Nối Supabase Cloud</h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
             <X className="w-5 h-5" />
@@ -94,7 +94,7 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
           </div>
           <p>1. Đăng ký tài khoản miễn phí tại <a href="https://supabase.com" target="_blank" rel="noreferrer" className="text-emerald-400 underline">supabase.com</a>.</p>
           <p>2. Chạy file <code className="text-amber-300">supabase_schema.sql</code> trong Supabase SQL Editor.</p>
-          <p>3. Dán URL và Anon Key thu được từ Project Settings {'>'} API vào đây.</p>
+          <p>3. Dán URL và Anon Key thu được từ Project Settings API vào đây.</p>
         </div>
 
         <div className="flex justify-end space-x-3 pt-3 border-t border-slate-700">

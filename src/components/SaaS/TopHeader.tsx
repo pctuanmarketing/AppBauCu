@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User } from '../../types';
-import { Search, Sparkles, Bell, HelpCircle, User as UserIcon, LogOut, ChevronDown, Award } from 'lucide-react';
+import { Search, Sparkles, Bell, HelpCircle, LogOut, ChevronDown, Award } from 'lucide-react';
 
 interface TopHeaderProps {
   currentUser: User | null;
@@ -31,7 +31,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         </div>
       </div>
 
-      {/* Center: Smart Search Bar (AI Assistant) */}
+      {/* Center: Smart Search Bar */}
       <div className="hidden md:flex items-center space-x-2 bg-slate-100 border border-slate-300 rounded-full px-3 py-1.5 w-96 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20 transition">
         <Search className="w-4 h-4 text-slate-400" />
         <input
@@ -50,7 +50,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       {/* Right: Quick Action Buttons, Notifications & User Profile */}
       <div className="flex items-center space-x-3">
         
-        {/* Green "Hướng dẫn" Button */}
         <button
           onClick={onOpenHelpGuide}
           className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-xs font-bold transition shadow-sm"
@@ -59,7 +58,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           <span className="hidden sm:inline">Hướng dẫn</span>
         </button>
 
-        {/* Notifications Icon with Badge */}
         <div className="relative cursor-pointer p-2 hover:bg-slate-100 rounded-full transition">
           <Bell className="w-5 h-5 text-slate-600" />
           <span className="absolute top-1 right-1 w-4 h-4 bg-red-600 text-white rounded-full text-[9px] font-extrabold flex items-center justify-center border-2 border-white">
@@ -67,7 +65,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           </span>
         </div>
 
-        {/* User Profile & Author Badge Dropdown */}
         <div className="relative">
           <div
             onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -87,7 +84,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
           </div>
 
-          {/* Profile Dropdown Menu */}
           {showProfileMenu && (
             <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl p-3 space-y-2 text-xs z-50 animate-fadeIn">
               <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 space-y-1">

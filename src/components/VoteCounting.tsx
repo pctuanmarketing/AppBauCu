@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Candidate, CandidateVote, Council, CouncilId, SingleBallotLog, VoteRecord, VotingUnit, User } from '../types';
-import { Check, RotateCcw, Trash2, Eye, X, ShieldAlert, Lock } from 'lucide-react';
+import { RotateCcw, Eye, ShieldAlert, Lock } from 'lucide-react';
 
 interface VoteCountingProps {
   councils: Council[];
@@ -53,7 +53,6 @@ export const VoteCounting: React.FC<VoteCountingProps> = ({
   // Fast Vote Entry State
   const [pinkInput, setPinkInput] = useState('');
   const [ballotHistory, setBallotHistory] = useState<SingleBallotLog[]>([]);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   const pinkInputRef = useRef<HTMLInputElement>(null);
 
@@ -73,7 +72,6 @@ export const VoteCounting: React.FC<VoteCountingProps> = ({
     }));
   }, [selectedCouncilId, voteRecord, candidates]);
 
-  // Struck-out STTs from typing
   const getStruckOutSttsFromInput = (input: string): number[] => {
     const clean = input.trim();
     if (!clean) return [];
@@ -82,7 +80,6 @@ export const VoteCounting: React.FC<VoteCountingProps> = ({
 
   const currentStruckStts = getStruckOutSttsFromInput(pinkInput);
 
-  // Submit a single ballot (Enter key)
   const handlePinkInputSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (isViewer) return;
     if (e.key === 'Enter') {
@@ -91,7 +88,6 @@ export const VoteCounting: React.FC<VoteCountingProps> = ({
       const struckStts = currentStruckStts;
       const ballotNo = ballotHistory.length + 1;
 
-      // Update vote counts
       const updatedCVotes = cVotes.map(cv => {
         const cand = currentCandidates.find(c => c.id === cv.candidateId);
         if (cand && !struckStts.includes(cand.stt)) {
@@ -125,7 +121,6 @@ export const VoteCounting: React.FC<VoteCountingProps> = ({
     }
   };
 
-  // Undo Last Ballot
   const handleUndoLastBallot = () => {
     if (isViewer) return;
     if (ballotHistory.length === 0) return;
@@ -169,7 +164,6 @@ export const VoteCounting: React.FC<VoteCountingProps> = ({
           </span>
         </div>
 
-        {/* Council Tabs */}
         <div className="flex space-x-1">
           {councils.map(c => (
             <button
@@ -187,7 +181,7 @@ export const VoteCounting: React.FC<VoteCountingProps> = ({
         </div>
       </div>
 
-      {/* Viewer Role Alert Banner */}
+      {/* Viewer Alert */}
       {isViewer && (
         <div className="bg-amber-50 border-2 border-amber-400 p-3 rounded-xl flex items-center space-x-3 text-amber-900 font-bold text-xs shadow-xs">
           <ShieldAlert className="w-6 h-6 text-amber-600 flex-shrink-0" />
@@ -208,13 +202,10 @@ export const VoteCounting: React.FC<VoteCountingProps> = ({
           </label>
 
           <div className="flex space-x-2">
-            <button
-              onClick={() => setShowHistoryModal(true)}
-              className="flex items-center space-x-1 px-3 py-1 bg-sky-50 text-sky-800 border border-sky-300 rounded hover:bg-sky-100 font-bold transition text-xs"
-            >
+            <div className="px-3 py-1 bg-sky-50 text-sky-800 border border-sky-300 rounded font-bold text-xs flex items-center space-x-1">
               <Eye className="w-3.5 h-3.5" />
-              <span>Xem lịch sử đọc ({ballotHistory.length})</span>
-            </button>
+              <span>Đã đọc {ballotHistory.length} phiếu</span>
+            </div>
 
             {!isViewer && (
               <button
@@ -229,7 +220,7 @@ export const VoteCounting: React.FC<VoteCountingProps> = ({
           </div>
         </div>
 
-        {/* Pink Fast Vote Input Box (Glowing Pink) */}
+        {/* Pink Fast Vote Input Box */}
         <div className="relative">
           <input
             ref={pinkInputRef}
@@ -249,7 +240,7 @@ export const VoteCounting: React.FC<VoteCountingProps> = ({
         </div>
       </div>
 
-      {/* CANDIDATES ROSTER TABLE WITH LIVE RED HIGHLIGHT */}
+      {/* CANDIDATES ROSTER TABLE */}
       <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
         <table className="w-full text-left border-collapse">
           <thead>

@@ -68,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        {/* Group HAY DÙNG (Pinned Quick Features) */}
+        {/* Group HAY DÙNG */}
         {!isCollapsed && (
           <div className="px-3 py-2 space-y-1">
             <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase px-2">
@@ -101,7 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        {/* Group PHÂN HỆ Navigation Items */}
+        {/* Group PHÂN HỆ */}
         <div className="px-3 py-2 space-y-1">
           {!isCollapsed && (
             <div className="text-[11px] font-bold text-slate-500 uppercase px-2 mb-1">
@@ -109,7 +109,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
-          {/* Item 1: TỔNG QUAN */}
           <button
             onClick={() => setActiveModule('dashboard')}
             className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all relative ${
@@ -125,7 +124,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {!isCollapsed && <span>TỔNG QUAN</span>}
           </button>
 
-          {/* Item 2: DỮ LIỆU BẦU CỬ */}
           <button
             onClick={() => {
               setActiveModule('data');
@@ -144,7 +142,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {!isCollapsed && <span>DỮ LIỆU BẦU CỬ</span>}
           </button>
 
-          {/* Item 3: KIỂM PHIẾU BẦU CỬ */}
           <button
             onClick={() => {
               setActiveModule('counting');
@@ -164,7 +161,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {!isCollapsed && <span>KIỂM PHIẾU BẦU CỬ</span>}
           </button>
 
-          {/* Item 4: THỐNG KÊ KẾT QUẢ */}
           <button
             onClick={() => {
               setActiveModule('stats');
@@ -184,7 +180,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {!isCollapsed && <span>THỐNG KÊ KẾT QUẢ</span>}
           </button>
 
-          {/* Item 5: HỆ THỐNG */}
           <button
             onClick={() => setActiveModule('system')}
             className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all relative ${
@@ -200,7 +195,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {!isCollapsed && <span>HỆ THỐNG & CẤU HÌNH</span>}
           </button>
 
-          {/* Item 6: TRỢ GIÚP */}
           <button
             onClick={() => setActiveModule('help')}
             className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all relative ${
@@ -218,7 +212,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* Collapse / Expand Button at Bottom */}
+      {/* Bottom Toggle Button */}
       <div className="p-3 border-t border-slate-800">
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}

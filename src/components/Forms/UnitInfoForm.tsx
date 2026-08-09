@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { VotingUnit, ElectionPersonnel, WitnessVoter } from '../../types';
-import { Check, X, Plus, Trash2 } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 
 interface UnitInfoFormProps {
   unit: VotingUnit;
@@ -58,36 +58,39 @@ export const UnitInfoForm: React.FC<UnitInfoFormProps> = ({
       </div>
 
       {savingMsg && (
-        <div className="bg-emerald-100 border border-emerald-500 text-emerald-800 px-3 py-1.5 rounded my-2 text-xs font-bold flex items-center space-x-1">
-          <Check className="w-4 h-4 text-emerald-600" />
-          <span>{savingMsg}</span>
+        <div className="m-2 p-2 bg-emerald-100 border border-emerald-400 text-emerald-800 font-bold rounded text-xs">
+          ✓ {savingMsg}
         </div>
       )}
 
-      {/* Tabs (.:: Đơn vị bầu cử, .:: Nhân sự tổ bầu cử, .:: Cử tri chứng kiến) */}
-      <div className="flex border-b border-slate-300 bg-slate-200 mt-2 font-bold text-slate-700">
+      {/* 3 Main Tabs */}
+      <div className="flex border-b border-slate-300 mt-2 bg-slate-200">
         <button
           onClick={() => setActiveSubTab('don_vi')}
-          className={`px-4 py-1.5 border-t border-x rounded-t transition ${
-            activeSubTab === 'don_vi' ? 'bg-slate-50 text-sky-900 border-slate-400 border-b-transparent shadow-xs' : 'hover:bg-slate-300'
+          className={`px-4 py-2 font-bold transition border-t-2 ${
+            activeSubTab === 'don_vi'
+              ? 'bg-slate-100 border-red-700 text-red-700 shadow-xs'
+              : 'border-transparent text-slate-700 hover:bg-slate-300'
           }`}
         >
           .:: Đơn vị bầu cử
         </button>
-
         <button
           onClick={() => setActiveSubTab('nhan_su')}
-          className={`px-4 py-1.5 border-t border-x rounded-t transition ${
-            activeSubTab === 'nhan_su' ? 'bg-slate-50 text-sky-900 border-slate-400 border-b-transparent shadow-xs' : 'hover:bg-slate-300'
+          className={`px-4 py-2 font-bold transition border-t-2 ${
+            activeSubTab === 'nhan_su'
+              ? 'bg-slate-100 border-red-700 text-red-700 shadow-xs'
+              : 'border-transparent text-slate-700 hover:bg-slate-300'
           }`}
         >
           .:: Nhân sự tổ bầu cử
         </button>
-
         <button
           onClick={() => setActiveSubTab('cu_tri')}
-          className={`px-4 py-1.5 border-t border-x rounded-t transition ${
-            activeSubTab === 'cu_tri' ? 'bg-slate-50 text-sky-900 border-slate-400 border-b-transparent shadow-xs' : 'hover:bg-slate-300'
+          className={`px-4 py-2 font-bold transition border-t-2 ${
+            activeSubTab === 'cu_tri'
+              ? 'bg-slate-100 border-red-700 text-red-700 shadow-xs'
+              : 'border-transparent text-slate-700 hover:bg-slate-300'
           }`}
         >
           .:: Cử tri chứng kiến
@@ -96,140 +99,152 @@ export const UnitInfoForm: React.FC<UnitInfoFormProps> = ({
 
       {/* Tab 1 Content: Đơn vị bầu cử */}
       {activeSubTab === 'don_vi' && (
-        <div className="bg-slate-50 border border-slate-300 p-4 space-y-4 shadow-inner">
+        <div className="p-4 bg-slate-50 border-x border-b border-slate-300 space-y-4">
           
-          {/* Header Row: Tỉnh/Thành phố, Khóa, Nút Lưu */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-dashed border-slate-400 pb-3">
-            <div className="flex items-center space-x-3">
-              <span className="font-extrabold text-red-700 text-sm">*** TỈNH/THÀNH PHỐ:</span>
-              <select
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="font-bold text-slate-800 block mb-1">Tên Tổ bầu cử (*)</label>
+              <input
+                type="text"
+                value={formData.unitName}
+                onChange={e => setFormData({ ...formData, unitName: e.target.value })}
+                className="w-full bg-white border border-slate-400 rounded px-2.5 py-1.5 font-semibold focus:outline-none focus:border-red-600"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-800 block mb-1">Khu vực bỏ phiếu (*)</label>
+              <input
+                type="text"
+                value={formData.votingArea}
+                onChange={e => setFormData({ ...formData, votingArea: e.target.value })}
+                className="w-full bg-white border border-slate-400 rounded px-2.5 py-1.5 font-semibold focus:outline-none focus:border-red-600"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+              <label className="font-bold text-slate-800 block mb-1">Tỉnh / Thành phố</label>
+              <input
+                type="text"
                 value={formData.province}
                 onChange={e => setFormData({ ...formData, province: e.target.value })}
-                className="bg-white border border-slate-400 rounded px-3 py-1 font-bold text-slate-800 focus:outline-none"
-              >
-                <option value="Thành phố Đà Nẵng">Thành phố Đà Nẵng</option>
-                <option value="Thành phố Hà Nội">Thành phố Hà Nội</option>
-                <option value="Thành phố Hồ Chí Minh">Thành phố Hồ Chí Minh</option>
-                <option value="Tỉnh Quảng Nam">Tỉnh Quảng Nam</option>
-              </select>
-
-              <span className="font-bold text-slate-800 ml-4">KHÓA:</span>
-              <input
-                type="text"
-                value={formData.term}
-                onChange={e => setFormData({ ...formData, term: e.target.value })}
-                className="w-20 bg-white border border-slate-400 text-center font-bold px-2 py-1"
+                className="w-full bg-white border border-slate-400 rounded px-2 py-1 font-medium"
               />
             </div>
 
+            <div>
+              <label className="font-bold text-slate-800 block mb-1">Huyện / Quận</label>
+              <input
+                type="text"
+                value={formData.district}
+                onChange={e => setFormData({ ...formData, district: e.target.value })}
+                className="w-full bg-white border border-slate-400 rounded px-2 py-1 font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-800 block mb-1">Xã / Phường</label>
+              <input
+                type="text"
+                value={formData.commune}
+                onChange={e => setFormData({ ...formData, commune: e.target.value })}
+                className="w-full bg-white border border-slate-400 rounded px-2 py-1 font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-800 block mb-1">Tổng số cử tri (*)</label>
+              <input
+                type="number"
+                value={formData.totalVoters}
+                onChange={e => setFormData({ ...formData, totalVoters: Number(e.target.value) })}
+                className="w-full bg-white border border-slate-400 rounded px-2 py-1 font-black text-red-800"
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-slate-300 pt-3 space-y-3">
+            <h4 className="font-extrabold text-red-800 uppercase">Khai báo đơn vị bầu cử các Cấp</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="bg-white p-3 border border-slate-300 rounded space-y-2">
+                <span className="font-extrabold text-slate-900 block text-[11px] uppercase">1. Bầu cử ĐBQH</span>
+                <div>
+                  <label className="text-[11px] text-slate-600 block">Đơn vị số:</label>
+                  <input
+                    type="text"
+                    value={formData.quocHoiUnitNo}
+                    onChange={e => setFormData({ ...formData, quocHoiUnitNo: e.target.value })}
+                    className="w-full border border-slate-300 rounded px-2 py-0.5 font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-600 block">Địa bàn bầu cử:</label>
+                  <textarea
+                    rows={2}
+                    value={formData.quocHoiAreas}
+                    onChange={e => setFormData({ ...formData, quocHoiAreas: e.target.value })}
+                    className="w-full border border-slate-300 rounded px-2 py-1 text-[11px]"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white p-3 border border-slate-300 rounded space-y-2">
+                <span className="font-extrabold text-slate-900 block text-[11px] uppercase">2. Bầu cử HĐND Tỉnh</span>
+                <div>
+                  <label className="text-[11px] text-slate-600 block">Đơn vị số:</label>
+                  <input
+                    type="text"
+                    value={formData.hdndTinhUnitNo}
+                    onChange={e => setFormData({ ...formData, hdndTinhUnitNo: e.target.value })}
+                    className="w-full border border-slate-300 rounded px-2 py-0.5 font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-600 block">Địa bàn bầu cử:</label>
+                  <textarea
+                    rows={2}
+                    value={formData.hdndTinhAreas}
+                    onChange={e => setFormData({ ...formData, hdndTinhAreas: e.target.value })}
+                    className="w-full border border-slate-300 rounded px-2 py-1 text-[11px]"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white p-3 border border-slate-300 rounded space-y-2">
+                <span className="font-extrabold text-slate-900 block text-[11px] uppercase">3. Bầu cử HĐND Xã</span>
+                <div>
+                  <label className="text-[11px] text-slate-600 block">Đơn vị số:</label>
+                  <input
+                    type="text"
+                    value={formData.hdndXaUnitNo}
+                    onChange={e => setFormData({ ...formData, hdndXaUnitNo: e.target.value })}
+                    className="w-full border border-slate-300 rounded px-2 py-0.5 font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-600 block">Địa bàn bầu cử:</label>
+                  <textarea
+                    rows={2}
+                    value={formData.hdndXaAreas}
+                    onChange={e => setFormData({ ...formData, hdndXaAreas: e.target.value })}
+                    className="w-full border border-slate-300 rounded px-2 py-1 text-[11px]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-2 border-t border-slate-300">
             <button
               onClick={handleSave}
-              className="flex items-center space-x-1.5 px-4 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-500 rounded font-bold shadow-xs transition"
+              className="px-5 py-1.5 bg-red-700 hover:bg-red-800 text-white rounded font-bold transition flex items-center space-x-1 shadow-sm"
             >
-              <Check className="w-4 h-4 text-emerald-700" />
-              <span>Lưu</span>
+              <Check className="w-4 h-4" />
+              <span>Lưu thông tin</span>
             </button>
-          </div>
-
-          {/* 1. Đơn vị bầu cử Đại biểu Quốc Hội */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-900">1. Đơn vị bầu cử Đại biểu Quốc Hội:</span>
-              <span className="text-[11px] text-purple-700 italic">
-                (Ghi đầy đủ Cấp + Tên. Ví dụ: Phường Tân Định, Xã Thạnh An...)
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-red-700 font-bold">‣ Số:</span>
-              <input
-                type="text"
-                value={formData.quocHoiUnitNo}
-                onChange={e => setFormData({ ...formData, quocHoiUnitNo: e.target.value })}
-                className="w-16 bg-white border border-slate-400 text-center font-bold py-1"
-              />
-              <span className="text-red-700 font-bold ml-2">‣ Gồm Xã/Phường/Đặc khu:</span>
-              <input
-                type="text"
-                value={formData.quocHoiAreas}
-                onChange={e => setFormData({ ...formData, quocHoiAreas: e.target.value })}
-                className="flex-1 bg-white border border-slate-400 px-3 py-1 text-slate-800"
-                placeholder="Ví dụ: Đặc khu Hoàng Sa, Phường An Hải..."
-              />
-            </div>
-          </div>
-
-          <hr className="border-dashed border-slate-300" />
-
-          {/* 2. Đơn vị bầu cử Đại biểu HĐND Tỉnh */}
-          <div className="space-y-1">
-            <span className="font-bold text-slate-900 block">2. Đơn vị bầu cử Đại biểu HĐND Tỉnh:</span>
-            <div className="flex items-center space-x-2">
-              <span className="text-red-700 font-bold">‣ Số:</span>
-              <input
-                type="text"
-                value={formData.hdndTinhUnitNo}
-                onChange={e => setFormData({ ...formData, hdndTinhUnitNo: e.target.value })}
-                className="w-16 bg-white border border-slate-400 text-center font-bold py-1"
-              />
-              <span className="text-red-700 font-bold ml-2">‣ Gồm Xã/Phường/Đặc khu:</span>
-              <input
-                type="text"
-                value={formData.hdndTinhAreas}
-                onChange={e => setFormData({ ...formData, hdndTinhAreas: e.target.value })}
-                className="flex-1 bg-white border border-slate-400 px-3 py-1 text-slate-800"
-                placeholder="Ví dụ: Xã Hòa Vang, Xã Hòa Tiến, Xã Bà Nà"
-              />
-            </div>
-          </div>
-
-          <hr className="border-dashed border-slate-300" />
-
-          {/* 3. Đơn vị bầu cử Đại biểu HĐND Xã */}
-          <div className="space-y-1">
-            <span className="font-bold text-slate-900 block">3. Đơn vị bầu cử Đại biểu HĐND Xã:</span>
-            <div className="flex items-center space-x-2">
-              <span className="text-red-700 font-bold">‣ Số:</span>
-              <input
-                type="text"
-                value={formData.hdndXaUnitNo}
-                onChange={e => setFormData({ ...formData, hdndXaUnitNo: e.target.value })}
-                className="w-16 bg-white border border-slate-400 text-center font-bold py-1"
-              />
-              <span className="text-red-700 font-bold ml-2">‣ Gồm Thôn/Tổ dân phố:</span>
-              <input
-                type="text"
-                value={formData.hdndXaAreas}
-                onChange={e => setFormData({ ...formData, hdndXaAreas: e.target.value })}
-                className="flex-1 bg-white border border-slate-400 px-3 py-1 text-slate-800"
-                placeholder="Ví dụ: Nam Sơn, Lệ Sơn 2, An Trạch"
-              />
-            </div>
-          </div>
-
-          {/* Khung Tổ Bầu Cử */}
-          <div className="bg-slate-200/60 border border-slate-400 rounded p-3 space-y-2">
-            <span className="font-extrabold text-slate-900 block underline">Tổ bầu cử:</span>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-red-700 font-bold">‣ Khu vực bỏ phiếu số:</span>
-                <input
-                  type="text"
-                  value={formData.votingArea.replace(/[^0-9]/g, '') || '21'}
-                  onChange={e => setFormData({ ...formData, votingArea: `Khu vực bỏ phiếu số ${e.target.value}` })}
-                  className="w-20 bg-white border border-slate-400 text-center font-bold py-1"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2 flex-1">
-                <span className="text-red-700 font-bold">‣ Xã/Phường/Đặc khu:</span>
-                <input
-                  type="text"
-                  value={formData.commune}
-                  onChange={e => setFormData({ ...formData, commune: e.target.value })}
-                  className="flex-1 bg-white border border-slate-400 px-3 py-1 text-slate-800"
-                />
-              </div>
-            </div>
           </div>
 
         </div>
@@ -237,115 +252,95 @@ export const UnitInfoForm: React.FC<UnitInfoFormProps> = ({
 
       {/* Tab 2 Content: Nhân sự tổ bầu cử */}
       {activeSubTab === 'nhan_su' && (
-        <div className="bg-slate-50 border border-slate-300 p-4 space-y-3 shadow-inner">
-          <h3 className="font-bold text-slate-900 text-sm border-b pb-1">
-            DANH SÁCH THÀNH VIÊN TỔ KIỂM PHIẾU BẦU CỬ
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-4 bg-slate-50 border-x border-b border-slate-300 space-y-3">
+          <h4 className="font-extrabold text-red-800 uppercase">Danh sách thành viên Tổ kiểm phiếu</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="font-bold text-red-700 block mb-1">Tổ trưởng Tổ kiểm phiếu:</label>
+              <label className="font-bold text-slate-800 block">Tổ trưởng (*)</label>
               <input
                 type="text"
                 value={personnel.toTruong}
                 onChange={e => setPersonnel({ ...personnel, toTruong: e.target.value })}
-                className="w-full bg-white border border-slate-400 px-3 py-1.5 font-semibold text-slate-800"
+                className="w-full bg-white border border-slate-400 rounded px-2.5 py-1 font-semibold"
               />
             </div>
-
             <div>
-              <label className="font-bold text-red-700 block mb-1">Thư ký Tổ kiểm phiếu:</label>
+              <label className="font-bold text-slate-800 block">Thư ký (*)</label>
               <input
                 type="text"
                 value={personnel.thuKy}
                 onChange={e => setPersonnel({ ...personnel, thuKy: e.target.value })}
-                className="w-full bg-white border border-slate-400 px-3 py-1.5 font-semibold text-slate-800"
+                className="w-full bg-white border border-slate-400 rounded px-2.5 py-1 font-semibold"
               />
             </div>
-
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Ủy viên 1:</label>
+              <label className="font-bold text-slate-800 block">Ủy viên 1</label>
               <input
                 type="text"
                 value={personnel.uyVien1}
                 onChange={e => setPersonnel({ ...personnel, uyVien1: e.target.value })}
-                className="w-full bg-white border border-slate-400 px-3 py-1.5 text-slate-800"
+                className="w-full bg-white border border-slate-400 rounded px-2.5 py-1"
               />
             </div>
-
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Ủy viên 2:</label>
+              <label className="font-bold text-slate-800 block">Ủy viên 2</label>
               <input
                 type="text"
                 value={personnel.uyVien2}
                 onChange={e => setPersonnel({ ...personnel, uyVien2: e.target.value })}
-                className="w-full bg-white border border-slate-400 px-3 py-1.5 text-slate-800"
+                className="w-full bg-white border border-slate-400 rounded px-2.5 py-1"
               />
             </div>
+          </div>
+
+          <div className="flex justify-end pt-2 border-t border-slate-300">
+            <button
+              onClick={handleSave}
+              className="px-5 py-1.5 bg-red-700 hover:bg-red-800 text-white rounded font-bold transition flex items-center space-x-1"
+            >
+              <Check className="w-4 h-4" />
+              <span>Lưu danh sách nhân sự</span>
+            </button>
           </div>
         </div>
       )}
 
       {/* Tab 3 Content: Cử tri chứng kiến */}
       {activeSubTab === 'cu_tri' && (
-        <div className="bg-slate-50 border border-slate-300 p-4 space-y-3 shadow-inner">
-          <h3 className="font-bold text-slate-900 text-sm border-b pb-1">
-            DANH SÁCH CỬ TRI CHỨNG KIẾN MỞ HÒM PHIẾU & KIỂM PHIẾU
-          </h3>
-
-          <table className="w-full border-collapse border border-slate-300 text-left bg-white">
-            <thead>
-              <tr className="bg-slate-200 font-bold text-slate-800">
-                <th className="border border-slate-300 p-2 text-center w-12">STT</th>
-                <th className="border border-slate-300 p-2">Họ và tên cử tri chứng kiến</th>
-                <th className="border border-slate-300 p-2">Địa chỉ thường trú</th>
-                <th className="border border-slate-300 p-2">Số CCCD / CMND</th>
-              </tr>
-            </thead>
-            <tbody>
-              {witnesses.map((w, idx) => (
-                <tr key={idx}>
-                  <td className="border border-slate-300 p-2 text-center font-bold">{idx + 1}</td>
-                  <td className="border border-slate-300 p-2">
-                    <input
-                      type="text"
-                      value={w.fullName}
-                      onChange={e => {
-                        const updated = [...witnesses];
-                        updated[idx].fullName = e.target.value;
-                        setWitnesses(updated);
-                      }}
-                      className="w-full border border-slate-300 px-2 py-1 font-semibold"
-                    />
-                  </td>
-                  <td className="border border-slate-300 p-2">
-                    <input
-                      type="text"
-                      value={w.address}
-                      onChange={e => {
-                        const updated = [...witnesses];
-                        updated[idx].address = e.target.value;
-                        setWitnesses(updated);
-                      }}
-                      className="w-full border border-slate-300 px-2 py-1"
-                    />
-                  </td>
-                  <td className="border border-slate-300 p-2">
-                    <input
-                      type="text"
-                      value={w.idCard}
-                      onChange={e => {
-                        const updated = [...witnesses];
-                        updated[idx].idCard = e.target.value;
-                        setWitnesses(updated);
-                      }}
-                      className="w-full border border-slate-300 px-2 py-1 text-center"
-                    />
-                  </td>
+        <div className="p-4 bg-slate-50 border-x border-b border-slate-300 space-y-3">
+          <h4 className="font-extrabold text-red-800 uppercase">Danh sách cử tri chứng kiến mở thùng phiếu</h4>
+          <div className="border border-slate-300 rounded overflow-hidden">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-200 text-slate-800 font-extrabold border-b border-slate-300">
+                  <th className="p-2 w-12 text-center">STT</th>
+                  <th className="p-2">Họ và tên cử tri</th>
+                  <th className="p-2">Địa chỉ cư trú</th>
+                  <th className="p-2 w-36">Số CCCD / CMND</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {witnesses.map(w => (
+                  <tr key={w.stt} className="bg-white">
+                    <td className="p-2 text-center font-bold">{w.stt}</td>
+                    <td className="p-2 font-semibold">{w.fullName}</td>
+                    <td className="p-2">{w.address}</td>
+                    <td className="p-2 font-mono">{w.idCard}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex justify-end pt-2 border-t border-slate-300">
+            <button
+              onClick={handleSave}
+              className="px-5 py-1.5 bg-red-700 hover:bg-red-800 text-white rounded font-bold transition flex items-center space-x-1"
+            >
+              <Check className="w-4 h-4" />
+              <span>Lưu danh sách cử tri</span>
+            </button>
+          </div>
         </div>
       )}
 

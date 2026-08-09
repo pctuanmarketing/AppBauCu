@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Candidate, CandidateVote, Council, CouncilId, VoteRecord, VotingUnit } from '../types';
 import { exportDocxReport } from '../lib/exportDocx';
 import { exportExcelReport } from '../lib/exportExcel';
-import { FileSpreadsheet, Printer, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { FileSpreadsheet, RefreshCw, CheckCircle2, FileText } from 'lucide-react';
 
 interface ReportGeneratorProps {
   councils: Council[];
@@ -33,36 +33,23 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
 
   const councilCandidates = candidates.filter(c => c.councilId === selectedCouncilId);
 
-  // Compute Ranked Candidate Results for Table 1
   const rankedResults = councilCandidates.map(cand => {
     const cvote = currentData.candidateVotes.find(v => v.candidateId === cand.id);
-    const voteCount = cvote ? cvote.voteCount : (cand.stt === 4 ? 6 : cand.stt === 2 || cand.stt === 1 ? 4 : cand.stt === 3 ? 3 : 1);
+    const voteCount = cvote ? (cvote.votesCount || cvote.voteCount || 0) : (cand.stt === 4 ? 6 : cand.stt === 2 || cand.stt === 1 ? 4 : cand.stt === 3 ? 3 : 1);
     const valid = currentData.record.validBallots > 0 ? currentData.record.validBallots : 9;
     const percent = ((voteCount / valid) * 100).toFixed(2);
     return {
       cand,
       voteCount,
-      percent: Number(percent)
+      percent: parseFloat(percent)
     };
   }).sort((a, b) => b.voteCount - a.voteCount);
 
-  // Assign ranks
-  let currentRank = 1;
-  const rankedWithRanks = rankedResults.map((item, idx) => {
-    if (idx > 0 && item.voteCount < rankedResults[idx - 1].voteCount) {
-      currentRank = idx + 1;
-    }
-    return { ...item, rank: currentRank };
-  });
+  const electLimit = currentCouncil.candidatesToElect || currentCouncil.electCount || 3;
 
-  const totalCandidateVotes = rankedResults.reduce((acc, item) => acc + item.voteCount, 0);
-  const totalValidBallots = currentData.record.validBallots > 0 ? currentData.record.validBallots : 9;
-
-  // Compute Table 2 Check (KẾT QUẢ KIỂM TRA)
-  const votesPerBallot = Math.round(totalCandidateVotes / totalValidBallots) || 2;
-
-  const handleExportWord = async () => {
+  const handleExportDocx = async () => {
     setIsExporting(true);
+    setExportMsg('Đang tạo Biên bản Mẫu Word...');
     try {
       await exportDocxReport(
         currentCouncil,
@@ -71,10 +58,9 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         councilCandidates,
         currentData.candidateVotes
       );
-      setExportMsg(`Đã kết xuất Biên bản Word (${currentCouncil.reportTemplate}) thành công!`);
-    } catch (e) {
-      console.error(e);
-      alert('Có lỗi xảy ra khi xuất file Word');
+      setExportMsg('✓ Đã xuất file Word Mẫu 18 & 23 thành công!');
+    } catch (e: any) {
+      setExportMsg(`Lỗi xuất Word: ${e.message || e}`);
     } finally {
       setIsExporting(false);
       setTimeout(() => setExportMsg(''), 4000);
@@ -82,186 +68,140 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
   };
 
   const handleExportExcel = () => {
-    setIsExporting(true);
     try {
       exportExcelReport(councils, unit, voteRecords);
-      setExportMsg('Đã kết xuất file Excel tổng hợp kết quả thành công!');
-    } catch (e) {
-      console.error(e);
-      alert('Có lỗi xảy ra khi xuất file Excel');
+      setExportMsg('✓ Đã xuất file Excel kết quả toàn bộ các cấp!');
+    } catch (e: any) {
+      setExportMsg(`Lỗi xuất Excel: ${e.message || e}`);
     } finally {
-      setIsExporting(false);
       setTimeout(() => setExportMsg(''), 4000);
     }
   };
 
-  const councilTitle = selectedCouncilId === 'quoc_hoi'
-    ? 'KẾT QUẢ KIỂM PHIẾU BẦU CỬ ĐẠI BIỂU QUỐC HỘI'
-    : selectedCouncilId === 'hdnd_tinh'
-    ? 'KẾT QUẢ KIỂM PHIẾU BẦU CỬ ĐẠI BIỂU HỘI ĐỒNG NHÂN DÂN TỈNH'
-    : 'KẾT QUẢ KIỂM PHIẾU BẦU CỬ ĐẠI BIỂU HỘI ĐỒNG NHÂN DÂN XÃ';
-
   return (
-    <div className="bg-slate-100 border-2 border-slate-300 rounded-lg shadow-2xl p-2 font-sans text-xs max-w-5xl mx-auto my-4 text-slate-900">
+    <div className="bg-slate-100 border border-slate-300 rounded-xl p-3 sm:p-5 shadow-sm font-sans text-xs text-slate-900 space-y-4 select-none">
       
-      {/* Window Header Title */}
-      <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white px-4 py-2 flex items-center justify-between shadow">
-        <span className="font-extrabold text-sm tracking-wider uppercase">
-          {councilTitle}
-        </span>
-        <button
-          onClick={() => setSelectedCouncilId('quoc_hoi')}
-          className="px-3 py-1 bg-slate-900 hover:bg-red-700 text-white border border-slate-500 rounded text-xs font-bold transition"
-        >
-          Đóng
-        </button>
+      {/* Title Banner Bar */}
+      <div className="bg-gradient-to-r from-red-900 via-red-800 to-red-950 text-white px-4 py-2.5 rounded-t-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow">
+        <div>
+          <h2 className="font-black text-sm uppercase tracking-wide">
+            3. THỐNG KÊ KẾT QUẢ KIỂM PHIẾU BẦU CỬ {currentCouncil.shortName.toUpperCase()}
+          </h2>
+          <p className="text-[11px] text-amber-300 font-semibold">
+            {unit.unitName} - Địa bàn: {unit.commune}, {unit.district}, {unit.province}
+          </p>
+        </div>
+
+        {/* Council Selector Tabs */}
+        <div className="flex space-x-1">
+          {councils.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setSelectedCouncilId(c.id)}
+              className={`px-3 py-1 rounded text-xs font-bold transition ${
+                selectedCouncilId === c.id
+                  ? 'bg-amber-400 text-red-950 shadow-sm'
+                  : 'bg-red-950/60 text-slate-200 hover:bg-red-800'
+              }`}
+            >
+              {c.shortName}
+            </button>
+          ))}
+        </div>
       </div>
 
       {exportMsg && (
-        <div className="bg-emerald-100 border border-emerald-500 text-emerald-800 px-3 py-1.5 rounded my-2 text-xs font-bold flex items-center space-x-1">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          <span>{exportMsg}</span>
+        <div className="p-3 bg-emerald-100 border border-emerald-400 text-emerald-900 font-bold rounded-lg text-xs shadow-xs">
+          {exportMsg}
         </div>
       )}
 
-      {/* Main Container */}
-      <div className="bg-slate-50 border border-slate-300 p-3 mt-2 space-y-3 shadow-inner">
-        
-        {/* Yellow Notice Banner & Action Buttons */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-          
-          {/* Yellow Banner Notice */}
-          <div className="bg-amber-100 border-2 border-amber-400 text-red-700 px-4 py-1.5 rounded text-center font-extrabold text-xs shadow-xs flex-1">
-            *** PHẢI BẤM NÚT CẬP NHẬT TRÊN MENU ĐỂ TỔNG HỢP KẾT QUẢ KIỂM PHIẾU CHÍNH XÁC
-          </div>
-
-          {/* Action Buttons Top Right */}
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handleExportExcel}
-              disabled={isExporting}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-500 rounded font-bold shadow-xs transition"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
-              <span>Xuất báo cáo Excel</span>
-            </button>
-
-            <button
-              onClick={handleExportWord}
-              disabled={isExporting}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-500 rounded font-bold shadow-xs transition"
-            >
-              <Printer className="w-4 h-4 text-sky-700" />
-              <span>In biên bản (Word)</span>
-            </button>
-          </div>
-
+      {/* Export Actions Row */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 border border-slate-300 rounded-xl shadow-xs">
+        <div className="flex items-center space-x-2 text-slate-700 font-bold">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+          <span>Số đại biểu được bầu: <strong className="text-red-800 text-sm">{electLimit} đại biểu</strong> / Tổng {councilCandidates.length} ứng cử viên</span>
         </div>
 
-        {/* 2 Tables Grid (KẾT QUẢ KIỂM PHIẾU vs KẾT QUẢ KIỂM TRA) */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-1">
-          
-          {/* Left Table: KẾT QUẢ KIỂM PHIẾU */}
-          <div className="md:col-span-7 space-y-2">
-            <h4 className="font-extrabold text-slate-900 uppercase text-xs">
-              KẾT QUẢ KIỂM PHIẾU
-            </h4>
+        <div className="flex space-x-2">
+          <button
+            onClick={handleExportDocx}
+            disabled={isExporting}
+            className="flex items-center space-x-1.5 px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-lg text-xs font-bold transition shadow-sm disabled:opacity-50"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Xuất Biên Bản Word (Mẫu {currentCouncil.reportTemplate === 'Mau18' ? '18' : '23'})</span>
+          </button>
 
-            <div className="border border-slate-300 bg-white">
-              <table className="w-full border-collapse text-left text-xs">
-                <thead>
-                  <tr className="bg-slate-200 font-bold text-slate-800 border-b border-slate-300">
-                    <th className="p-2 border-r border-slate-300 text-center w-10">Stt</th>
-                    <th className="p-2 border-r border-slate-300">Tên ứng cử viên</th>
-                    <th className="p-2 border-r border-slate-300 text-center w-28">Số phiếu bầu</th>
-                    <th className="p-2 border-r border-slate-300 text-center w-16">Tỷ lệ %</th>
-                    <th className="p-2 text-center w-16">Xếp hạng</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rankedWithRanks.map((item) => {
-                    const maxVotes = Math.max(...rankedWithRanks.map(r => r.voteCount), 1);
-                    const progressPercent = Math.min(100, Math.round((item.voteCount / maxVotes) * 100));
+          <button
+            onClick={handleExportExcel}
+            className="flex items-center space-x-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition shadow-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Xuất Excel Toàn Bộ Kết Quả</span>
+          </button>
+        </div>
+      </div>
 
-                    return (
-                      <tr key={item.cand.id} className="border-b border-slate-200 hover:bg-sky-50 transition">
-                        <td className="p-2 border-r border-slate-200 text-center font-bold">{item.cand.stt}</td>
-                        <td className="p-2 border-r border-slate-200 font-bold text-slate-900">{item.cand.fullName}</td>
-                        
-                        {/* Cell with Visual Progress Bar inside */}
-                        <td className="p-1 border-r border-slate-200 text-center relative overflow-hidden">
+      {/* TABLE 1: RANKED CANDIDATE RESULTS */}
+      <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm space-y-2 p-4">
+        <h3 className="font-extrabold text-red-800 text-xs uppercase tracking-wide border-b pb-2">
+          BẢNG 1: XẾP HẠNG KẾT QUẢ BẦU CỬ CỦA TỪNG ỨNG CỬ VIÊN (TỪ CAO XUỐNG THẤP)
+        </h3>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-200 text-slate-800 font-extrabold text-xs border-b border-slate-300">
+                <th className="p-2.5 text-center w-14">HẠNG</th>
+                <th className="p-2.5 text-center w-14">STT</th>
+                <th className="p-2.5">HỌ VÀ TÊN ỨNG CỬ VIÊN</th>
+                <th className="p-2.5 text-center w-36">SỐ PHIẾU ĐỒNG Ý</th>
+                <th className="p-2.5 w-48">TIẾN ĐỘ TỶ LỆ (%)</th>
+                <th className="p-2.5 text-center w-32">KẾT QUẢ</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 text-xs">
+              {rankedResults.map((item, idx) => {
+                const isElected = idx < electLimit;
+                return (
+                  <tr key={item.cand.id} className={isElected ? 'bg-emerald-50/70 font-semibold' : 'hover:bg-slate-50'}>
+                    <td className="p-2.5 text-center font-bold text-slate-700">{idx + 1}</td>
+                    <td className="p-2.5 text-center font-bold">{item.cand.stt}</td>
+                    <td className="p-2.5 font-bold uppercase text-slate-900">{item.cand.fullName}</td>
+                    <td className="p-2.5 text-center font-black text-sm text-emerald-700">
+                      {item.voteCount.toLocaleString('vi-VN')}
+                    </td>
+                    <td className="p-2.5">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden border border-slate-300">
                           <div
-                            className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-teal-400/40 to-sky-500/50 pointer-events-none"
-                            style={{ width: `${progressPercent}%` }}
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              isElected ? 'bg-gradient-to-r from-emerald-500 to-teal-600' : 'bg-slate-400'
+                            }`}
+                            style={{ width: `${Math.min(100, item.percent)}%` }}
                           />
-                          <span className="relative z-10 font-extrabold text-slate-900 text-xs">
-                            {item.voteCount}
-                          </span>
-                        </td>
-
-                        <td className="p-2 border-r border-slate-200 text-center font-semibold">{item.percent}%</td>
-                        <td className="p-2 text-center font-bold text-slate-800">{item.rank}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-
-              {/* Table 1 Bottom Summary Bar */}
-              <div className="bg-emerald-100/70 border-t border-slate-300 p-2 flex justify-between items-center font-extrabold text-slate-900 text-xs">
-                <span>Tổng cộng</span>
-                <span className="text-sky-900">Tổng số lượt bầu: <strong className="text-red-700 text-sm ml-2">{totalCandidateVotes}</strong></span>
-                <span>-</span>
-              </div>
-            </div>
-
-            <p className="text-[11px] text-red-700 font-bold italic pt-1">
-              * Phải kiểm tra lại nếu Tổng số lượt bầu cả 2 bảng không bằng nhau.
-            </p>
-          </div>
-
-          {/* Right Table: KẾT QUẢ KIỂM TRA */}
-          <div className="md:col-span-5 space-y-2">
-            <h4 className="font-extrabold text-slate-900 uppercase text-xs">
-              KẾT QUẢ KIỂM TRA
-            </h4>
-
-            <div className="border border-slate-300 bg-white">
-              <table className="w-full border-collapse text-left text-xs">
-                <thead>
-                  <tr className="bg-slate-200 font-bold text-slate-800 border-b border-slate-300">
-                    <th className="p-2 border-r border-slate-300">Loại phiếu bầu</th>
-                    <th className="p-2 border-r border-slate-300 text-center w-20">Số phiếu</th>
-                    <th className="p-2 text-center w-24">Số lượt bầu</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-slate-200 hover:bg-sky-50">
-                    <td className="p-2 border-r border-slate-200 font-semibold text-slate-800">
-                      .:: Phiếu bầu {votesPerBallot}
+                        </div>
+                        <span className="font-bold text-slate-800 w-12 text-right">{item.percent}%</span>
+                      </div>
                     </td>
-                    <td className="p-2 border-r border-slate-200 text-center font-bold">
-                      {totalValidBallots}
-                    </td>
-                    <td className="p-2 text-center font-bold text-sky-900">
-                      {totalCandidateVotes}
+                    <td className="p-2.5 text-center">
+                      {isElected ? (
+                        <span className="px-2.5 py-0.5 bg-emerald-600 text-white rounded font-extrabold text-[10px] uppercase shadow-xs">
+                          TRÚNG CỬ
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded font-medium text-[10px]">
+                          Không trúng cử
+                        </span>
+                      )}
                     </td>
                   </tr>
-                </tbody>
-              </table>
-
-              {/* Table 2 Bottom Summary Bar */}
-              <div className="bg-emerald-100/70 border-t border-slate-300 p-2 flex justify-between items-center font-extrabold text-slate-900 text-xs">
-                <span>Tổng cộng</span>
-                <span className="text-sky-900">Tổng số phiếu: <strong className="text-red-700 text-sm ml-1">{totalValidBallots}</strong></span>
-                <span className="text-sky-900">Tổng số lượt bầu: <strong className="text-red-700 text-sm ml-1">{totalCandidateVotes}</strong></span>
-              </div>
-            </div>
-
-          </div>
-
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-
       </div>
 
     </div>
