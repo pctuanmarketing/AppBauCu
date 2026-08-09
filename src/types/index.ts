@@ -43,7 +43,6 @@ export interface Candidate {
   electionLevel: ElectionLevel;
   voteCount: number;
   votePercentage: number;
-  // Phân rã theo loại phiếu bầu 3, 2, 1 đại biểu
   votesType3?: number;
   votesType2?: number;
   votesType1?: number;
@@ -64,24 +63,32 @@ export interface ElectionLevelConfig {
 export interface Voter {
   id: string;
   stt: number;
-  voterCardNo: string;
-  fullName: string;
-  gender: string;
-  dob: string;
-  address: string; // Thôn / Tổ
-  hasVoted: boolean;
+  voterCardNo: string; // Số thẻ cử tri (1, 2, 3...)
+  fullName: string; // Họ và Tên
+  gender: string; // Nam / Nữ
+  dob: string; // Ngày tháng năm sinh (13/01/2005)
+  idCard?: string; // Số Căn cước (048*******698)
+  ethnicity?: string; // Dân tộc (Kinh)
+  address: string; // Nơi cư trú / Thường trú
+
+  // Tích chọn 3 cấp bầu cử cử tri tham gia bỏ phiếu
+  eligibleQuocHoi?: boolean; // Bầu cử Đại biểu Quốc Hội
+  eligibleHdndTinh?: boolean; // Bầu cử đại biểu HĐND Thành phố / Tỉnh
+  eligibleHdndXa?: boolean; // Bầu cử đại biểu HĐND Xã / Phường
+
+  hasVoted: boolean; // Trạng thái đã đi bầu
   votedAt?: string;
 }
 
 export interface BallotRecord {
   id: string;
-  ballotIndex: number; // Số phiếu thứ bao nhiêu (1, 2, 3...)
+  ballotIndex: number;
   electionLevel: ElectionLevel;
   isValid: boolean;
-  struckOutNumbers: string; // Chuỗi gạch nhập vào, VD '134' hoặc '0'
-  struckOutCandidateIds: string[]; // Danh sách ID các ứng cử viên bị gạch
-  electedCandidateIds: string[]; // Danh sách ID các ứng cử viên được bầu
-  numElectedCount: number; // Số đại biểu cử tri bầu trên phiếu này (1, 2, 3)
+  struckOutNumbers: string;
+  struckOutCandidateIds: string[];
+  electedCandidateIds: string[];
+  numElectedCount: number;
   createdAt: string;
 }
 

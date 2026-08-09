@@ -14,6 +14,7 @@ import {
   X,
   Activity,
   Sparkles,
+  Check,
 } from 'lucide-react';
 import { Voter } from '../types';
 import * as XLSX from 'xlsx';
@@ -42,7 +43,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
   const [filterVoted, setFilterVoted] = useState<'ALL' | 'VOTED' | 'NOT_VOTED'>('ALL');
   const [quickCardNoInput, setQuickCardNoInput] = useState('');
 
-  // Non-blocking toast notification state (thay thế cho alert popup)
+  // Non-blocking toast notification state
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
   // Add / Edit Voter Modal State
@@ -52,7 +53,14 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState('Nam');
   const [dob, setDob] = useState('01/01/1990');
-  const [address, setAddress] = useState('Thôn An Trạch');
+  const [idCard, setIdCard] = useState('');
+  const [ethnicity, setEthnicity] = useState('Kinh');
+  const [address, setAddress] = useState('Tổ 1, Thôn An Trạch, Xã Hòa Tiến, TP Đà Nẵng');
+
+  // Checkboxes for 3 election levels
+  const [eligibleQuocHoi, setEligibleQuocHoi] = useState(true);
+  const [eligibleHdndTinh, setEligibleHdndTinh] = useState(true);
+  const [eligibleHdndXa, setEligibleHdndXa] = useState(true);
 
   const villages = Array.from(new Set(voters.map(v => v.address).filter(Boolean)));
 
@@ -74,7 +82,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
     }, 2500);
   };
 
-  // Quick check-in by card number or STT (KHÔNG CÒN ALERT POPUP CHẶN MÀN HÌNH)
+  // Quick check-in by card number or STT
   const handleQuickCheckinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanInput = quickCardNoInput.trim().toUpperCase();
@@ -87,7 +95,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
     if (matchedVoter) {
       if (!matchedVoter.hasVoted) {
         toggleVoterStatus(matchedVoter.id);
-        showToast(`✅ Đã điểm danh thành công cử tri: ${matchedVoter.fullName} (${matchedVoter.address})`, 'success');
+        showToast(`✅ Đã điểm danh thành công cử tri: ${matchedVoter.fullName}`, 'success');
       } else {
         showToast(`ℹ️ Cử tri ${matchedVoter.fullName} đã bỏ phiếu trước đó (${matchedVoter.votedAt || ''})`, 'info');
       }
@@ -99,11 +107,16 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
 
   const handleOpenAddModal = () => {
     setEditingVoter(null);
-    setVoterCardNo(`TC-21-${(voters.length + 1).toString().padStart(4, '0')}`);
+    setVoterCardNo((voters.length + 1).toString());
     setFullName('');
     setGender('Nam');
     setDob('01/01/1990');
-    setAddress('Thôn An Trạch');
+    setIdCard('048085001234');
+    setEthnicity('Kinh');
+    setAddress('Tổ 1, Thôn An Trạch, Xã Hòa Tiến, Thành Phố Đà Nẵng');
+    setEligibleQuocHoi(true);
+    setEligibleHdndTinh(true);
+    setEligibleHdndXa(true);
     setShowVoterModal(true);
   };
 
@@ -113,8 +126,22 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
     setFullName(v.fullName);
     setGender(v.gender || 'Nam');
     setDob(v.dob || '');
-    setAddress(v.address || 'Thôn An Trạch');
+    setIdCard(v.idCard || '');
+    setEthnicity(v.ethnicity || 'Kinh');
+    setAddress(v.address || 'Tổ 1, Thôn An Trạch, Xã Hòa Tiến, TP Đà Nẵng');
+    setEligibleQuocHoi(v.eligibleQuocHoi !== false);
+    setEligibleHdndTinh(v.eligibleHdndTinh !== false);
+    setEligibleHdndXa(v.eligibleHdndXa !== false);
     setShowVoterModal(true);
+  };
+
+  const handleToggleLevelFlag = (voter: Voter, flagKey: 'eligibleQuocHoi' | 'eligibleHdndTinh' | 'eligibleHdndXa') => {
+    const updated = {
+      ...voter,
+      [flagKey]: !(voter[flagKey] !== false),
+    };
+    updateVoter(updated);
+    showToast(`✅ Đã cập nhật quyền bầu cử cho: ${voter.fullName}`, 'info');
   };
 
   const handleSaveVoter = (e: React.FormEvent) => {
@@ -128,7 +155,12 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
         fullName,
         gender,
         dob,
+        idCard,
+        ethnicity,
         address,
+        eligibleQuocHoi,
+        eligibleHdndTinh,
+        eligibleHdndXa,
       });
       showToast(`✅ Đã cập nhật thông tin cử tri: ${fullName}`, 'success');
     } else {
@@ -137,7 +169,12 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
         fullName,
         gender,
         dob,
+        idCard,
+        ethnicity,
         address,
+        eligibleQuocHoi,
+        eligibleHdndTinh,
+        eligibleHdndXa,
         hasVoted: false,
       });
       showToast(`✅ Đã thêm mới cử tri: ${fullName}`, 'success');
@@ -145,7 +182,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
     setShowVoterModal(false);
   };
 
-  // EXCEL IMPORT METHOD
+  // MULTI-ROW HEADER EXCEL PARSER MATCHING REFERENCE TEMPLATE
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -167,9 +204,15 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
         let headerRowIdx = -1;
         let nameColIdx = -1;
         let cardColIdx = -1;
-        let genderColIdx = -1;
         let dobColIdx = -1;
+        let maleColIdx = -1;
+        let femaleColIdx = -1;
+        let idCardColIdx = -1;
+        let ethColIdx = -1;
         let addressColIdx = -1;
+        let qhColIdx = -1;
+        let tinhColIdx = -1;
+        let xaColIdx = -1;
 
         for (let r = 0; r < Math.min(25, rawRows.length); r++) {
           const row = rawRows[r];
@@ -180,9 +223,6 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
             if (cellVal.includes('họ') && cellVal.includes('tên')) {
               headerRowIdx = r;
               nameColIdx = c;
-            } else if (cellVal === 'họ và tên' || cellVal === 'họ tên' || cellVal === 'cử tri' || cellVal === 'tên') {
-              headerRowIdx = r;
-              nameColIdx = c;
             }
           }
 
@@ -190,23 +230,22 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
             const headerRow = rawRows[headerRowIdx];
             for (let c = 0; c < headerRow.length; c++) {
               const val = headerRow[c]?.toString().toLowerCase().trim() || '';
-              if (c !== nameColIdx) {
-                if (val.includes('mã') || val.includes('thẻ') || val === 'stt' || val.includes('card')) {
-                  cardColIdx = c;
-                } else if (val.includes('giới') || val.includes('tính') || val === 'nam/nữ') {
-                  genderColIdx = c;
-                } else if (val.includes('sinh') || val.includes('dob')) {
-                  dobColIdx = c;
-                } else if (val.includes('địa chỉ') || val.includes('thôn') || val.includes('tổ') || val.includes('đơn vị') || val.includes('khu vực')) {
-                  addressColIdx = c;
-                }
-              }
+              if (val.includes('thẻ') || val.includes('stt')) cardColIdx = c;
+              if (val.includes('ngày') || val.includes('sinh') || val.includes('năm')) dobColIdx = c;
+              if (val === 'nam') maleColIdx = c;
+              if (val === 'nữ') femaleColIdx = c;
+              if (val.includes('căn cước') || val.includes('cccd') || val.includes('cmnd')) idCardColIdx = c;
+              if (val.includes('dân tộc')) ethColIdx = c;
+              if (val.includes('cư trú') || val.includes('thường trú') || val.includes('địa chỉ')) addressColIdx = c;
+              if (val.includes('quốc hội')) qhColIdx = c;
+              if (val.includes('thành phố') || val.includes('tỉnh') || val.includes('đà nẵng')) tinhColIdx = c;
+              if (val.includes('hòa tiến') || val.includes('xã')) xaColIdx = c;
             }
             break;
           }
         }
 
-        if (nameColIdx === -1) nameColIdx = 1;
+        if (nameColIdx === -1) nameColIdx = 2; // Default to Column C
         const startRow = headerRowIdx !== -1 ? headerRowIdx + 1 : 0;
         const newVotersBatch: Omit<Voter, 'id' | 'stt'>[] = [];
 
@@ -219,25 +258,42 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
             continue;
           }
 
-          const rawCard = cardColIdx !== -1 && row[cardColIdx] ? row[cardColIdx].toString().trim() : '';
-          const cardNo = rawCard || `TC-21-${(voters.length + newVotersBatch.length + 1).toString().padStart(4, '0')}`;
-          const sex = genderColIdx !== -1 && row[genderColIdx] ? row[genderColIdx].toString().trim() : 'Nam';
-          const birthday = dobColIdx !== -1 && row[dobColIdx] ? row[dobColIdx].toString().trim() : '';
-          const addr = addressColIdx !== -1 && row[addressColIdx] ? row[addressColIdx].toString().trim() : 'Thôn An Trạch';
+          const cardNo = cardColIdx !== -1 && row[cardColIdx] ? row[cardColIdx].toString().trim() : (voters.length + newVotersBatch.length + 1).toString();
+          const dobVal = dobColIdx !== -1 && row[dobColIdx] ? row[dobColIdx].toString().trim() : '';
+
+          let genderVal = 'Nam';
+          if (femaleColIdx !== -1 && row[femaleColIdx] && row[femaleColIdx].toString().trim() !== '') {
+            genderVal = 'Nữ';
+          } else if (maleColIdx !== -1 && row[maleColIdx] && row[maleColIdx].toString().trim() !== '') {
+            genderVal = 'Nam';
+          }
+
+          const idCardVal = idCardColIdx !== -1 && row[idCardColIdx] ? row[idCardColIdx].toString().trim() : '';
+          const ethVal = ethColIdx !== -1 && row[ethColIdx] ? row[ethColIdx].toString().trim() : 'Kinh';
+          const addrVal = addressColIdx !== -1 && row[addressColIdx] ? row[addressColIdx].toString().trim() : 'Tổ 1, Thôn An Trạch, Xã Hòa Tiến, TP Đà Nẵng';
+
+          const elQH = qhColIdx !== -1 ? row[qhColIdx]?.toString().toLowerCase().trim() !== '' : true;
+          const elTinh = tinhColIdx !== -1 ? row[tinhColIdx]?.toString().toLowerCase().trim() !== '' : true;
+          const elXa = xaColIdx !== -1 ? row[xaColIdx]?.toString().toLowerCase().trim() !== '' : true;
 
           newVotersBatch.push({
             voterCardNo: cardNo,
             fullName: rawName,
-            gender: sex,
-            dob: birthday,
-            address: addr,
+            gender: genderVal,
+            dob: dobVal,
+            idCard: idCardVal,
+            ethnicity: ethVal,
+            address: addrVal,
+            eligibleQuocHoi: elQH,
+            eligibleHdndTinh: elTinh,
+            eligibleHdndXa: elXa,
             hasVoted: false,
           });
         }
 
         if (newVotersBatch.length > 0) {
           importVotersBatch(newVotersBatch);
-          showToast(`✅ Import thành công ${newVotersBatch.length} cử tri từ tệp Excel!`, 'success');
+          showToast(`✅ Import thành công ${newVotersBatch.length} cử tri từ file Excel!`, 'success');
         } else {
           showToast('⚠️ Không nạp được dữ liệu cử tri. Vui lòng kiểm tra file Excel.', 'error');
         }
@@ -254,9 +310,10 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
     const matchSearch =
       v.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       v.voterCardNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.address.toLowerCase().includes(searchTerm.toLowerCase());
+      v.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (v.idCard && v.idCard.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchVillage = selectedVillage === 'ALL' || v.address === selectedVillage;
+    const matchVillage = selectedVillage === 'ALL' || v.address.includes(selectedVillage);
 
     const matchVoted =
       filterVoted === 'ALL' ||
@@ -268,7 +325,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Non-blocking Toast Banner Notification (Thay thế Popup Alert) */}
+      {/* Non-blocking Toast Banner */}
       {toastMsg && (
         <div
           className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between shadow-lg transition-all animate-bounce ${
@@ -295,10 +352,10 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
           <div>
             <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
               <Users className="w-5 h-5 text-sky-600" />
-              QUẢN LÝ CỬ TRI & ĐIỂM DANH BỎ PHIẾU
+              QUẢN LÝ CỬ TRI & ĐIỂM DANH BỎ PHIẾU (DANH SÁCH BẦU 2 & 3 CẤP)
             </h1>
             <p className="text-xs text-slate-500">
-              Quét thẻ cử tri để cập nhật tiến độ bỏ phiếu thời gian thực | Tỷ lệ đi bầu đạt {votedPct}%
+              Điểm danh cử tri theo mã thẻ/STT | Tích chọn quyền bỏ phiếu ĐBQH, HĐND Tỉnh, HĐND Xã
             </p>
           </div>
 
@@ -343,7 +400,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
             type="text"
             value={quickCardNoInput}
             onChange={e => setQuickCardNoInput(e.target.value)}
-            placeholder="Nhập/Quét Mã Thẻ Cử Tri (VD: TC-21-0001)..."
+            placeholder="Nhập/Quét Số thẻ Cử Tri hoặc STT (VD: 1, 2, 3...)..."
             className="flex-1 px-3 py-1.5 bg-white border border-sky-300 rounded-md text-xs focus:ring-2 focus:ring-sky-500 outline-none font-mono"
           />
           <button
@@ -355,7 +412,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
         </form>
       </div>
 
-      {/* THANH THỐNG KÊ THỜI GIAN THỰC ĐÚNG THEO ẢNH MẪU */}
+      {/* THANH THỐNG KÊ THỜI GIAN THỰC */}
       <div className="bg-white p-5 rounded-xl border-2 border-sky-300 shadow-md space-y-3">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
           <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
@@ -374,11 +431,8 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
               TỔNG SỐ CỬ TRI
             </div>
             <div className="flex-1 bg-sky-100/60 h-8 rounded border border-sky-300 relative overflow-hidden flex items-center shadow-inner">
-              <div
-                className="h-full bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600 transition-all duration-500 rounded-l"
-                style={{ width: '100%' }}
-              />
-              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-slate-900 text-sm tracking-widest drop-shadow-xs">
+              <div className="h-full bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600 transition-all duration-500 rounded-l" style={{ width: '100%' }} />
+              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-slate-900 text-sm tracking-widest">
                 {totalCount.toLocaleString('vi-VN')}
               </span>
             </div>
@@ -393,11 +447,8 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
               TỔNG SỐ CỬ TRI ĐÃ BỎ PHIẾU
             </div>
             <div className="flex-1 bg-emerald-50 h-8 rounded border border-emerald-300 relative overflow-hidden flex items-center shadow-inner">
-              <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 transition-all duration-500 rounded-l"
-                style={{ width: `${Math.min(100, votedPctNum)}%` }}
-              />
-              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-emerald-950 text-sm tracking-widest drop-shadow-xs">
+              <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 transition-all duration-500 rounded-l" style={{ width: `${Math.min(100, votedPctNum)}%` }} />
+              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-emerald-950 text-sm tracking-widest">
                 {votedCount.toLocaleString('vi-VN')}
               </span>
             </div>
@@ -412,11 +463,8 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
               TỔNG SỐ CỬ TRI CHƯA BỎ PHIẾU
             </div>
             <div className="flex-1 bg-rose-50 h-8 rounded border border-rose-300 relative overflow-hidden flex items-center shadow-inner">
-              <div
-                className="h-full bg-gradient-to-r from-sky-400 via-rose-500 to-rose-600 transition-all duration-500 rounded-l"
-                style={{ width: `${Math.min(100, remainingPctNum)}%` }}
-              />
-              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-rose-950 text-sm tracking-widest drop-shadow-xs">
+              <div className="h-full bg-gradient-to-r from-sky-400 via-rose-500 to-rose-600 transition-all duration-500 rounded-l" style={{ width: `${Math.min(100, remainingPctNum)}%` }} />
+              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-rose-950 text-sm tracking-widest">
                 {remainingCount.toLocaleString('vi-VN')}
               </span>
             </div>
@@ -429,19 +477,17 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
 
       {/* Filters Bar */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Search Input */}
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            placeholder="Tìm theo tên cử tri, mã thẻ, địa chỉ..."
+            placeholder="Tìm theo tên cử tri, số thẻ, số CCCD, địa chỉ..."
             className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/30"
           />
         </div>
 
-        {/* Village & Status dropdown filters */}
         <div className="flex flex-wrap items-center gap-3 text-xs">
           <div className="flex items-center gap-1.5">
             <Filter className="w-3.5 h-3.5 text-slate-500" />
@@ -475,93 +521,160 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
         </div>
       </div>
 
-      {/* Voter Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* OFFICIAL VOTER LIST TABLE (DANH SÁCH CỬ TRI CHUẨN MẪU) */}
+      <div className="bg-white rounded-xl border-2 border-slate-700 shadow-md overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100 text-slate-700 font-bold uppercase border-b border-slate-200">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-[#1e3a8a] text-white font-extrabold text-center border-b-2 border-slate-800 uppercase tracking-tight">
               <tr>
-                <th className="p-3.5 w-12 text-center">STT</th>
-                <th className="p-3.5">Mã Thẻ Cử Tri</th>
-                <th className="p-3.5">Họ và tên</th>
-                <th className="p-3.5 w-20 text-center">Giới tính</th>
-                <th className="p-3.5 w-28 text-center">Ngày sinh</th>
-                <th className="p-3.5">Địa chỉ / Thôn</th>
-                <th className="p-3.5 w-36 text-center">Trạng thái đi bầu</th>
-                <th className="p-3.5 w-44 text-center">Thao tác</th>
+                <th rowSpan={2} className="p-2.5 w-12 border-r border-blue-900">Số TT</th>
+                <th rowSpan={2} className="p-2.5 w-16 border-r border-blue-900">Số thẻ Cử tri</th>
+                <th rowSpan={2} className="p-2.5 border-r border-blue-900 text-left">Họ và Tên</th>
+                <th rowSpan={2} className="p-2.5 w-24 border-r border-blue-900">Ngày tháng năm sinh</th>
+                <th rowSpan={2} className="p-2.5 w-10 border-r border-blue-900">Nam</th>
+                <th rowSpan={2} className="p-2.5 w-10 border-r border-blue-900">Nữ</th>
+                <th rowSpan={2} className="p-2.5 w-28 border-r border-blue-900">Số Căn cước</th>
+                <th rowSpan={2} className="p-2.5 w-16 border-r border-blue-900">Dân tộc</th>
+                <th rowSpan={2} className="p-2.5 border-r border-blue-900 text-left">NƠI CƯ TRÚ (Thường trú)</th>
+                <th rowSpan={2} className="p-2.5 w-20 border-r border-blue-900 bg-blue-950">
+                  Bầu cử ĐB Quốc Hội
+                </th>
+                <th colSpan={2} className="p-1.5 border-b border-blue-900 bg-blue-950">
+                  Bầu cử đại biểu HĐND
+                </th>
+                <th rowSpan={2} className="p-2.5 w-32 border-l border-blue-900">Trạng thái & Thao tác</th>
+              </tr>
+              <tr>
+                <th className="p-1.5 w-24 border-r border-blue-900 bg-blue-950">TP Đà Nẵng</th>
+                <th className="p-1.5 w-24 border-r border-blue-900 bg-blue-950">Xã Hòa Tiến</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-300 font-medium">
               {filteredVoters.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-400">
+                  <td colSpan={13} className="p-8 text-center text-slate-400">
                     Chưa có cử tri nào trong danh sách. Vui lòng bấm "+ Thêm cử tri mới" hoặc "Import Excel".
                   </td>
                 </tr>
               ) : (
-                filteredVoters.map(v => (
-                  <tr key={v.id} className="hover:bg-slate-50">
-                    <td className="p-3.5 text-center font-bold text-slate-500">{v.stt}</td>
-                    <td className="p-3.5 font-mono font-bold text-sky-800">{v.voterCardNo}</td>
-                    <td className="p-3.5 font-bold text-slate-800 text-sm">{v.fullName}</td>
-                    <td className="p-3.5 text-center text-slate-600">{v.gender}</td>
-                    <td className="p-3.5 text-center font-mono text-slate-600">{v.dob}</td>
-                    <td className="p-3.5 text-slate-700 font-medium">{v.address}</td>
-                    <td className="p-3.5 text-center">
-                      {v.hasVoted ? (
-                        <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-full">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          Đã bầu ({v.votedAt || '---'})
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-1 rounded-full">
-                          <XCircle className="w-3.5 h-3.5 text-amber-600" />
-                          Chưa đi bầu
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3.5 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
+                filteredVoters.map((v, idx) => {
+                  const isMale = v.gender === 'Nam';
+                  const isFemale = v.gender === 'Nữ';
+                  const isQH = v.eligibleQuocHoi !== false;
+                  const isTinh = v.eligibleHdndTinh !== false;
+                  const isXa = v.eligibleHdndXa !== false;
+
+                  return (
+                    <tr key={v.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-2 text-center font-bold text-slate-600 border-r border-slate-200">
+                        {v.stt.toString().padStart(2, '0')}
+                      </td>
+                      <td className="p-2 text-center font-mono font-bold text-sky-900 border-r border-slate-200">
+                        {v.voterCardNo}
+                      </td>
+                      <td className="p-2 font-bold text-slate-900 text-xs border-r border-slate-200 uppercase">
+                        {v.fullName}
+                      </td>
+                      <td className="p-2 text-center font-mono text-slate-600 border-r border-slate-200">
+                        {v.dob}
+                      </td>
+                      <td className="p-2 text-center font-extrabold text-slate-800 border-r border-slate-200">
+                        {isMale ? 'x' : ''}
+                      </td>
+                      <td className="p-2 text-center font-extrabold text-slate-800 border-r border-slate-200">
+                        {isFemale ? 'x' : ''}
+                      </td>
+                      <td className="p-2 text-center font-mono text-slate-700 text-[11px] border-r border-slate-200">
+                        {v.idCard || '048*******888'}
+                      </td>
+                      <td className="p-2 text-center text-slate-700 border-r border-slate-200">
+                        {v.ethnicity || 'Kinh'}
+                      </td>
+                      <td className="p-2 text-slate-700 text-[11px] border-r border-slate-200">
+                        {v.address}
+                      </td>
+
+                      {/* Interactive Level Checkboxes */}
+                      <td className="p-2 text-center border-r border-slate-200 bg-sky-50/40">
                         <button
-                          onClick={() => {
-                            toggleVoterStatus(v.id);
-                            if (!v.hasVoted) {
-                              showToast(`✅ Đã điểm danh cử tri: ${v.fullName}`, 'success');
-                            }
-                          }}
-                          className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
-                            v.hasVoted
-                              ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                              : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs'
+                          onClick={() => handleToggleLevelFlag(v, 'eligibleQuocHoi')}
+                          className={`w-6 h-6 rounded border font-bold text-xs inline-flex items-center justify-center transition-all ${
+                            isQH ? 'bg-sky-600 text-white border-sky-700 shadow-xs' : 'bg-white text-slate-300 border-slate-300'
                           }`}
+                          title="Tích chọn/Bỏ chọn bầu cử ĐB Quốc hội"
                         >
-                          {v.hasVoted ? 'Hủy' : 'Bầu'}
+                          {isQH ? 'x' : ''}
                         </button>
+                      </td>
 
+                      <td className="p-2 text-center border-r border-slate-200 bg-sky-50/40">
                         <button
-                          onClick={() => handleOpenEditModal(v)}
-                          className="p-1 text-sky-600 hover:text-sky-800 hover:bg-sky-50 rounded"
-                          title="Sửa cử tri"
+                          onClick={() => handleToggleLevelFlag(v, 'eligibleHdndTinh')}
+                          className={`w-6 h-6 rounded border font-bold text-xs inline-flex items-center justify-center transition-all ${
+                            isTinh ? 'bg-sky-600 text-white border-sky-700 shadow-xs' : 'bg-white text-slate-300 border-slate-300'
+                          }`}
+                          title="Tích chọn/Bỏ chọn bầu cử ĐB HĐND TP Đà Nẵng"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          {isTinh ? 'x' : ''}
                         </button>
+                      </td>
 
+                      <td className="p-2 text-center border-r border-slate-200 bg-sky-50/40">
                         <button
-                          onClick={() => {
-                            if (confirm(`Xóa cử tri "${v.fullName}" khỏi danh sách?`)) {
-                              deleteVoter(v.id);
-                              showToast(`✅ Đã xóa cử tri: ${v.fullName}`, 'info');
-                            }
-                          }}
-                          className="p-1 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded"
-                          title="Xóa cử tri"
+                          onClick={() => handleToggleLevelFlag(v, 'eligibleHdndXa')}
+                          className={`w-6 h-6 rounded border font-bold text-xs inline-flex items-center justify-center transition-all ${
+                            isXa ? 'bg-sky-600 text-white border-sky-700 shadow-xs' : 'bg-white text-slate-300 border-slate-300'
+                          }`}
+                          title="Tích chọn/Bỏ chọn bầu cử ĐB HĐND Xã Hòa Tiến"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          {isXa ? 'x' : ''}
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+
+                      {/* Check-in & Actions */}
+                      <td className="p-2 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              toggleVoterStatus(v.id);
+                              if (!v.hasVoted) {
+                                showToast(`✅ Đã điểm danh cử tri: ${v.fullName}`, 'success');
+                              }
+                            }}
+                            className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
+                              v.hasVoted
+                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300'
+                                : 'bg-sky-600 text-white hover:bg-sky-700 shadow-xs'
+                            }`}
+                          >
+                            {v.hasVoted ? 'Đã bầu' : 'Điểm danh'}
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenEditModal(v)}
+                            className="p-1 text-sky-600 hover:text-sky-800 hover:bg-sky-50 rounded"
+                            title="Sửa cử tri"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              if (confirm(`Xóa cử tri "${v.fullName}" khỏi danh sách?`)) {
+                                deleteVoter(v.id);
+                                showToast(`✅ Đã xóa cử tri: ${v.fullName}`, 'info');
+                              }
+                            }}
+                            className="p-1 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded"
+                            title="Xóa cử tri"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -571,9 +684,9 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
       {/* Add / Edit Voter Modal */}
       {showVoterModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 space-y-4 shadow-xl border border-slate-200">
             <div className="flex justify-between items-center border-b pb-2">
-              <h3 className="text-sm font-bold text-slate-800">
+              <h3 className="text-sm font-bold text-slate-800 uppercase">
                 {editingVoter ? 'SỬA THÔNG TIN CỬ TRI' : 'THÊM MỚI CỬ TRI'}
               </h3>
               <button onClick={() => setShowVoterModal(false)} className="text-slate-400 hover:text-slate-600 font-bold">
@@ -581,29 +694,32 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
               </button>
             </div>
             <form onSubmit={handleSaveVoter} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-600 font-semibold mb-1">Mã Thẻ Cử Tri:</label>
-                <input
-                  type="text"
-                  required
-                  value={voterCardNo}
-                  onChange={e => setVoterCardNo(e.target.value)}
-                  placeholder="TC-21-0008"
-                  className="w-full p-2 border border-slate-300 rounded font-mono font-bold"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1">Số Thẻ Cử Tri:</label>
+                  <input
+                    type="text"
+                    required
+                    value={voterCardNo}
+                    onChange={e => setVoterCardNo(e.target.value)}
+                    placeholder="1, 2, 3..."
+                    className="w-full p-2 border border-slate-300 rounded font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1">Họ và Tên:</label>
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    placeholder="ĐẶNG HUY TƯỜNG"
+                    className="w-full p-2 border border-slate-300 rounded font-bold text-slate-800 uppercase"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-slate-600 font-semibold mb-1">Họ và tên:</label>
-                <input
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={e => setFullName(e.target.value)}
-                  placeholder="Nguyễn Văn A"
-                  className="w-full p-2 border border-slate-300 rounded font-bold text-slate-800"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
+
+              <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Giới tính:</label>
                   <select
@@ -616,26 +732,83 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-600 font-semibold mb-1">Ngày sinh:</label>
+                  <label className="block text-slate-600 font-semibold mb-1">Ngày tháng năm sinh:</label>
                   <input
                     type="text"
                     value={dob}
                     onChange={e => setDob(e.target.value)}
-                    placeholder="15/05/1980"
+                    placeholder="13/01/2005"
                     className="w-full p-2 border border-slate-300 rounded font-mono"
                   />
                 </div>
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1">Dân tộc:</label>
+                  <input
+                    type="text"
+                    value={ethnicity}
+                    onChange={e => setEthnicity(e.target.value)}
+                    placeholder="Kinh"
+                    className="w-full p-2 border border-slate-300 rounded font-medium"
+                  />
+                </div>
               </div>
+
               <div>
-                <label className="block text-slate-600 font-semibold mb-1">Địa chỉ / Thôn / Tổ:</label>
+                <label className="block text-slate-600 font-semibold mb-1">Số Căn cước (CCCD):</label>
+                <input
+                  type="text"
+                  value={idCard}
+                  onChange={e => setIdCard(e.target.value)}
+                  placeholder="048*******698"
+                  className="w-full p-2 border border-slate-300 rounded font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-600 font-semibold mb-1">NƠI CƯ TRÚ (Thường trú):</label>
                 <input
                   type="text"
                   value={address}
                   onChange={e => setAddress(e.target.value)}
-                  placeholder="Thôn An Trạch"
+                  placeholder="Tổ 1, Thôn An Trạch, Xã Hòa Tiến, Thành Phố Đà Nẵng"
                   className="w-full p-2 border border-slate-300 rounded font-medium"
                 />
               </div>
+
+              {/* Checklist Cấp Bầu Cử Được Bầu */}
+              <div className="p-3 bg-sky-50 rounded-lg border border-sky-200 space-y-2">
+                <label className="block text-sky-900 font-bold">CÁC CẤP BẦU CỬ CỬ TRI THAM GIA BỎ PHIẾU:</label>
+                <div className="space-y-1.5 pl-1">
+                  <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={eligibleQuocHoi}
+                      onChange={e => setEligibleQuocHoi(e.target.checked)}
+                      className="w-4 h-4 text-sky-600 rounded"
+                    />
+                    <span>Bầu cử Đại biểu Quốc Hội</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={eligibleHdndTinh}
+                      onChange={e => setEligibleHdndTinh(e.target.checked)}
+                      className="w-4 h-4 text-sky-600 rounded"
+                    />
+                    <span>Bầu cử đại biểu HĐND Thành phố Đà Nẵng</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={eligibleHdndXa}
+                      onChange={e => setEligibleHdndXa(e.target.checked)}
+                      className="w-4 h-4 text-sky-600 rounded"
+                    />
+                    <span>Bầu cử đại biểu HĐND Xã Hòa Tiến</span>
+                  </label>
+                </div>
+              </div>
+
               <div className="flex justify-end gap-2 pt-2 border-t">
                 <button
                   type="button"
