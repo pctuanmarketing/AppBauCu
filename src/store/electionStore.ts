@@ -165,7 +165,7 @@ export function useElectionStore() {
       votingStartTime: '07:00',
       votingEndTime: '19:00',
       votingDate: new Date().toISOString().split('T')[0],
-      enableVotingTimeCheck: true,
+      enableVotingTimeCheck: false,
     };
     return saved ? { ...defaultVal, ...JSON.parse(saved) } : defaultVal;
   });
