@@ -12,6 +12,7 @@ import { ElectionResultsPage } from './pages/ElectionResultsPage';
 import { ResultsReportPage } from './pages/ResultsReportPage';
 import { SystemAdminPage } from './pages/SystemAdminPage';
 import { UserProfilePage } from './pages/UserProfilePage';
+import { HelpModal } from './components/common/HelpModal';
 import { ElectionLevel, SystemNotification, UserAccount, UserRole } from './types';
 import { EmailPayload } from './lib/emailService';
 import { HelpCircle, Vote, Users, X } from 'lucide-react';
@@ -569,60 +570,7 @@ export function App() {
 
       {/* User Help Modal */}
       {showHelpModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 font-sans">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-200 max-h-[85vh] flex flex-col">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <HelpCircle className="w-5 h-5 text-sky-600" />
-                HƯỚNG DẪN SỬ DỤNG PHẦN MỀM BẦU CỬ
-              </h3>
-              <button
-                onClick={() => setShowHelpModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto space-y-4 text-xs text-slate-700 leading-relaxed pr-2">
-              <div className="p-3 bg-sky-50 rounded-lg border border-sky-200">
-                <h4 className="font-bold text-sky-900 mb-1">1. Quy trình Kiểm phiếu Bầu cử:</h4>
-                <p>
-                  - Chọn cấp bầu cử (Đại biểu Quốc hội / HĐND Tỉnh / HĐND Xã).
-                  <br />- Nhập số thứ tự ứng cử viên bị gạch tên (VD: Gõ <strong>134</strong> là ứng cử viên số 1, 3, 4 bị gạch phiếu).
-                  <br />- Gõ <strong>0</strong> cho phiếu không hợp lệ do hình thức/gạch ngoài danh sách.
-                  <br />- Nhấn <strong>Enter 2 lần</strong> để xác nhận ghi nhận phiếu.
-                </p>
-              </div>
-
-              <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                <h4 className="font-bold text-emerald-900 mb-1">2. Điểm danh cử tri đi bỏ phiếu:</h4>
-                <p>
-                  - Sử dụng ô điểm danh nhanh bằng cách nhập <strong>Mã thẻ cử tri</strong> hoặc STT.
-                  <br />- Tích chọn quyền bỏ phiếu cho từng cấp đại biểu (Quốc hội, HĐND Tỉnh, HĐND Xã).
-                </p>
-              </div>
-
-              <div className="p-3 bg-slate-100 rounded-lg border border-slate-200">
-                <h4 className="font-bold text-slate-900 mb-1">3. Xuất Báo cáo & Biên bản:</h4>
-                <p>
-                  - Vào phân hệ <strong>"KẾT QUẢ"</strong>.
-                  <br />- Bấm nút <strong>"Xuất báo cáo Excel (.xlsx)"</strong> để tải file dữ liệu chi tiết.
-                  <br />- Bấm nút <strong>"In Biên bản kiểm phiếu (Word)"</strong> để mở trang in biên bản đúng mẫu quốc gia.
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t text-right">
-              <button
-                onClick={() => setShowHelpModal(false)}
-                className="px-4 py-2 bg-sky-600 text-white rounded-lg text-xs font-bold"
-              >
-                Đã hiểu
-              </button>
-            </div>
-          </div>
-        </div>
+        <HelpModal onClose={() => setShowHelpModal(false)} />
       )}
     </Layout>
   );
