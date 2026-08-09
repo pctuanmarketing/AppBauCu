@@ -140,19 +140,6 @@ export function App() {
     setIsLandingPage(true);
   };
 
-  const handleEnterDemoApp = () => {
-    setCurrentUser({
-      id: 'demo-guest',
-      fullName: 'Khách Xem Thử Khảo Sát',
-      email: 'demo@hoatien.gov.vn',
-      phone: '0900000000',
-      role: 'VIEW',
-      status: 'APPROVED',
-      createdAt: new Date().toISOString(),
-    });
-    setIsLandingPage(false);
-  };
-
   const handleRoleChange = (role: UserRole) => {
     setSettings(prev => ({ ...prev, currentRole: role }));
   };
@@ -164,7 +151,6 @@ export function App() {
         <LandingPage
           onOpenLogin={() => setAuthModalMode('LOGIN')}
           onOpenRegister={() => setAuthModalMode('REGISTER')}
-          onEnterDemoApp={handleEnterDemoApp}
         />
 
         {authModalMode && (

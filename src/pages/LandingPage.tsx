@@ -17,19 +17,16 @@ import {
   Mail,
   Phone,
   Building2,
-  Eye,
 } from 'lucide-react';
 
 interface LandingPageProps {
   onOpenLogin: () => void;
   onOpenRegister: () => void;
-  onEnterDemoApp: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onOpenLogin,
   onOpenRegister,
-  onEnterDemoApp,
 }) => {
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 font-sans selection:bg-sky-500 selection:text-white flex flex-col justify-between">
@@ -42,7 +39,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
             <div>
               <div className="font-black text-white text-base tracking-tight flex items-center gap-2">
-                APP BẦU CỬ
+                KIỂM PHIẾU BẦU CỬ
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
                   v2.0
                 </span>
@@ -78,7 +75,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-8 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-500/10 text-sky-300 text-xs font-bold border border-sky-400/30 backdrop-blur-md">
             <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-            <span>ÁP DỤNG THỰC TẾ CHO TỔ BẦU CỬ SỐ 21 - THÔN AN TRẠCH, XÃ HÒA TIẾN</span>
+            <span>ÁP DỤNG THỰC TẾ CHO TẤT CẢ CÁC ĐƠN VỊ & KHU VỰC BỎ PHIẾU</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight max-w-4xl mx-auto">
@@ -106,14 +103,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             >
               <LogIn className="w-5 h-5 text-sky-400" />
               <span>Đăng nhập hệ thống</span>
-            </button>
-
-            <button
-              onClick={onEnterDemoApp}
-              className="px-6 py-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 text-sky-300 border border-sky-500/30 font-bold text-sm transition-all flex items-center gap-2"
-            >
-              <Eye className="w-5 h-5 text-amber-400" />
-              <span>Xem ứng dụng Demo (Read-only)</span>
             </button>
           </div>
 
@@ -188,7 +177,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <footer className="border-t border-slate-800 bg-slate-950 py-8 text-center text-xs text-slate-400">
         <div className="max-w-7xl mx-auto px-4 space-y-2">
           <p className="font-bold text-slate-300">
-            HỆ THỐNG QUẢN LÝ BẦU CỬ VÀ KIỂM PHIẾU ĐIỆN TỬ - TỔ BẦU CỬ SỐ 21 (XÃ HÒA TIẾN, TP ĐÀ NẴNG)
+            HỆ THỐNG QUẢN LÝ BẦU CỬ VÀ KIỂM PHIẾU ĐIỆN TỬ TỰ ĐỘNG
           </p>
           <p className="flex items-center justify-center gap-4 text-slate-400 font-mono text-[11px]">
             <span>Tác giả: <strong>Phạm Công Tuân</strong></span>

@@ -158,7 +158,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <h2 className="text-sm font-extrabold tracking-tight">
                 {mode === 'LOGIN' ? 'ĐĂNG NHẬP PHẦN MỀM BẦU CỬ' : 'ĐĂNG KÝ TÀI KHOẢN CẤP QUYỀN'}
               </h2>
-              <p className="text-[11px] text-sky-200/80">Tổ Bầu cử số 21 - Thôn An Trạch, Hòa Tiến</p>
+              <p className="text-[11px] text-sky-200/80">Hệ thống Kiểm phiếu Bầu cử Điện tử</p>
             </div>
           </div>
 
