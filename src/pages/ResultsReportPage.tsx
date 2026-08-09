@@ -109,11 +109,11 @@ export const ResultsReportPage: React.FC<ResultsReportPageProps> = ({
   const isAllExact = isVoterMatch && isReturnedMatch && isBallotTypesMatch && isMatrixMatch;
 
   const handleExportExcel = () => {
-    exportElectionResultsToExcel(config, levelCandidates, voters, validBallotsCount, invalidBallotsCount);
+    exportElectionResultsToExcel(config, candidateStats, voters, validBallotsCount, invalidBallotsCount, unit, committee);
   };
 
   const handlePrintWord = () => {
-    generatePrintProtocol(unit, config, levelCandidates, committee, validBallotsCount, invalidBallotsCount);
+    generatePrintProtocol(unit, config, candidateStats, committee, validBallotsCount, invalidBallotsCount);
   };
 
   return (
