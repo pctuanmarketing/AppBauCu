@@ -10,28 +10,36 @@
   input, select, textarea, button {
     font-family: inherit;
   }
+
+  /* Firefox Custom Scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #0284c7 #f1f5f9;
+  }
 }
 
-/* Custom scrollbars */
+/* Webkit Custom Side Scrollbars (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  border-radius: 9999px;
+  border: 2px solid #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
 }
 
-/* Custom animations & glow */
+/* Custom animations & glassmorphism */
 .glass-card {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);

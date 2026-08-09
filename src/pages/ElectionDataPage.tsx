@@ -232,7 +232,7 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
             <Database className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-lg font-extrabold text-slate-900">THIẾT LẬP DỮ LIỆU BẦU CỬ & NHÂN SỰ</h1>
+            <h1 className="text-lg font-extrabold text-slate-900 tracking-tight">DỮ LIỆU BẦU CỬ</h1>
             <p className="text-xs text-slate-500">Cấu hình Danh sách Ứng cử viên 3 cấp, Đơn vị bầu cử, Tổ bầu cử và Cử tri chứng kiến</p>
           </div>
         </div>

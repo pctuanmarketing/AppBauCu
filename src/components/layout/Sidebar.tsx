@@ -6,8 +6,6 @@ import {
   Vote,
   FileSpreadsheet,
   Settings,
-  ChevronLeft,
-  ChevronRight,
   PlusCircle,
   ShieldCheck,
   PanelLeftClose,
@@ -34,29 +32,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
-  // Dynamic effective collapsed state: if user manually collapsed it, but is hovering, expand temporarily!
   const isEffectiveExpanded = !collapsed || isHovered;
 
   const menuSections = [
     {
-      title: 'TỔNG QUAN',
+      title: 'DASHBOARD',
       items: [
-        { id: 'dashboard', label: 'Tổng quan hệ thống', icon: LayoutDashboard },
+        { id: 'dashboard', label: 'DASHBOARD', icon: LayoutDashboard },
       ],
     },
     {
       title: 'NGHIỆP VỤ BẦU CỬ',
       items: [
-        { id: 'election_data', label: 'Dữ liệu bầu cử', icon: Building2 },
-        { id: 'voters', label: 'Quản lý cử tri', icon: Users },
-        { id: 'ballot_counting', label: 'Kiểm phiếu bầu cử', icon: Vote, highlight: true },
-        { id: 'results_report', label: 'Kết quả & Báo cáo', icon: FileSpreadsheet },
+        { id: 'election_data', label: 'DỮ LIỆU BẦU CỬ', icon: Building2 },
+        { id: 'voters', label: 'QUẢN LÝ CỬ TRI', icon: Users },
+        { id: 'ballot_counting', label: 'KIỂM PHIẾU BẦU CỬ', icon: Vote, highlight: true },
+        { id: 'results_report', label: 'KẾT QUẢ', icon: FileSpreadsheet },
       ],
     },
     {
       title: 'HỆ THỐNG',
       items: [
-        { id: 'system_admin', label: 'Quản trị hệ thống', icon: Settings },
+        { id: 'system_admin', label: 'HỆ THỐNG', icon: Settings },
       ],
     },
   ];
@@ -114,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      {/* Categorized Scientific Navigation Links */}
+      {/* Categorized Navigation Links */}
       <nav className="flex-1 px-2 py-2 space-y-4 overflow-y-auto">
         {menuSections.map((sec, secIdx) => (
           <div key={secIdx} className="space-y-1">

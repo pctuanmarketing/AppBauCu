@@ -96,7 +96,7 @@ export const ResultsReportPage: React.FC<ResultsReportPageProps> = ({
       {/* Header & Export Buttons */}
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-bold text-slate-800">KẾT QUẢ KIỂM PHIẾU & BIÊN BẢN TỔNG HỢP (MẪU CHÍNH THỨC)</h1>
+          <h1 className="text-lg font-extrabold text-slate-900 tracking-tight">KẾT QUẢ</h1>
           <p className="text-xs text-slate-500">
             Tự động tổng hợp bảng phân rã phiếu bầu theo loại (bầu 3, bầu 2, bầu 1) và đối soát dữ liệu 3 cấp
           </p>

@@ -11,6 +11,8 @@ import {
   Building2,
   FileSpreadsheet,
   BarChart3,
+  Activity,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Candidate, ElectionLevel, ElectionLevelConfig, ElectionUnit, Voter } from '../types';
 
@@ -34,7 +36,34 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const totalVotersCount = voters.length;
   const votedCount = voters.filter(v => v.hasVoted).length;
   const remainingVoters = totalVotersCount - votedCount;
-  const turnOutPct = totalVotersCount > 0 ? ((votedCount / totalVotersCount) * 100).toFixed(2) : '0.00';
+  const turnOutPctNum = totalVotersCount > 0 ? (votedCount / totalVotersCount) * 100 : 0;
+  const remainingPctNum = totalVotersCount > 0 ? (remainingVoters / totalVotersCount) * 100 : 0;
+
+  const turnOutPct = turnOutPctNum.toFixed(2);
+  const remainingPct = remainingPctNum.toFixed(2);
+
+  // 1. Phân rã cử tri theo số cấp được bầu (3 cấp & 2 cấp)
+  const voters3Levels = voters.filter(
+    v => (v.eligibleQuocHoi !== false) && (v.eligibleHdndTinh !== false) && (v.eligibleHdndXa !== false)
+  ).length;
+
+  const voters2Levels = voters.filter(v => {
+    const count = [v.eligibleQuocHoi !== false, v.eligibleHdndTinh !== false, v.eligibleHdndXa !== false].filter(Boolean).length;
+    return count === 2;
+  }).length;
+
+  // 2. Thống kê cử tri đi bầu tương ứng cho từng cấp bầu cử
+  const totalQuocHoi = voters.filter(v => v.eligibleQuocHoi !== false).length;
+  const votedQuocHoi = voters.filter(v => v.hasVoted && (v.eligibleQuocHoi !== false)).length;
+  const pctQuocHoi = totalQuocHoi > 0 ? ((votedQuocHoi / totalQuocHoi) * 100).toFixed(2) : '0.00';
+
+  const totalHdndTinh = voters.filter(v => v.eligibleHdndTinh !== false).length;
+  const votedHdndTinh = voters.filter(v => v.hasVoted && (v.eligibleHdndTinh !== false)).length;
+  const pctHdndTinh = totalHdndTinh > 0 ? ((votedHdndTinh / totalHdndTinh) * 100).toFixed(2) : '0.00';
+
+  const totalHdndXa = voters.filter(v => v.eligibleHdndXa !== false).length;
+  const votedHdndXa = voters.filter(v => v.hasVoted && (v.eligibleHdndXa !== false)).length;
+  const pctHdndXa = totalHdndXa > 0 ? ((votedHdndXa / totalHdndXa) * 100).toFixed(2) : '0.00';
 
   // Group voters by Village / Address
   const villageStatsMap = voters.reduce((acc, v) => {
@@ -55,7 +84,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   }));
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto font-sans">
       {/* Top Welcome Banner Card */}
       <div className="bg-gradient-to-r from-sky-900 via-slate-900 to-sky-950 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden border border-sky-800/40">
         <div className="absolute -right-10 -bottom-10 w-72 h-72 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -63,14 +92,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-bold border border-sky-400/30 backdrop-blur-md">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span>HỆ THỐNG BẦU CỬ ĐIỆN TỬ {unit.term}</span>
+              <LayoutDashboard className="w-3.5 h-3.5 text-sky-400" />
+              <span>DASHBOARD TỔNG QUAN BẦU CỬ {unit.term}</span>
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-white">
-              TỔ BẦU CỬ SỐ {unit.votingAreaNo} - {unit.wardName.toUpperCase()}
+            <h1 className="text-2xl font-black tracking-tight text-white uppercase">
+              DASHBOARD - {unit.wardName.toUpperCase()}
             </h1>
             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-              Khu vực bỏ phiếu: <strong className="text-sky-300">{unit.hdndXaVillages}</strong> | Quản lý tiến độ cử tri đi bầu và tính toán biên bản kết quả kiểm phiếu 3 cấp thời gian thực.
+              Khu vực bỏ phiếu số <strong className="text-sky-300">{unit.votingAreaNo}</strong> ({unit.hdndXaVillages}) | Theo dõi tiến độ cử tri đi bầu và chỉ số kiểm phiếu 3 cấp thời gian thực.
             </p>
           </div>
 
@@ -87,7 +116,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-sky-600/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2"
             >
               <BarChart3 className="w-4 h-4" />
-              <span>Vào Kiểm phiếu ➔</span>
+              <span>Vào KIỂM PHIẾU BẦU CỬ ➔</span>
             </button>
           </div>
         </div>
@@ -155,6 +184,162 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       </div>
 
+      {/* THANH THỐNG KÊ CỬ TRI THEO THỜI GIAN THỰC (REAL-TIME PROGRESS WIDGET) */}
+      <div className="bg-white p-5 rounded-2xl border-2 border-sky-300 shadow-md space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+            <Activity className="w-4 h-4 text-sky-600" />
+            BÁO CÁO THỐNG KÊ CỬ TRI THEO THỜI GIAN THỰC (REAL-TIME PROGRESS)
+          </h2>
+          <span className="text-[11px] font-bold text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-200/80">
+            {unit.wardName} - Khóa {unit.term}
+          </span>
+        </div>
+
+        <div className="space-y-2.5 text-xs font-bold font-sans">
+          {/* ROW 1: TỔNG SỐ CỬ TRI */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="w-full sm:w-64 text-slate-800 font-extrabold text-right uppercase tracking-wider pr-2">
+              TỔNG SỐ CỬ TRI
+            </div>
+            <div className="flex-1 bg-sky-100/60 h-9 rounded-lg border border-sky-300 relative overflow-hidden flex items-center shadow-inner">
+              <div className="h-full bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600 transition-all duration-500 rounded-l" style={{ width: '100%' }} />
+              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-slate-900 text-sm tracking-widest drop-shadow-xs">
+                {totalVotersCount.toLocaleString('vi-VN')}
+              </span>
+            </div>
+            <div className="w-full sm:w-28 bg-emerald-600 text-white font-mono font-extrabold text-center py-2 rounded-lg border border-emerald-700 shadow-xs text-xs">
+              100.00%
+            </div>
+          </div>
+
+          {/* ROW 2: TỔNG SỐ CỬ TRI ĐÃ BỎ PHIẾU */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="w-full sm:w-64 text-emerald-700 font-extrabold text-right uppercase tracking-wider pr-2">
+              TỔNG SỐ CỬ TRI ĐÃ BỎ PHIẾU
+            </div>
+            <div className="flex-1 bg-emerald-50 h-9 rounded-lg border border-emerald-300 relative overflow-hidden flex items-center shadow-inner">
+              <div className="h-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 transition-all duration-500 rounded-l" style={{ width: `${Math.min(100, turnOutPctNum)}%` }} />
+              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-emerald-950 text-sm tracking-widest drop-shadow-xs">
+                {votedCount.toLocaleString('vi-VN')}
+              </span>
+            </div>
+            <div className="w-full sm:w-28 bg-emerald-600 text-white font-mono font-extrabold text-center py-2 rounded-lg border border-emerald-700 shadow-xs text-xs">
+              {turnOutPct}%
+            </div>
+          </div>
+
+          {/* ROW 3: TỔNG SỐ CỬ TRI CHƯA BỎ PHIẾU */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="w-full sm:w-64 text-rose-700 font-extrabold text-right uppercase tracking-wider pr-2">
+              TỔNG SỐ CỬ TRI CHƯA BỎ PHIẾU
+            </div>
+            <div className="flex-1 bg-rose-50 h-9 rounded-lg border border-rose-300 relative overflow-hidden flex items-center shadow-inner">
+              <div className="h-full bg-gradient-to-r from-sky-400 via-rose-500 to-rose-600 transition-all duration-500 rounded-l" style={{ width: `${Math.min(100, remainingPctNum)}%` }} />
+              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-rose-950 text-sm tracking-widest drop-shadow-xs">
+                {remainingVoters.toLocaleString('vi-VN')}
+              </span>
+            </div>
+            <div className="w-full sm:w-28 bg-emerald-600 text-white font-mono font-extrabold text-center py-2 rounded-lg border border-emerald-700 shadow-xs text-xs">
+              {remainingPct}%
+            </div>
+          </div>
+        </div>
+
+        {/* KHU VỰC THỐNG KÊ CHI TIẾT: CỬ TRI BẦU 3 CẤP & 2 CẤP & SỐ CỬ TRI ĐÃ ĐI BẦU THEO TỪNG CẤP */}
+        <div className="pt-3 border-t border-slate-200 space-y-3">
+          {/* THỐNG KÊ CỬ TRI 3 CẤP VÀ 2 CẤP */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="p-3.5 bg-gradient-to-r from-sky-50 to-blue-50 rounded-xl border border-sky-200 flex items-center justify-between shadow-2xs">
+              <div className="space-y-0.5">
+                <div className="font-extrabold text-sky-950 text-xs uppercase flex items-center gap-1.5">
+                  <span>🗳️ CỬ TRI BẦU 3 CẤP</span>
+                  <span className="text-[10px] text-sky-700 font-medium">(Quốc hội + HĐND Tỉnh + HĐND Xã)</span>
+                </div>
+                <p className="text-[11px] text-slate-600">Tổng số cử tri được cấp 3 phiếu bầu</p>
+              </div>
+              <div className="text-right">
+                <div className="text-base font-black text-sky-900 font-mono">{voters3Levels.toLocaleString('vi-VN')}</div>
+                <div className="text-[10px] font-bold text-sky-700 bg-white px-2 py-0.5 rounded border border-sky-300 inline-block">
+                  {totalVotersCount > 0 ? ((voters3Levels / totalVotersCount) * 100).toFixed(1) : '0'}% tổng cử tri
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200 flex items-center justify-between shadow-2xs">
+              <div className="space-y-0.5">
+                <div className="font-extrabold text-purple-950 text-xs uppercase flex items-center gap-1.5">
+                  <span>🗳️ CỬ TRI BẦU 2 CẤP</span>
+                  <span className="text-[10px] text-purple-700 font-medium">(Cử tri biến động / Tạm trú)</span>
+                </div>
+                <p className="text-[11px] text-slate-600">Tổng số cử tri được cấp 2 phiếu bầu</p>
+              </div>
+              <div className="text-right">
+                <div className="text-base font-black text-purple-900 font-mono">{voters2Levels.toLocaleString('vi-VN')}</div>
+                <div className="text-[10px] font-bold text-purple-700 bg-white px-2 py-0.5 rounded border border-purple-300 inline-block">
+                  {totalVotersCount > 0 ? ((voters2Levels / totalVotersCount) * 100).toFixed(1) : '0'}% tổng cử tri
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* THỐNG KÊ SỐ CỬ TRI ĐÃ ĐI BẦU TƯƠNG ỨNG CHO TỪNG CẤP BẦU CỬ */}
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/90 space-y-2.5">
+            <div className="font-extrabold text-slate-900 text-xs uppercase tracking-wide flex items-center gap-2 border-b border-slate-200 pb-2">
+              <Vote className="w-4 h-4 text-sky-600" />
+              SỐ CỬ TRI ĐÃ ĐI BẦU TƯƠNG ỨNG CHO TỪNG CẤP BẦU CỬ:
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+              {/* 1. ĐẠI BIỂU QUỐC HỘI */}
+              <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
+                <div className="flex items-center justify-between font-bold text-xs text-slate-800">
+                  <span className="text-sky-900 font-extrabold">🇻🇳 ĐẠI BIỂU QUỐC HỘI</span>
+                  <span className="font-mono text-sky-700 font-extrabold">{pctQuocHoi}%</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
+                  <div className="bg-sky-600 h-full transition-all duration-500 rounded-full" style={{ width: `${Math.min(100, Number(pctQuocHoi))}%` }} />
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-600 font-medium">
+                  <span>Đã đi bầu: <strong className="text-slate-900 font-bold">{votedQuocHoi.toLocaleString('vi-VN')}</strong></span>
+                  <span>Tổng cử tri: <strong className="text-slate-700">{totalQuocHoi.toLocaleString('vi-VN')}</strong></span>
+                </div>
+              </div>
+
+              {/* 2. ĐẠI BIỂU HĐND TỈNH */}
+              <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
+                <div className="flex items-center justify-between font-bold text-xs text-slate-800">
+                  <span className="text-emerald-900 font-extrabold">🏛️ HĐND TỈNH/THÀNH PHỐ</span>
+                  <span className="font-mono text-emerald-700 font-extrabold">{pctHdndTinh}%</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
+                  <div className="bg-emerald-600 h-full transition-all duration-500 rounded-full" style={{ width: `${Math.min(100, Number(pctHdndTinh))}%` }} />
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-600 font-medium">
+                  <span>Đã đi bầu: <strong className="text-slate-900 font-bold">{votedHdndTinh.toLocaleString('vi-VN')}</strong></span>
+                  <span>Tổng cử tri: <strong className="text-slate-700">{totalHdndTinh.toLocaleString('vi-VN')}</strong></span>
+                </div>
+              </div>
+
+              {/* 3. ĐẠI BIỂU HĐND XÃ */}
+              <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
+                <div className="flex items-center justify-between font-bold text-xs text-slate-800">
+                  <span className="text-indigo-900 font-extrabold">🏡 HĐND XÃ/PHƯỜNG</span>
+                  <span className="font-mono text-indigo-700 font-extrabold">{pctHdndXa}%</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
+                  <div className="bg-indigo-600 h-full transition-all duration-500 rounded-full" style={{ width: `${Math.min(100, Number(pctHdndXa))}%` }} />
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-600 font-medium">
+                  <span>Đã đi bầu: <strong className="text-slate-900 font-bold">{votedHdndXa.toLocaleString('vi-VN')}</strong></span>
+                  <span>Tổng cử tri: <strong className="text-slate-700">{totalHdndXa.toLocaleString('vi-VN')}</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* VILLAGE PROGRESS BARS & QUICK MODULE NAVIGATION */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Village Voting Progress List (Cols 8) */}
@@ -168,7 +353,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               onClick={() => setActiveTab('voters')}
               className="text-xs font-bold text-sky-600 hover:text-sky-800 flex items-center gap-1"
             >
-              <span>Xem danh sách</span>
+              <span>Xem QUẢN LÝ CỬ TRI</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -200,7 +385,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         {/* Quick Module Shortcuts Panel (Cols 4) */}
         <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4 flex flex-col justify-between">
           <div className="border-b border-slate-100 pb-3">
-            <h2 className="text-sm font-extrabold text-slate-900">TRUY CẬP NHANH PHẦN MỀM</h2>
+            <h2 className="text-sm font-extrabold text-slate-900 uppercase">TRUY CẬP NHANH PHẦN MỀM</h2>
             <p className="text-xs text-slate-500">Chuyển đổi phân hệ làm việc nhanh</p>
           </div>
 
@@ -213,7 +398,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center">
                   🗳️
                 </div>
-                <span>Kiểm phiếu 3 cấp</span>
+                <span className="uppercase">KIỂM PHIẾU BẦU CỬ</span>
               </div>
               <span className="group-hover:translate-x-1 transition-transform">➔</span>
             </button>
@@ -226,7 +411,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
                   👥
                 </div>
-                <span>Điểm danh cử tri</span>
+                <span className="uppercase">QUẢN LÝ CỬ TRI</span>
               </div>
               <span className="group-hover:translate-x-1 transition-transform">➔</span>
             </button>
@@ -239,14 +424,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
                   📄
                 </div>
-                <span>Biên bản kết quả</span>
+                <span className="uppercase">KẾT QUẢ</span>
               </div>
               <span className="group-hover:translate-x-1 transition-transform">➔</span>
             </button>
           </div>
 
           <div className="p-3 bg-sky-50 rounded-xl border border-sky-200/80 text-[11px] text-sky-900 font-medium text-center">
-            🔒 Hệ thống đang hoạt động an toàn | Khóa XVI 2026-2031
+            🔒 Hệ thống đang hoạt động an toàn | Khóa {unit.term}
           </div>
         </div>
       </div>
