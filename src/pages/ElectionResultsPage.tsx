@@ -13,7 +13,8 @@ import {
   Building2,
 } from 'lucide-react';
 import { Candidate, ElectionLevel, ElectionLevelConfig, ElectionUnit, BallotRecord } from '../types';
-import { exportElectionResultsExcel, generatePrintProtocol } from '../lib/excelExport';
+import { exportElectionResultsToExcel } from '../lib/excelExporter';
+import { generatePrintProtocol } from '../lib/wordExporter';
 
 interface ElectionResultsPageProps {
   unit: ElectionUnit;
@@ -87,7 +88,7 @@ export const ElectionResultsPage: React.FC<ElectionResultsPageProps> = ({
   const maxVotes = Math.max(...candidateStats.map(c => c.voteCount), 1);
 
   const handleExportExcel = () => {
-    exportElectionResultsExcel(unit, configs, candidates, ballots);
+    exportElectionResultsToExcel(config, levelCandidates, [], validBallots.length, invalidBallotsCount);
   };
 
   const handlePrintWord = () => {
