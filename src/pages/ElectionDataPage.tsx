@@ -293,27 +293,47 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
 
           <div className="bg-white p-5 rounded-2xl border-2 border-sky-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="block text-xs font-extrabold text-slate-700 uppercase">Tổng số cử tri ({currentConfig.levelName}):</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-extrabold text-slate-700 uppercase">Tổng số cử tri ({currentConfig.levelName}):</label>
+                <span className="text-[10px] font-bold text-slate-400">🔒 Tự động đồng bộ</span>
+              </div>
               <input
                 type="number"
+                readOnly
+                disabled
                 value={currentConfig.totalVoters}
-                onChange={e => updateLevelConfig(selectedLevel, { totalVoters: parseInt(e.target.value) || 0 })}
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none"
+                className="w-full p-2.5 bg-slate-100 border border-slate-300 rounded-xl font-extrabold text-slate-600 cursor-not-allowed select-none"
+                title="Số liệu tự động lấy từ danh sách cử tri chính thức (Không cho phép sửa thủ công)"
               />
             </div>
+
             <div className="space-y-1">
-              <label className="block text-xs font-extrabold text-slate-700 uppercase">Số người ứng cử:</label>
-              <div className="p-2.5 bg-slate-100 border border-slate-300 rounded-xl font-extrabold text-slate-900">
-                {levelCandidates.length} người
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-extrabold text-slate-700 uppercase">Số người ứng cử:</label>
+                <span className="text-[10px] font-bold text-slate-400">🔒 Tự động đồng bộ</span>
               </div>
+              <input
+                type="text"
+                readOnly
+                disabled
+                value={`${levelCandidates.length} người`}
+                className="w-full p-2.5 bg-slate-100 border border-slate-300 rounded-xl font-extrabold text-slate-600 cursor-not-allowed select-none"
+                title="Số liệu tự động lấy từ bảng danh sách nhập vào của từng cấp (Không cho phép sửa thủ công)"
+              />
             </div>
+
             <div className="space-y-1">
-              <label className="block text-xs font-extrabold text-slate-700 uppercase">Số đại biểu được bầu:</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-extrabold text-sky-900 uppercase">Số đại biểu được bầu:</label>
+                <span className="text-[10px] font-bold text-sky-600 bg-sky-100 px-1.5 py-0.5 rounded">✍️ Nhập số</span>
+              </div>
               <input
                 type="number"
+                min={1}
                 value={currentConfig.numRepresentatives}
-                onChange={e => updateLevelConfig(selectedLevel, { numRepresentatives: parseInt(e.target.value) || 1 })}
-                className="w-full p-2.5 bg-sky-50 border border-sky-300 rounded-xl font-extrabold text-sky-900 focus:ring-2 focus:ring-sky-500 outline-none"
+                onChange={e => updateLevelConfig(selectedLevel, { numRepresentatives: Math.max(1, parseInt(e.target.value) || 1) })}
+                className="w-full p-2.5 bg-sky-50 border-2 border-sky-400 rounded-xl font-black text-sky-900 focus:ring-2 focus:ring-sky-500 outline-none shadow-2xs"
+                placeholder="Nhập số đại biểu được bầu..."
               />
             </div>
           </div>

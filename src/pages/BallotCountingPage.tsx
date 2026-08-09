@@ -246,30 +246,45 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
           {/* CARD 1: GENERAL ELECTION SETUP */}
           <div className="bg-white p-3.5 rounded-xl border border-slate-300 shadow-sm text-xs space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-slate-700 font-bold">▶ Tổng số cử tri:</span>
+              <span className="text-slate-700 font-bold flex items-center gap-1">
+                <span>▶ Tổng số cử tri:</span>
+                <span className="text-[10px] text-slate-400 font-normal">🔒 Tự động</span>
+              </span>
               <input
                 type="number"
+                readOnly
+                disabled
                 value={config.totalVoters}
-                onChange={e => updateLevelConfig(activeLevel, { totalVoters: parseInt(e.target.value) || 0 })}
-                className="w-24 p-1 bg-slate-50 border border-slate-300 rounded font-bold text-center text-slate-800"
+                className="w-24 p-1 bg-slate-100 border border-slate-300 rounded font-bold text-center text-slate-500 cursor-not-allowed select-none"
+                title="Tự động đồng bộ từ danh sách cử tri"
               />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-700 font-bold">▶ Số người ứng cử:</span>
+              <span className="text-slate-700 font-bold flex items-center gap-1">
+                <span>▶ Số người ứng cử:</span>
+                <span className="text-[10px] text-slate-400 font-normal">🔒 Tự động</span>
+              </span>
               <input
                 type="number"
+                readOnly
+                disabled
                 value={levelCandidates.length}
-                onChange={e => updateLevelConfig(activeLevel, { numCandidates: parseInt(e.target.value) || 0 })}
-                className="w-24 p-1 bg-slate-50 border border-slate-300 rounded font-bold text-center text-slate-800"
+                className="w-24 p-1 bg-slate-100 border border-slate-300 rounded font-bold text-center text-slate-500 cursor-not-allowed select-none"
+                title="Tự động lấy từ danh sách ứng cử viên nhập vào"
               />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-700 font-bold">▶ Số đại biểu được bầu:</span>
+              <span className="text-sky-900 font-bold flex items-center gap-1">
+                <span>▶ Số đại biểu được bầu:</span>
+                <span className="text-[10px] text-sky-600 bg-sky-100 px-1 rounded font-normal">✍️ Nhập số</span>
+              </span>
               <input
                 type="number"
+                min={1}
                 value={config.numRepresentatives}
-                onChange={e => updateLevelConfig(activeLevel, { numRepresentatives: parseInt(e.target.value) || 1 })}
-                className="w-24 p-1 bg-slate-50 border border-slate-300 rounded font-bold text-center text-sky-800"
+                onChange={e => updateLevelConfig(activeLevel, { numRepresentatives: Math.max(1, parseInt(e.target.value) || 1) })}
+                className="w-24 p-1 bg-sky-50 border-2 border-sky-400 rounded font-black text-center text-sky-900 focus:ring-2 focus:ring-sky-500 outline-none"
+                placeholder="Nhập số..."
               />
             </div>
           </div>

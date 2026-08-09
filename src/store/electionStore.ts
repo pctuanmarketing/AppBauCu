@@ -161,6 +161,37 @@ export function useElectionStore() {
     return saved ? JSON.parse(saved) : { isLocked: false, currentRole: 'ADMIN', termName: 'Khóa XVI (2026 - 2031)' };
   });
 
+  // Auto-synchronize totalVoters & numCandidates for each level from real lists
+  useEffect(() => {
+    const qhVoters = voters.filter(v => v.eligibleQuocHoi !== false).length;
+    const tinhVoters = voters.filter(v => v.eligibleHdndTinh !== false).length;
+    const xaVoters = voters.filter(v => v.eligibleHdndXa !== false).length;
+
+    const qhCandidates = candidates.filter(c => c.electionLevel === 'QUOC_HOI').length;
+    const tinhCandidates = candidates.filter(c => c.electionLevel === 'HDND_TINH').length;
+    const xaCandidates = candidates.filter(c => c.electionLevel === 'HDND_XA').length;
+
+    setConfigs(prev => {
+      let changed = false;
+      const next = { ...prev };
+
+      if (next['QUOC_HOI'].totalVoters !== qhVoters || next['QUOC_HOI'].numCandidates !== qhCandidates) {
+        next['QUOC_HOI'] = { ...next['QUOC_HOI'], totalVoters: qhVoters, numCandidates: qhCandidates };
+        changed = true;
+      }
+      if (next['HDND_TINH'].totalVoters !== tinhVoters || next['HDND_TINH'].numCandidates !== tinhCandidates) {
+        next['HDND_TINH'] = { ...next['HDND_TINH'], totalVoters: tinhVoters, numCandidates: tinhCandidates };
+        changed = true;
+      }
+      if (next['HDND_XA'].totalVoters !== xaVoters || next['HDND_XA'].numCandidates !== xaCandidates) {
+        next['HDND_XA'] = { ...next['HDND_XA'], totalVoters: xaVoters, numCandidates: xaCandidates };
+        changed = true;
+      }
+
+      return changed ? next : prev;
+    });
+  }, [voters, candidates]);
+
   // Synchronize to LocalStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.UNIT, JSON.stringify(unit));
