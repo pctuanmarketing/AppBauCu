@@ -15,6 +15,9 @@ import {
   Activity,
   Sparkles,
   Check,
+  Building2,
+  ShieldCheck,
+  Vote,
 } from 'lucide-react';
 import { Voter } from '../types';
 import * as XLSX from 'xlsx';
@@ -57,7 +60,6 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
   const [ethnicity, setEthnicity] = useState('Kinh');
   const [address, setAddress] = useState('Tổ 1, Thôn An Trạch, Xã Hòa Tiến, TP Đà Nẵng');
 
-  // Checkboxes for 3 election levels
   const [eligibleQuocHoi, setEligibleQuocHoi] = useState(true);
   const [eligibleHdndTinh, setEligibleHdndTinh] = useState(true);
   const [eligibleHdndXa, setEligibleHdndXa] = useState(true);
@@ -182,7 +184,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
     setShowVoterModal(false);
   };
 
-  // MULTI-ROW HEADER EXCEL PARSER MATCHING REFERENCE TEMPLATE
+  // MULTI-ROW HEADER EXCEL PARSER
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -245,7 +247,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
           }
         }
 
-        if (nameColIdx === -1) nameColIdx = 2; // Default to Column C
+        if (nameColIdx === -1) nameColIdx = 2;
         const startRow = headerRowIdx !== -1 ? headerRowIdx + 1 : 0;
         const newVotersBatch: Omit<Voter, 'id' | 'stt'>[] = [];
 
@@ -293,9 +295,9 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
 
         if (newVotersBatch.length > 0) {
           importVotersBatch(newVotersBatch);
-          showToast(`✅ Import thành công ${newVotersBatch.length} cử tri từ file Excel!`, 'success');
+          showToast(`✅ Import thành công ${newVotersBatch.length} cử tri từ tệp Excel!`, 'success');
         } else {
-          showToast('⚠️ Không nạp được dữ liệu cử tri. Vui lòng kiểm tra file Excel.', 'error');
+          showToast('⚠️ Không nạp được dữ liệu cử tri. Vui lòng kiểm tra tệp Excel.', 'error');
         }
       } catch (err) {
         showToast('❌ Có lỗi xảy ra khi đọc tệp Excel.', 'error');
@@ -325,41 +327,47 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Non-blocking Toast Banner */}
+      {/* Toast Banner Notification */}
       {toastMsg && (
         <div
-          className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between shadow-lg transition-all animate-bounce ${
+          className={`p-3.5 rounded-xl border text-xs font-bold flex items-center justify-between shadow-xl transition-all duration-300 transform animate-slide-down ${
             toastMsg.type === 'success'
-              ? 'bg-emerald-600 text-white border-emerald-700'
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white border-emerald-500'
               : toastMsg.type === 'info'
-              ? 'bg-sky-600 text-white border-sky-700'
-              : 'bg-rose-600 text-white border-rose-700'
+              ? 'bg-gradient-to-r from-sky-600 to-blue-700 text-white border-sky-500'
+              : 'bg-gradient-to-r from-rose-600 to-red-700 text-white border-rose-500'
           }`}
         >
-          <span className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-300" />
+          <span className="flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 text-amber-300 animate-spin" />
             {toastMsg.text}
           </span>
-          <button onClick={() => setToastMsg(null)} className="text-white hover:opacity-80 font-extrabold ml-4">
+          <button onClick={() => setToastMsg(null)} className="text-white/80 hover:text-white font-extrabold text-sm ml-4">
             ✕
           </button>
         </div>
       )}
 
-      {/* Header & Quick Check-in Bar */}
-      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-3">
-          <div>
-            <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <Users className="w-5 h-5 text-sky-600" />
-              QUẢN LÝ CỬ TRI & ĐIỂM DANH BỎ PHIẾU (DANH SÁCH BẦU 2 & 3 CẤP)
-            </h1>
-            <p className="text-xs text-slate-500">
-              Điểm danh cử tri theo mã thẻ/STT | Tích chọn quyền bỏ phiếu ĐBQH, HĐND Tỉnh, HĐND Xã
-            </p>
+      {/* Modern Header & Quick Check-in Module */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white shadow-md">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="text-lg font-extrabold text-slate-900 tracking-tight">
+                  QUẢN LÝ CỬ TRI & ĐIỂM DANH BỎ PHIẾU
+                </h1>
+                <p className="text-xs text-slate-500 font-medium">
+                  Danh sách cử tri chính thức bầu 2 & 3 cấp | Tỷ lệ cử tri đi bầu toàn khu vực: <strong className="text-sky-700 font-bold">{votedPct}%</strong>
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             {voters.length > 0 && (
               <button
                 onClick={() => {
@@ -368,21 +376,21 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                     showToast('✅ Đã xóa sạch toàn bộ danh sách cử tri.', 'info');
                   }
                 }}
-                className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors"
+                className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-2xs hover:shadow-xs"
                 title="Xóa toàn bộ danh sách cử tri"
               >
                 <Trash className="w-4 h-4" />
                 <span>Xóa sạch danh sách</span>
               </button>
             )}
-            <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300 flex items-center gap-1.5 transition-colors">
+            <label className="cursor-pointer bg-slate-100/80 hover:bg-slate-200/80 text-slate-700 text-xs font-bold px-3.5 py-2 rounded-xl border border-slate-300/80 flex items-center gap-1.5 transition-all shadow-2xs">
               <Upload className="w-4 h-4 text-slate-600" />
               <span>Import Excel</span>
               <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="hidden" />
             </label>
             <button
               onClick={handleOpenAddModal}
-              className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow"
+              className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-xs font-extrabold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-md shadow-sky-600/20 transition-all transform hover:-translate-y-0.5"
             >
               <Plus className="w-4 h-4" />
               Thêm cử tri mới
@@ -390,112 +398,114 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
           </div>
         </div>
 
-        {/* Quick Card Check-in Form */}
-        <form onSubmit={handleQuickCheckinSubmit} className="bg-sky-50/80 p-3 rounded-lg border border-sky-200 flex flex-col sm:flex-row items-center gap-3">
-          <div className="flex items-center gap-2 text-sky-900 font-bold text-xs">
-            <UserCheck className="w-4 h-4 text-sky-600" />
-            <span>ĐIỂM DANH THẺ CỬ TRI KHU VỰC:</span>
+        {/* Rapid Check-in Scanner Bar */}
+        <form onSubmit={handleQuickCheckinSubmit} className="bg-gradient-to-r from-sky-50 via-indigo-50/40 to-sky-50 p-4 rounded-xl border border-sky-200/80 flex flex-col sm:flex-row items-center gap-3 shadow-inner">
+          <div className="flex items-center gap-2.5 text-sky-950 font-extrabold text-xs shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-sky-600 text-white flex items-center justify-center shadow-xs">
+              <UserCheck className="w-4 h-4" />
+            </div>
+            <span>ĐIỂM DANH THẺ CỬ TRI BẰNG MÃ/STT:</span>
           </div>
           <input
             type="text"
             value={quickCardNoInput}
             onChange={e => setQuickCardNoInput(e.target.value)}
             placeholder="Nhập/Quét Số thẻ Cử Tri hoặc STT (VD: 1, 2, 3...)..."
-            className="flex-1 px-3 py-1.5 bg-white border border-sky-300 rounded-md text-xs focus:ring-2 focus:ring-sky-500 outline-none font-mono"
+            className="flex-1 px-4 py-2 bg-white border border-sky-300/80 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none font-mono font-bold text-slate-900 shadow-2xs transition-all"
           />
           <button
             type="submit"
-            className="w-full sm:w-auto px-4 py-1.5 bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold rounded-md shadow"
+            className="w-full sm:w-auto px-5 py-2 bg-sky-700 hover:bg-sky-800 text-white text-xs font-extrabold rounded-xl shadow-md transition-all active:scale-95 shrink-0"
           >
             XÁC NHẬN BỎ PHIẾU
           </button>
         </form>
       </div>
 
-      {/* THANH THỐNG KÊ THỜI GIAN THỰC */}
-      <div className="bg-white p-5 rounded-xl border-2 border-sky-300 shadow-md space-y-3">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-          <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+      {/* THANH THỐNG KÊ THỜI GIAN THỰC (EXCEL SPEC BAR DESIGN) */}
+      <div className="bg-white p-5 rounded-2xl border-2 border-sky-300 shadow-md space-y-3.5">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wide flex items-center gap-2">
             <Activity className="w-4 h-4 text-sky-600" />
             BÁO CÁO THỐNG KÊ CỬ TRI THEO THỜI GIAN THỰC (REAL-TIME PROGRESS)
           </h2>
-          <span className="text-[11px] font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded border border-sky-200">
-            Tổ Bầu Cử #21
+          <span className="text-[11px] font-bold text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-200/80 shadow-2xs">
+            Tổ Bầu Cử Số 21 - Thôn An Trạch
           </span>
         </div>
 
-        <div className="space-y-2 text-xs font-bold font-sans">
+        <div className="space-y-2.5 text-xs font-bold font-sans">
           {/* ROW 1: TỔNG SỐ CỬ TRI */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <div className="w-full sm:w-60 text-slate-800 font-extrabold text-right uppercase tracking-wider pr-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="w-full sm:w-64 text-slate-800 font-extrabold text-right uppercase tracking-wider pr-2">
               TỔNG SỐ CỬ TRI
             </div>
-            <div className="flex-1 bg-sky-100/60 h-8 rounded border border-sky-300 relative overflow-hidden flex items-center shadow-inner">
+            <div className="flex-1 bg-sky-100/60 h-9 rounded-lg border border-sky-300 relative overflow-hidden flex items-center shadow-inner">
               <div className="h-full bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600 transition-all duration-500 rounded-l" style={{ width: '100%' }} />
-              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-slate-900 text-sm tracking-widest">
+              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-slate-900 text-sm tracking-widest drop-shadow-xs">
                 {totalCount.toLocaleString('vi-VN')}
               </span>
             </div>
-            <div className="w-full sm:w-24 bg-emerald-600 text-white font-mono font-extrabold text-center py-1.5 rounded border border-emerald-700 shadow-xs text-xs">
+            <div className="w-full sm:w-28 bg-emerald-600 text-white font-mono font-extrabold text-center py-2 rounded-lg border border-emerald-700 shadow-xs text-xs">
               100.00%
             </div>
           </div>
 
           {/* ROW 2: TỔNG SỐ CỬ TRI ĐÃ BỎ PHIẾU */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <div className="w-full sm:w-60 text-emerald-700 font-extrabold text-right uppercase tracking-wider pr-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="w-full sm:w-64 text-emerald-700 font-extrabold text-right uppercase tracking-wider pr-2">
               TỔNG SỐ CỬ TRI ĐÃ BỎ PHIẾU
             </div>
-            <div className="flex-1 bg-emerald-50 h-8 rounded border border-emerald-300 relative overflow-hidden flex items-center shadow-inner">
-              <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 transition-all duration-500 rounded-l" style={{ width: `${Math.min(100, votedPctNum)}%` }} />
-              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-emerald-950 text-sm tracking-widest">
+            <div className="flex-1 bg-emerald-50 h-9 rounded-lg border border-emerald-300 relative overflow-hidden flex items-center shadow-inner">
+              <div className="h-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 transition-all duration-500 rounded-l" style={{ width: `${Math.min(100, votedPctNum)}%` }} />
+              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-emerald-950 text-sm tracking-widest drop-shadow-xs">
                 {votedCount.toLocaleString('vi-VN')}
               </span>
             </div>
-            <div className="w-full sm:w-24 bg-emerald-600 text-white font-mono font-extrabold text-center py-1.5 rounded border border-emerald-700 shadow-xs text-xs">
+            <div className="w-full sm:w-28 bg-emerald-600 text-white font-mono font-extrabold text-center py-2 rounded-lg border border-emerald-700 shadow-xs text-xs">
               {votedPct}%
             </div>
           </div>
 
           {/* ROW 3: TỔNG SỐ CỬ TRI CHƯA BỎ PHIẾU */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <div className="w-full sm:w-60 text-rose-700 font-extrabold text-right uppercase tracking-wider pr-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="w-full sm:w-64 text-rose-700 font-extrabold text-right uppercase tracking-wider pr-2">
               TỔNG SỐ CỬ TRI CHƯA BỎ PHIẾU
             </div>
-            <div className="flex-1 bg-rose-50 h-8 rounded border border-rose-300 relative overflow-hidden flex items-center shadow-inner">
+            <div className="flex-1 bg-rose-50 h-9 rounded-lg border border-rose-300 relative overflow-hidden flex items-center shadow-inner">
               <div className="h-full bg-gradient-to-r from-sky-400 via-rose-500 to-rose-600 transition-all duration-500 rounded-l" style={{ width: `${Math.min(100, remainingPctNum)}%` }} />
-              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-rose-950 text-sm tracking-widest">
+              <span className="absolute inset-0 flex items-center justify-center font-extrabold text-rose-950 text-sm tracking-widest drop-shadow-xs">
                 {remainingCount.toLocaleString('vi-VN')}
               </span>
             </div>
-            <div className="w-full sm:w-24 bg-emerald-600 text-white font-mono font-extrabold text-center py-1.5 rounded border border-emerald-700 shadow-xs text-xs">
+            <div className="w-full sm:w-28 bg-emerald-600 text-white font-mono font-extrabold text-center py-2 rounded-lg border border-emerald-700 shadow-xs text-xs">
               {remainingPct}%
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Filters & Search Control Panel */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             placeholder="Tìm theo tên cử tri, số thẻ, số CCCD, địa chỉ..."
-            className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/30"
+            className="w-full pl-10 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 font-medium"
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-xs">
-          <div className="flex items-center gap-1.5">
-            <Filter className="w-3.5 h-3.5 text-slate-500" />
+          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+            <Filter className="w-3.5 h-3.5 text-slate-500 ml-1" />
             <span className="font-semibold text-slate-600">Thôn/Tổ:</span>
             <select
               value={selectedVillage}
               onChange={e => setSelectedVillage(e.target.value)}
-              className="p-1.5 bg-slate-50 border border-slate-200 rounded-md font-medium text-slate-700"
+              className="p-1 bg-white border border-slate-200 rounded-lg font-medium text-slate-700 outline-none"
             >
               <option value="ALL">Tất cả thôn/tổ ({voters.length})</option>
               {villages.map(v => (
@@ -506,12 +516,12 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
             </select>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-slate-600">Trạng thái:</span>
+          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+            <span className="font-semibold text-slate-600 ml-1">Trạng thái:</span>
             <select
               value={filterVoted}
               onChange={e => setFilterVoted(e.target.value as any)}
-              className="p-1.5 bg-slate-50 border border-slate-200 rounded-md font-medium text-slate-700"
+              className="p-1 bg-white border border-slate-200 rounded-lg font-medium text-slate-700 outline-none"
             >
               <option value="ALL">Tất cả cử tri</option>
               <option value="VOTED">Đã bỏ phiếu ({votedCount})</option>
@@ -521,38 +531,38 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
         </div>
       </div>
 
-      {/* OFFICIAL VOTER LIST TABLE (DANH SÁCH CỬ TRI CHUẨN MẪU) */}
-      <div className="bg-white rounded-xl border-2 border-slate-700 shadow-md overflow-hidden">
+      {/* OFFICIAL VOTER LIST TABLE DESIGN (CHUẨN NGUYÊN MẪU) */}
+      <div className="bg-white rounded-2xl border-2 border-slate-800 shadow-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-[#1e3a8a] text-white font-extrabold text-center border-b-2 border-slate-800 uppercase tracking-tight">
+            <thead className="bg-[#1e3a8a] text-white font-extrabold text-center border-b-2 border-slate-900 uppercase tracking-tight">
               <tr>
-                <th rowSpan={2} className="p-2.5 w-12 border-r border-blue-900">Số TT</th>
-                <th rowSpan={2} className="p-2.5 w-16 border-r border-blue-900">Số thẻ Cử tri</th>
-                <th rowSpan={2} className="p-2.5 border-r border-blue-900 text-left">Họ và Tên</th>
-                <th rowSpan={2} className="p-2.5 w-24 border-r border-blue-900">Ngày tháng năm sinh</th>
-                <th rowSpan={2} className="p-2.5 w-10 border-r border-blue-900">Nam</th>
-                <th rowSpan={2} className="p-2.5 w-10 border-r border-blue-900">Nữ</th>
-                <th rowSpan={2} className="p-2.5 w-28 border-r border-blue-900">Số Căn cước</th>
-                <th rowSpan={2} className="p-2.5 w-16 border-r border-blue-900">Dân tộc</th>
-                <th rowSpan={2} className="p-2.5 border-r border-blue-900 text-left">NƠI CƯ TRÚ (Thường trú)</th>
-                <th rowSpan={2} className="p-2.5 w-20 border-r border-blue-900 bg-blue-950">
+                <th rowSpan={2} className="p-3 w-12 border-r border-blue-900/60">Số TT</th>
+                <th rowSpan={2} className="p-3 w-16 border-r border-blue-900/60">Số thẻ Cử tri</th>
+                <th rowSpan={2} className="p-3 border-r border-blue-900/60 text-left">Họ và Tên</th>
+                <th rowSpan={2} className="p-3 w-28 border-r border-blue-900/60">Ngày tháng năm sinh</th>
+                <th rowSpan={2} className="p-3 w-10 border-r border-blue-900/60">Nam</th>
+                <th rowSpan={2} className="p-3 w-10 border-r border-blue-900/60">Nữ</th>
+                <th rowSpan={2} className="p-3 w-32 border-r border-blue-900/60">Số Căn cước</th>
+                <th rowSpan={2} className="p-3 w-16 border-r border-blue-900/60">Dân tộc</th>
+                <th rowSpan={2} className="p-3 border-r border-blue-900/60 text-left">NƠI CƯ TRÚ (Thường trú)</th>
+                <th rowSpan={2} className="p-3 w-20 border-r border-blue-900/60 bg-blue-950/80">
                   Bầu cử ĐB Quốc Hội
                 </th>
-                <th colSpan={2} className="p-1.5 border-b border-blue-900 bg-blue-950">
+                <th colSpan={2} className="p-2 border-b border-blue-900/60 bg-blue-950/80">
                   Bầu cử đại biểu HĐND
                 </th>
-                <th rowSpan={2} className="p-2.5 w-32 border-l border-blue-900">Trạng thái & Thao tác</th>
+                <th rowSpan={2} className="p-3 w-32 border-l border-blue-900/60">Trạng thái & Thao tác</th>
               </tr>
               <tr>
-                <th className="p-1.5 w-24 border-r border-blue-900 bg-blue-950">TP Đà Nẵng</th>
-                <th className="p-1.5 w-24 border-r border-blue-900 bg-blue-950">Xã Hòa Tiến</th>
+                <th className="p-2 w-24 border-r border-blue-900/60 bg-blue-950/80">TP Đà Nẵng</th>
+                <th className="p-2 w-24 border-r border-blue-900/60 bg-blue-950/80">Xã Hòa Tiến</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-300 font-medium">
               {filteredVoters.length === 0 ? (
                 <tr>
-                  <td colSpan={13} className="p-8 text-center text-slate-400">
+                  <td colSpan={13} className="p-12 text-center text-slate-400 font-semibold">
                     Chưa có cử tri nào trong danh sách. Vui lòng bấm "+ Thêm cử tri mới" hoặc "Import Excel".
                   </td>
                 </tr>
@@ -565,41 +575,41 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                   const isXa = v.eligibleHdndXa !== false;
 
                   return (
-                    <tr key={v.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-2 text-center font-bold text-slate-600 border-r border-slate-200">
+                    <tr key={v.id} className="hover:bg-sky-50/40 transition-colors">
+                      <td className="p-2.5 text-center font-bold text-slate-600 border-r border-slate-200">
                         {v.stt.toString().padStart(2, '0')}
                       </td>
-                      <td className="p-2 text-center font-mono font-bold text-sky-900 border-r border-slate-200">
+                      <td className="p-2.5 text-center font-mono font-bold text-sky-900 border-r border-slate-200">
                         {v.voterCardNo}
                       </td>
-                      <td className="p-2 font-bold text-slate-900 text-xs border-r border-slate-200 uppercase">
+                      <td className="p-2.5 font-bold text-slate-900 text-xs border-r border-slate-200 uppercase">
                         {v.fullName}
                       </td>
-                      <td className="p-2 text-center font-mono text-slate-600 border-r border-slate-200">
+                      <td className="p-2.5 text-center font-mono text-slate-600 border-r border-slate-200">
                         {v.dob}
                       </td>
-                      <td className="p-2 text-center font-extrabold text-slate-800 border-r border-slate-200">
+                      <td className="p-2.5 text-center font-extrabold text-slate-800 border-r border-slate-200">
                         {isMale ? 'x' : ''}
                       </td>
-                      <td className="p-2 text-center font-extrabold text-slate-800 border-r border-slate-200">
+                      <td className="p-2.5 text-center font-extrabold text-slate-800 border-r border-slate-200">
                         {isFemale ? 'x' : ''}
                       </td>
-                      <td className="p-2 text-center font-mono text-slate-700 text-[11px] border-r border-slate-200">
+                      <td className="p-2.5 text-center font-mono text-slate-700 text-[11px] border-r border-slate-200">
                         {v.idCard || '048*******888'}
                       </td>
-                      <td className="p-2 text-center text-slate-700 border-r border-slate-200">
+                      <td className="p-2.5 text-center text-slate-700 border-r border-slate-200">
                         {v.ethnicity || 'Kinh'}
                       </td>
-                      <td className="p-2 text-slate-700 text-[11px] border-r border-slate-200">
+                      <td className="p-2.5 text-slate-700 text-[11px] border-r border-slate-200">
                         {v.address}
                       </td>
 
                       {/* Interactive Level Checkboxes */}
-                      <td className="p-2 text-center border-r border-slate-200 bg-sky-50/40">
+                      <td className="p-2.5 text-center border-r border-slate-200 bg-sky-50/30">
                         <button
                           onClick={() => handleToggleLevelFlag(v, 'eligibleQuocHoi')}
                           className={`w-6 h-6 rounded border font-bold text-xs inline-flex items-center justify-center transition-all ${
-                            isQH ? 'bg-sky-600 text-white border-sky-700 shadow-xs' : 'bg-white text-slate-300 border-slate-300'
+                            isQH ? 'bg-sky-600 text-white border-sky-700 shadow-2xs' : 'bg-white text-slate-300 border-slate-300'
                           }`}
                           title="Tích chọn/Bỏ chọn bầu cử ĐB Quốc hội"
                         >
@@ -607,11 +617,11 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                         </button>
                       </td>
 
-                      <td className="p-2 text-center border-r border-slate-200 bg-sky-50/40">
+                      <td className="p-2.5 text-center border-r border-slate-200 bg-sky-50/30">
                         <button
                           onClick={() => handleToggleLevelFlag(v, 'eligibleHdndTinh')}
                           className={`w-6 h-6 rounded border font-bold text-xs inline-flex items-center justify-center transition-all ${
-                            isTinh ? 'bg-sky-600 text-white border-sky-700 shadow-xs' : 'bg-white text-slate-300 border-slate-300'
+                            isTinh ? 'bg-sky-600 text-white border-sky-700 shadow-2xs' : 'bg-white text-slate-300 border-slate-300'
                           }`}
                           title="Tích chọn/Bỏ chọn bầu cử ĐB HĐND TP Đà Nẵng"
                         >
@@ -619,11 +629,11 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                         </button>
                       </td>
 
-                      <td className="p-2 text-center border-r border-slate-200 bg-sky-50/40">
+                      <td className="p-2.5 text-center border-r border-slate-200 bg-sky-50/30">
                         <button
                           onClick={() => handleToggleLevelFlag(v, 'eligibleHdndXa')}
                           className={`w-6 h-6 rounded border font-bold text-xs inline-flex items-center justify-center transition-all ${
-                            isXa ? 'bg-sky-600 text-white border-sky-700 shadow-xs' : 'bg-white text-slate-300 border-slate-300'
+                            isXa ? 'bg-sky-600 text-white border-sky-700 shadow-2xs' : 'bg-white text-slate-300 border-slate-300'
                           }`}
                           title="Tích chọn/Bỏ chọn bầu cử ĐB HĐND Xã Hòa Tiến"
                         >
@@ -632,7 +642,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                       </td>
 
                       {/* Check-in & Actions */}
-                      <td className="p-2 text-center">
+                      <td className="p-2.5 text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => {
@@ -641,10 +651,10 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                                 showToast(`✅ Đã điểm danh cử tri: ${v.fullName}`, 'success');
                               }
                             }}
-                            className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
+                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all shadow-2xs ${
                               v.hasVoted
                                 ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300'
-                                : 'bg-sky-600 text-white hover:bg-sky-700 shadow-xs'
+                                : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-xs'
                             }`}
                           >
                             {v.hasVoted ? 'Đã bầu' : 'Điểm danh'}
@@ -652,7 +662,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
 
                           <button
                             onClick={() => handleOpenEditModal(v)}
-                            className="p-1 text-sky-600 hover:text-sky-800 hover:bg-sky-50 rounded"
+                            className="p-1.5 text-sky-600 hover:text-sky-800 hover:bg-sky-50 rounded-lg transition-colors"
                             title="Sửa cử tri"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -665,7 +675,7 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
                                 showToast(`✅ Đã xóa cử tri: ${v.fullName}`, 'info');
                               }
                             }}
-                            className="p-1 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded"
+                            className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors"
                             title="Xóa cử tri"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -683,143 +693,144 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
 
       {/* Add / Edit Voter Modal */}
       {showVoterModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full p-6 space-y-4 shadow-xl border border-slate-200">
-            <div className="flex justify-between items-center border-b pb-2">
-              <h3 className="text-sm font-bold text-slate-800 uppercase">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                <Users className="w-4 h-4 text-sky-600" />
                 {editingVoter ? 'SỬA THÔNG TIN CỬ TRI' : 'THÊM MỚI CỬ TRI'}
               </h3>
               <button onClick={() => setShowVoterModal(false)} className="text-slate-400 hover:text-slate-600 font-bold">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleSaveVoter} className="space-y-3 text-xs">
+            <form onSubmit={handleSaveVoter} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-600 font-semibold mb-1">Số Thẻ Cử Tri:</label>
+                  <label className="block text-slate-700 font-bold mb-1">Số Thẻ Cử Tri:</label>
                   <input
                     type="text"
                     required
                     value={voterCardNo}
                     onChange={e => setVoterCardNo(e.target.value)}
                     placeholder="1, 2, 3..."
-                    className="w-full p-2 border border-slate-300 rounded font-mono font-bold"
+                    className="w-full p-2.5 border border-slate-300 rounded-xl font-mono font-bold focus:ring-2 focus:ring-sky-500 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-600 font-semibold mb-1">Họ và Tên:</label>
+                  <label className="block text-slate-700 font-bold mb-1">Họ và Tên:</label>
                   <input
                     type="text"
                     required
                     value={fullName}
                     onChange={e => setFullName(e.target.value)}
                     placeholder="ĐẶNG HUY TƯỜNG"
-                    className="w-full p-2 border border-slate-300 rounded font-bold text-slate-800 uppercase"
+                    className="w-full p-2.5 border border-slate-300 rounded-xl font-bold text-slate-900 uppercase focus:ring-2 focus:ring-sky-500 outline-none"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2.5">
                 <div>
-                  <label className="block text-slate-600 font-semibold mb-1">Giới tính:</label>
+                  <label className="block text-slate-700 font-bold mb-1">Giới tính:</label>
                   <select
                     value={gender}
                     onChange={e => setGender(e.target.value)}
-                    className="w-full p-2 border border-slate-300 rounded font-medium"
+                    className="w-full p-2.5 border border-slate-300 rounded-xl font-semibold outline-none"
                   >
                     <option value="Nam">Nam</option>
                     <option value="Nữ">Nữ</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-600 font-semibold mb-1">Ngày tháng năm sinh:</label>
+                  <label className="block text-slate-700 font-bold mb-1">Ngày sinh:</label>
                   <input
                     type="text"
                     value={dob}
                     onChange={e => setDob(e.target.value)}
                     placeholder="13/01/2005"
-                    className="w-full p-2 border border-slate-300 rounded font-mono"
+                    className="w-full p-2.5 border border-slate-300 rounded-xl font-mono outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-600 font-semibold mb-1">Dân tộc:</label>
+                  <label className="block text-slate-700 font-bold mb-1">Dân tộc:</label>
                   <input
                     type="text"
                     value={ethnicity}
                     onChange={e => setEthnicity(e.target.value)}
                     placeholder="Kinh"
-                    className="w-full p-2 border border-slate-300 rounded font-medium"
+                    className="w-full p-2.5 border border-slate-300 rounded-xl font-semibold outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-600 font-semibold mb-1">Số Căn cước (CCCD):</label>
+                <label className="block text-slate-700 font-bold mb-1">Số Căn cước (CCCD):</label>
                 <input
                   type="text"
                   value={idCard}
                   onChange={e => setIdCard(e.target.value)}
                   placeholder="048*******698"
-                  className="w-full p-2 border border-slate-300 rounded font-mono"
+                  className="w-full p-2.5 border border-slate-300 rounded-xl font-mono outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-600 font-semibold mb-1">NƠI CƯ TRÚ (Thường trú):</label>
+                <label className="block text-slate-700 font-bold mb-1">NƠI CƯ TRÚ (Thường trú):</label>
                 <input
                   type="text"
                   value={address}
                   onChange={e => setAddress(e.target.value)}
                   placeholder="Tổ 1, Thôn An Trạch, Xã Hòa Tiến, Thành Phố Đà Nẵng"
-                  className="w-full p-2 border border-slate-300 rounded font-medium"
+                  className="w-full p-2.5 border border-slate-300 rounded-xl font-semibold outline-none"
                 />
               </div>
 
               {/* Checklist Cấp Bầu Cử Được Bầu */}
-              <div className="p-3 bg-sky-50 rounded-lg border border-sky-200 space-y-2">
-                <label className="block text-sky-900 font-bold">CÁC CẤP BẦU CỬ CỬ TRI THAM GIA BỎ PHIẾU:</label>
-                <div className="space-y-1.5 pl-1">
-                  <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700">
+              <div className="p-3.5 bg-sky-50/80 rounded-xl border border-sky-200/80 space-y-2.5">
+                <label className="block text-sky-950 font-extrabold text-xs">CÁC CẤP BẦU CỬ CỬ TRI THAM GIA BỎ PHIẾU:</label>
+                <div className="space-y-2 pl-1">
+                  <label className="flex items-center gap-2.5 cursor-pointer font-bold text-slate-700 hover:text-sky-900">
                     <input
                       type="checkbox"
                       checked={eligibleQuocHoi}
                       onChange={e => setEligibleQuocHoi(e.target.checked)}
-                      className="w-4 h-4 text-sky-600 rounded"
+                      className="w-4 h-4 text-sky-600 rounded border-slate-300"
                     />
                     <span>Bầu cử Đại biểu Quốc Hội</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700">
+                  <label className="flex items-center gap-2.5 cursor-pointer font-bold text-slate-700 hover:text-sky-900">
                     <input
                       type="checkbox"
                       checked={eligibleHdndTinh}
                       onChange={e => setEligibleHdndTinh(e.target.checked)}
-                      className="w-4 h-4 text-sky-600 rounded"
+                      className="w-4 h-4 text-sky-600 rounded border-slate-300"
                     />
                     <span>Bầu cử đại biểu HĐND Thành phố Đà Nẵng</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700">
+                  <label className="flex items-center gap-2.5 cursor-pointer font-bold text-slate-700 hover:text-sky-900">
                     <input
                       type="checkbox"
                       checked={eligibleHdndXa}
                       onChange={e => setEligibleHdndXa(e.target.checked)}
-                      className="w-4 h-4 text-sky-600 rounded"
+                      className="w-4 h-4 text-sky-600 rounded border-slate-300"
                     />
                     <span>Bầu cử đại biểu HĐND Xã Hòa Tiến</span>
                   </label>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t">
+              <div className="flex justify-end gap-2.5 pt-3 border-t">
                 <button
                   type="button"
                   onClick={() => setShowVoterModal(false)}
-                  className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded font-semibold"
+                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-sky-600 text-white rounded font-bold"
+                  className="px-5 py-2 bg-gradient-to-r from-sky-600 to-blue-600 text-white rounded-xl font-extrabold shadow-md hover:opacity-95"
                 >
                   {editingVoter ? 'Lưu thay đổi' : 'Thêm cử tri'}
                 </button>
