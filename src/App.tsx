@@ -1,384 +1,245 @@
-import React, { useState, useEffect } from 'react';
-import { Council, CouncilId, Candidate, VoteRecord, VotingUnit, CandidateVote, User } from './types';
-import { getCouncils, getVotingUnit, saveVotingUnit, getCandidates, saveCandidates, getVoteRecord, saveVoteRecord } from './lib/storage';
-import { Sidebar } from './components/SaaS/Sidebar';
-import { TopHeader } from './components/SaaS/TopHeader';
-import { ERPDashboard } from './components/SaaS/ERPDashboard';
-import { UnitInfoForm } from './components/Forms/UnitInfoForm';
-import { CouncilInfoForm } from './components/Forms/CouncilInfoForm';
-import { VoteCounting } from './components/VoteCounting';
-import { ReportGenerator } from './components/ReportGenerator';
-import { AuthModal } from './components/Auth/AuthModal';
-import { UserManagementModal } from './components/Auth/UserManagementModal';
-import { SupabaseModal } from './components/SupabaseModal';
-import { HelpModal } from './components/Help/HelpModal';
-import { getSupabaseConfig } from './lib/supabase';
-import { Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { useElectionStore } from './store/electionStore';
+import { Layout } from './components/layout/Layout';
+import { DashboardPage } from './pages/DashboardPage';
+import { ElectionDataPage } from './pages/ElectionDataPage';
+import { VoterManagementPage } from './pages/VoterManagementPage';
+import { BallotCountingPage } from './pages/BallotCountingPage';
+import { ResultsReportPage } from './pages/ResultsReportPage';
+import { SystemAdminPage } from './pages/SystemAdminPage';
+import { UserRole } from './types';
+import { HelpCircle, Vote, Users, X } from 'lucide-react';
 
-export const App: React.FC = () => {
-  // Auth Session State
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('current_user');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { return null; }
-    }
-    return null;
-  });
+export function App() {
+  const {
+    unit,
+    configs,
+    committee,
+    witnesses,
+    candidates,
+    voters,
+    ballots,
+    settings,
+    setSettings,
+    toggleVoterStatus,
+    addBallot,
+    undoLastBallot,
+    resetBallotsForLevel,
+    addVoter,
+    updateCandidate,
+    updateUnit,
+    updateLevelConfig,
+    setCommittee,
+    setWitnesses,
+  } = useElectionStore();
 
-  // ERP Sidebar Navigation State
-  const [activeModule, setActiveModule] = useState<'dashboard' | 'data' | 'counting' | 'stats' | 'system' | 'help'>('dashboard');
-  const [activeSubView, setActiveSubView] = useState<string>('unit_info');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showQuickActionModal, setShowQuickActionModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
-  const [councils] = useState<Council[]>(getCouncils());
-  const [selectedCouncilId, setSelectedCouncilId] = useState<CouncilId>('quoc_hoi');
-
-  const [unit, setUnit] = useState<VotingUnit>({
-    id: 'unit-1',
-    unitName: 'Tổ bầu cử số 21',
-    votingArea: 'Khu vực bỏ phiếu số 21',
-    province: 'Thành phố Đà Nẵng',
-    term: 'XVI',
-    district: 'Huyện Hòa Vang',
-    commune: 'Xã Hòa Tiến',
-    totalVoters: 1250,
-    quocHoiUnitNo: '2',
-    quocHoiAreas: 'Đặc khu Hoàng Sa, Phường An Hải, Phường Sơn Trà, Phường Ngũ Hành Sơn, Ph...',
-    hdndTinhUnitNo: '6',
-    hdndTinhAreas: 'Xã Hòa Vang, Xã Hòa Tiến, Xã Bà Nà',
-    hdndXaUnitNo: '8',
-    hdndXaAreas: 'Nam Sơn, Lệ Sơn 2, An Trạch'
-  });
-
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [voteRecords, setVoteRecords] = useState<Record<string, { record: VoteRecord; candidateVotes: CandidateVote[]; candidates: Candidate[] }>>({});
-  const [loading, setLoading] = useState(true);
-
-  const [supabaseConfig, setSupabaseConfig] = useState(getSupabaseConfig());
-  const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
-  const [isUserManagementModalOpen, setIsUserManagementModalOpen] = useState(false);
-  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-  const [helpMode, setHelpMode] = useState<'guide' | 'author'>('guide');
-
-  const loadAllData = async () => {
-    setLoading(true);
-    try {
-      const u = await getVotingUnit();
-      setUnit(u);
-
-      const cands = await getCandidates();
-      setCandidates(cands);
-
-      const recordsMap: Record<string, { record: VoteRecord; candidateVotes: CandidateVote[]; candidates: Candidate[] }> = {};
-      for (const council of councils) {
-        const data = await getVoteRecord(council.id);
-        recordsMap[council.id] = {
-          record: data.record,
-          candidateVotes: data.candidateVotes,
-          candidates: cands.filter(c => c.councilId === council.id)
-        };
-      }
-      setVoteRecords(recordsMap);
-    } catch (e) {
-      console.error('Error loading data:', e);
-    } finally {
-      setLoading(false);
-    }
+  const handleRoleChange = (role: UserRole) => {
+    setSettings(prev => ({ ...prev, currentRole: role }));
   };
-
-  useEffect(() => {
-    loadAllData();
-  }, [councils]);
-
-  const handleSaveUnit = async (newUnit: VotingUnit) => {
-    if (currentUser?.role === 'viewer') {
-      alert('Tài khoản Quan sát viên (Viewer) chỉ có quyền xem, không được lưu dữ liệu!');
-      return;
-    }
-    setUnit(newUnit);
-    await saveVotingUnit(newUnit);
-  };
-
-  const handleSaveCandidates = async (newCands: Candidate[]) => {
-    if (currentUser?.role === 'viewer') {
-      alert('Tài khoản Quan sát viên (Viewer) chỉ có quyền xem, không được sửa ứng cử viên!');
-      return;
-    }
-    setCandidates(newCands);
-    await saveCandidates(newCands);
-  };
-
-  const handleSaveVoteRecord = async (record: VoteRecord, cVotes: CandidateVote[]) => {
-    if (currentUser?.role === 'viewer') {
-      alert('Tài khoản Quan sát viên (Viewer) chỉ có quyền xem, không được nhập phiếu bầu!');
-      return;
-    }
-    await saveVoteRecord(record, cVotes);
-    setVoteRecords(prev => ({
-      ...prev,
-      [record.councilId]: {
-        record,
-        candidateVotes: cVotes,
-        candidates: candidates.filter(c => c.councilId === record.councilId)
-      }
-    }));
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('current_user');
-    setCurrentUser(null);
-  };
-
-  const handleNavigateToCounting = (id: CouncilId) => {
-    setSelectedCouncilId(id);
-    setActiveModule('counting');
-    setActiveSubView(`counting_${id}`);
-  };
-
-  const handleNavigateToReports = (id: CouncilId) => {
-    setSelectedCouncilId(id);
-    setActiveModule('stats');
-    setActiveSubView(`reports_${id}`);
-  };
-
-  const currentCouncilData = voteRecords[selectedCouncilId] || {
-    record: {
-      id: `rec-${selectedCouncilId}`,
-      votingUnitId: unit.id,
-      councilId: selectedCouncilId,
-      totalVoters: unit.totalVoters,
-      votersVoted: 0,
-      ballotsIssued: 0,
-      ballotsCollected: 0,
-      validBallots: 0,
-      invalidBallots: 0,
-      status: 'draft'
-    },
-    candidateVotes: [],
-    candidates: []
-  };
-
-  const currentSelectedCouncil = councils.find(c => c.id === selectedCouncilId) || councils[0];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center space-y-4 text-white font-sans">
-        <Loader2 className="w-10 h-10 text-teal-400 animate-spin" />
-        <p className="text-xs font-bold tracking-wider">Đang tải AVA ERP Kiểm phiếu Bầu cử 2026...</p>
-      </div>
-    );
-  }
-
-  // Auth Protection
-  if (!currentUser) {
-    return (
-      <AuthModal
-        onLoginSuccess={(user) => {
-          setCurrentUser(user);
-        }}
-      />
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 flex font-sans select-none overflow-x-hidden">
-      
-      {/* Enterprise Left Sidebar */}
-      <Sidebar
-        activeModule={activeModule}
-        setActiveModule={setActiveModule}
-        setActiveSubView={setActiveSubView}
-        setSelectedCouncilId={setSelectedCouncilId}
-        isCollapsed={isSidebarCollapsed}
-        setIsCollapsed={setIsSidebarCollapsed}
-        currentUser={currentUser}
-        onOpenUserManagement={() => setIsUserManagementModalOpen(true)}
-      />
-
-      {/* Right Main Column */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
-        
-        {/* Enterprise Top Header Ribbon Menu Bar */}
-        <TopHeader
-          currentUser={currentUser}
-          onLogout={handleLogout}
-          onOpenHelpGuide={() => { setHelpMode('guide'); setIsHelpModalOpen(true); }}
-          onOpenAuthorInfo={() => { setHelpMode('author'); setIsHelpModalOpen(true); }}
-          onNavigateToUnitInfo={() => {
-            setActiveModule('data');
-            setActiveSubView('unit_info');
-          }}
-          onNavigateToCouncilInfo={(cId) => {
-            setSelectedCouncilId(cId);
-            setActiveModule('data');
-            setActiveSubView(`council_${cId}`);
-          }}
-          onNavigateToCounting={handleNavigateToCounting}
-          onNavigateToReports={handleNavigateToReports}
-          onOpenUserManagement={() => setIsUserManagementModalOpen(true)}
-          onOpenSupabaseConfig={() => setIsSupabaseModalOpen(true)}
+    <Layout
+      unit={unit}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      currentRole={settings.currentRole}
+      setRole={handleRoleChange}
+      searchTerm={searchTerm}
+      setSearchTerm={setSearchTerm}
+      onOpenQuickAction={() => setShowQuickActionModal(true)}
+      onOpenHelp={() => setShowHelpModal(true)}
+    >
+      {/* Tab Pages Switch */}
+      {activeTab === 'dashboard' && (
+        <DashboardPage
+          unit={unit}
+          configs={configs}
+          voters={voters}
+          candidates={candidates}
+          setActiveTab={setActiveTab}
+          onOpenQuickAction={() => setShowQuickActionModal(true)}
         />
+      )}
 
-        {/* Main Content Workspace Area */}
-        <main className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
-          
-          {/* Module 1: Dashboard */}
-          {activeModule === 'dashboard' && (
-            <ERPDashboard
-              unit={unit}
-              councils={councils}
-              voteRecords={voteRecords}
-              currentUser={currentUser}
-              onNavigateToCounting={handleNavigateToCounting}
-              onNavigateToReports={handleNavigateToReports}
-            />
-          )}
+      {activeTab === 'election_data' && (
+        <ElectionDataPage
+          unit={unit}
+          updateUnit={updateUnit}
+          configs={configs}
+          updateLevelConfig={updateLevelConfig}
+          committee={committee}
+          setCommittee={setCommittee}
+          witnesses={witnesses}
+          setWitnesses={setWitnesses}
+          candidates={candidates}
+          updateCandidate={updateCandidate}
+        />
+      )}
 
-          {/* Module 2: Data Entry */}
-          {activeModule === 'data' && activeSubView === 'unit_info' && (
-            <UnitInfoForm
-              unit={unit}
-              onSaveUnit={handleSaveUnit}
-              onClose={() => handleNavigateToCounting('quoc_hoi')}
-            />
-          )}
+      {activeTab === 'voters' && (
+        <VoterManagementPage
+          voters={voters}
+          toggleVoterStatus={toggleVoterStatus}
+          addVoter={addVoter}
+        />
+      )}
 
-          {activeModule === 'data' && activeSubView.startsWith('council_') && (
-            <CouncilInfoForm
-              council={currentSelectedCouncil}
-              candidates={candidates}
-              onSaveCandidates={handleSaveCandidates}
-              unit={unit}
-              onClose={() => setActiveSubView('unit_info')}
-            />
-          )}
+      {activeTab === 'ballot_counting' && (
+        <BallotCountingPage
+          configs={configs}
+          updateLevelConfig={updateLevelConfig}
+          candidates={candidates}
+          ballots={ballots}
+          addBallot={addBallot}
+          undoLastBallot={undoLastBallot}
+          resetBallotsForLevel={resetBallotsForLevel}
+        />
+      )}
 
-          {/* Module 3: Fast Vote Counting */}
-          {activeModule === 'counting' && (
-            <VoteCounting
-              councils={councils}
-              selectedCouncilId={selectedCouncilId}
-              setSelectedCouncilId={setSelectedCouncilId}
-              unit={unit}
-              candidates={candidates}
-              voteRecord={currentCouncilData.record}
-              candidateVotes={currentCouncilData.candidateVotes}
-              onSaveVoteRecord={handleSaveVoteRecord}
-              currentUser={currentUser}
-            />
-          )}
+      {activeTab === 'results_report' && (
+        <ResultsReportPage
+          unit={unit}
+          configs={configs}
+          candidates={candidates}
+          voters={voters}
+          ballots={ballots}
+          committee={committee}
+        />
+      )}
 
-          {/* Module 4: Statistics & Reports */}
-          {activeModule === 'stats' && (
-            <ReportGenerator
-              councils={councils}
-              selectedCouncilId={selectedCouncilId}
-              setSelectedCouncilId={setSelectedCouncilId}
-              unit={unit}
-              candidates={candidates}
-              voteRecords={voteRecords}
-            />
-          )}
+      {activeTab === 'system_admin' && (
+        <SystemAdminPage
+          settings={settings}
+          setSettings={setSettings}
+        />
+      )}
 
-          {/* Module 5: System Configuration */}
-          {activeModule === 'system' && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-              <h2 className="text-base font-extrabold text-slate-900 border-b pb-2">
-                HỆ THỐNG & CẤU HÌNH DỮ LIỆU
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {currentUser?.role === 'admin' && (
-                  <button
-                    onClick={() => setIsUserManagementModalOpen(true)}
-                    className="p-4 bg-amber-50 border border-amber-300 rounded-xl hover:bg-amber-100 transition text-left space-y-1"
-                  >
-                    <span className="font-bold text-amber-900 text-xs block">👑 Quản lý Người dùng & Phê duyệt</span>
-                    <span className="text-[11px] text-amber-700 block">Duyệt tài khoản mới & phân quyền Admin/Editor/Viewer</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => setIsSupabaseModalOpen(true)}
-                  className="p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-teal-500 transition text-left space-y-1"
-                >
-                  <span className="font-bold text-teal-800 text-xs block">☁️ Cấu hình Supabase Cloud</span>
-                  <span className="text-[11px] text-slate-500 block">Đồng bộ cơ sở dữ liệu trực tuyến</span>
-                </button>
-                <button
-                  onClick={() => {
-                    const backupData = { unit, candidates, voteRecords };
-                    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = `SaoLuu_DuLieu_${new Date().toISOString().slice(0, 10)}.json`;
-                    a.click();
-                  }}
-                  className="p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-teal-500 transition text-left space-y-1"
-                >
-                  <span className="font-bold text-teal-800 text-xs block">📥 Sao lưu dữ liệu JSON</span>
-                  <span className="text-[11px] text-slate-500 block">Tải file backup về máy tính</span>
-                </button>
+      {/* Quick Action Modal (+ Thêm Nhanh) */}
+      {showQuickActionModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <Vote className="w-5 h-5 text-sky-600" />
+                THAO TÁC NHAU CHỌN NHANH
+              </h3>
+              <button
+                onClick={() => setShowQuickActionModal(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              <button
+                onClick={() => {
+                  setShowQuickActionModal(false);
+                  setActiveTab('ballot_counting');
+                }}
+                className="p-4 rounded-xl bg-gradient-to-r from-sky-600 to-sky-700 text-white font-bold text-xs flex items-center justify-between shadow hover:opacity-95 transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-lg">
+                    🗳️
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-extrabold">KIỂM PHIẾU BẦU CỬ</div>
+                    <div className="text-[11px] font-normal text-sky-100">
+                      Gạch phiếu & tính kết quả tự động
+                    </div>
+                  </div>
+                </div>
+                <span>➔</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowQuickActionModal(false);
+                  setActiveTab('voters');
+                }}
+                className="p-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs flex items-center justify-between shadow hover:opacity-95 transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-lg">
+                    👥
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-extrabold">ĐIỂM DANH THẺ CỬ TRI</div>
+                    <div className="text-[11px] font-normal text-emerald-100">
+                      Cập nhật trạng thái cử tri đi bầu
+                    </div>
+                  </div>
+                </div>
+                <span>➔</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Help Modal */}
+      {showHelpModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-200 max-h-[85vh] flex flex-col">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-sky-600" />
+                HƯỚNG DẪN SỬ DỤNG PHẦN MỀM BẦU CỬ
+              </h3>
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-4 text-xs text-slate-700 leading-relaxed pr-2">
+              <div className="p-3 bg-sky-50 rounded-lg border border-sky-200">
+                <h4 className="font-bold text-sky-900 mb-1">1. Quy trình Kiểm phiếu Bầu cử:</h4>
+                <p>
+                  - Chọn cấp bầu cử (Đại biểu Quốc hội / HĐND Tỉnh / HĐND Xã).
+                  <br />- Nhập số thứ tự ứng cử viên bị gạch tên (VD: Gõ <strong>134</strong> là ứng cử viên số 1, 3, 4 bị gạch phiếu).
+                  <br />- Gõ <strong>0</strong> cho phiếu không hợp lệ do hình thức/gạch ngoài danh sách.
+                  <br />- Nhấn <strong>Enter 2 lần</strong> để xác nhận ghi nhận phiếu.
+                </p>
+              </div>
+
+              <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                <h4 className="font-bold text-emerald-900 mb-1">2. Điểm danh cử tri đi bỏ phiếu:</h4>
+                <p>
+                  - Sử dụng ô điểm danh nhanh bằng cách nhập <strong>Mã thẻ cử tri</strong> (VD: <i>TC-21-0001</i>).
+                  <br />- Hoặc tìm kiếm tên cử tri trên danh sách và bấm nút <strong>"Điểm danh ngay"</strong>.
+                </p>
+              </div>
+
+              <div className="p-3 bg-slate-100 rounded-lg border border-slate-200">
+                <h4 className="font-bold text-slate-900 mb-1">3. Xuất Báo cáo & Biên bản:</h4>
+                <p>
+                  - Vào phân hệ <strong>"Kết quả & Báo cáo"</strong>.
+                  <br />- Bấm nút <strong>"Xuất báo cáo Excel (.xlsx)"</strong> để tải file dữ liệu chi tiết.
+                  <br />- Bấm nút <strong>"In Biên bản kiểm phiếu (Word)"</strong> để mở trang in biên bản đúng mẫu quốc gia.
+                </p>
               </div>
             </div>
-          )}
 
-          {/* Module 6: Help */}
-          {activeModule === 'help' && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-              <h2 className="text-base font-extrabold text-slate-900 border-b pb-2">
-                HƯỚNG DẪN SỬ DỤNG & THÔNG TIN BẢN QUYỀN
-              </h2>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => { setHelpMode('guide'); setIsHelpModalOpen(true); }}
-                  className="px-4 py-2 bg-teal-600 text-white rounded-lg text-xs font-bold shadow"
-                >
-                  Mở Cửa sổ Hướng dẫn sử dụng
-                </button>
-                <button
-                  onClick={() => { setHelpMode('author'); setIsHelpModalOpen(true); }}
-                  className="px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold shadow"
-                >
-                  Xem Bản quyền Tác giả Phạm Công Tuân
-                </button>
-              </div>
+            <div className="pt-2 border-t text-right">
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="px-4 py-2 bg-sky-600 text-white rounded-lg text-xs font-bold"
+              >
+                Đã hiểu
+              </button>
             </div>
-          )}
-
-        </main>
-
-        {/* Footer Bar */}
-        <footer className="bg-white border-t border-slate-200 px-6 py-3 text-xs text-slate-500 flex justify-between items-center print:hidden">
-          <div>
-            AVA Kế toán & Kiểm phiếu Bầu cử 2026-2031 | Địa bàn: <strong>{unit.province}</strong> ({unit.commune})
           </div>
-          <div>
-            Tác giả: <strong className="text-teal-700">Phạm Công Tuân</strong> (0916 199 945 - pctuanit@gmail.com)
-          </div>
-        </footer>
-
-      </div>
-
-      {/* User Management Approval Modal (Admin Only) */}
-      <UserManagementModal
-        isOpen={isUserManagementModalOpen}
-        onClose={() => setIsUserManagementModalOpen(false)}
-        currentUser={currentUser}
-      />
-
-      {/* Supabase Modal */}
-      <SupabaseModal
-        isOpen={isSupabaseModalOpen}
-        onClose={() => setIsSupabaseModalOpen(false)}
-        onConnected={() => setSupabaseConfig(getSupabaseConfig())}
-      />
-
-      {/* Help Modal */}
-      <HelpModal
-        isOpen={isHelpModalOpen}
-        mode={helpMode}
-        onClose={() => setIsHelpModalOpen(false)}
-      />
-
-    </div>
+        </div>
+      )}
+    </Layout>
   );
-};
+}

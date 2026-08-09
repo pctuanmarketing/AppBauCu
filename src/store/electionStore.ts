@@ -1,0 +1,325 @@
+import { useState, useEffect } from 'react';
+import {
+  BallotRecord,
+  Candidate,
+  CommitteeMember,
+  ElectionLevel,
+  ElectionLevelConfig,
+  ElectionUnit,
+  SystemSettings,
+  Voter,
+  Witness,
+} from '../types';
+import { calculateBallot } from '../lib/ballotCalculator';
+
+// ---------------------------------------------------------
+// INITIAL REALISTIC DATASETS (Dựa theo tài liệu 1.pdf & Excel)
+// ---------------------------------------------------------
+
+const INITIAL_UNIT: ElectionUnit = {
+  id: 'unit-1',
+  province: 'Thành phố Đà Nẵng',
+  term: 'XVI',
+  quocHoiUnitNo: 2,
+  quocHoiWards: 'Đặc khu Hoàng Sa, Phường An Hải, Phường Sơn Trà, Phường Ngũ Hành Sơn',
+  hdndTinhUnitNo: 6,
+  hdndTinhWards: 'Xã Hòa Vang, Xã Hòa Tiến, Xã Bà Nà',
+  hdndXaUnitNo: 8,
+  hdndXaVillages: 'Nam Sơn, Lệ Sơn 2, An Trạch',
+  votingAreaNo: 21,
+  wardName: 'Xã Hòa Tiến',
+};
+
+const INITIAL_CONFIGS: Record<ElectionLevel, ElectionLevelConfig> = {
+  QUOC_HOI: {
+    levelCode: 'QUOC_HOI',
+    levelName: 'Đại biểu Quốc hội',
+    totalVoters: 1369,
+    numCandidates: 5,
+    numRepresentatives: 3,
+    ballotsReceived: 1436,
+    ballotsIssued: 1369,
+    ballotsDamaged: 2,
+    ballotsReturned: 9,
+  },
+  HDND_TINH: {
+    levelCode: 'HDND_TINH',
+    levelName: 'Đại biểu HĐND Tỉnh',
+    totalVoters: 1369,
+    numCandidates: 5,
+    numRepresentatives: 3,
+    ballotsReceived: 1436,
+    ballotsIssued: 1369,
+    ballotsDamaged: 0,
+    ballotsReturned: 0,
+  },
+  HDND_XA: {
+    levelCode: 'HDND_XA',
+    levelName: 'Đại biểu HĐND Xã',
+    totalVoters: 1369,
+    numCandidates: 5,
+    numRepresentatives: 3,
+    ballotsReceived: 100,
+    ballotsIssued: 100,
+    ballotsDamaged: 0,
+    ballotsReturned: 0,
+  },
+};
+
+const INITIAL_COMMITTEE: CommitteeMember[] = [
+  { id: '1', stt: 1, fullName: 'Nguyễn Đính', role: 'Tổ trưởng', idCard: '048085001234', phone: '0905628031' },
+  { id: '2', stt: 2, fullName: 'Đặng Thức', role: 'Thư ký', idCard: '048085005678', phone: '0905628660' },
+  { id: '3', stt: 3, fullName: 'Đặng Thử', role: 'Ủy viên', idCard: '048085009999', phone: '0905111222' },
+  { id: '4', stt: 4, fullName: 'Nguyễn Quang Thơ', role: 'Ủy viên', idCard: '048085008888', phone: '0905333444' },
+  { id: '5', stt: 5, fullName: 'Đặng Văn Quang', role: 'Ủy viên', idCard: '048085007777', phone: '0905555666' },
+  { id: '6', stt: 6, fullName: 'Phạm Công Tuân', role: 'Ủy viên', idCard: '048085001111', phone: '0916199945' },
+  { id: '7', stt: 7, fullName: 'Lê Thị Kim Nhung', role: 'Ủy viên', idCard: '048085002222', phone: '0905777888' },
+  { id: '8', stt: 8, fullName: 'Nguyễn Hiếu Nghĩa', role: 'Ủy viên', idCard: '048085003333', phone: '0905999000' },
+  { id: '9', stt: 9, fullName: 'Đặng Ngọc Duy', role: 'Ủy viên', idCard: '048085004444', phone: '0905123123' },
+  { id: '10', stt: 10, fullName: 'Nguyễn Thị Hương Triều', role: 'Ủy viên', idCard: '048085005555', phone: '0905456456' },
+];
+
+const INITIAL_WITNESSES: Witness[] = [
+  { id: 'w1', stt: 1, fullName: 'Trần Văn Cảnh', address: 'Thôn An Trạch' },
+  { id: 'w2', stt: 2, fullName: 'Phan Thị Bích', address: 'Thôn Lệ Sơn 2' },
+];
+
+const INITIAL_CANDIDATES: Candidate[] = [
+  // Cấp Quốc hội
+  { id: 'qh-1', stt: 1, fullName: 'Nguyễn Đại Đồng', gender: 'Ông', dob: '13/10/1979', electionLevel: 'QUOC_HOI', voteCount: 4, votePercentage: 44.44 },
+  { id: 'qh-2', stt: 2, fullName: 'Nguyễn Duy Minh', gender: 'Ông', dob: '26/07/1982', electionLevel: 'QUOC_HOI', voteCount: 4, votePercentage: 44.44 },
+  { id: 'qh-3', stt: 3, fullName: 'Lê Ngọc Quang', gender: 'Ông', dob: '21/01/1978', electionLevel: 'QUOC_HOI', voteCount: 3, votePercentage: 33.33 },
+  { id: 'qh-4', stt: 4, fullName: 'Đặng Thị Thanh Trà', gender: 'Bà', dob: '20/08/1978', electionLevel: 'QUOC_HOI', voteCount: 6, votePercentage: 66.67 },
+  { id: 'qh-5', stt: 5, fullName: 'Phạm Trần Minh Tuyễn', gender: 'Bà', dob: '11/04/1989', electionLevel: 'QUOC_HOI', voteCount: 1, votePercentage: 11.11 },
+
+  // Cấp HĐND Tỉnh
+  { id: 'tinh-1', stt: 1, fullName: 'Vũ Quang Hùng', gender: 'Ông', dob: '06/09/1969', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0 },
+  { id: 'tinh-2', stt: 2, fullName: 'Lê Phú Nguyên', gender: 'Ông', dob: '01/01/1978', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0 },
+  { id: 'tinh-3', stt: 3, fullName: 'Nguyễn Thị Phượng', gender: 'Bà', dob: '14/07/1974', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0 },
+  { id: 'tinh-4', stt: 4, fullName: 'Nguyễn Thị Xuân Sang', gender: 'Bà', dob: '22/01/1992', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0 },
+  { id: 'tinh-5', stt: 5, fullName: 'Châu Thị Thu', gender: 'Bà', dob: '01/04/1988', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0 },
+
+  // Cấp HĐND Xã
+  { id: 'xa-1', stt: 1, fullName: 'Bùi Ngọc Anh', gender: 'Ông', dob: '19/03/1979', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0 },
+  { id: 'xa-2', stt: 2, fullName: 'Nguyễn Cường', gender: 'Ông', dob: '18/12/1975', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0 },
+  { id: 'xa-3', stt: 3, fullName: 'Phạm Điệp', gender: 'Ông', dob: '25/01/1964', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0 },
+  { id: 'xa-4', stt: 4, fullName: 'Nguyễn Ngọc Hải', gender: 'Ông', dob: '20/10/1976', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0 },
+  { id: 'xa-5', stt: 5, fullName: 'Trần Hữu Tuyết', gender: 'Ông', dob: '20/02/1993', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0 },
+];
+
+const INITIAL_VOTERS: Voter[] = [
+  { id: 'v1', stt: 1, voterCardNo: 'TC-21-0001', fullName: 'Phạm Công Thành', gender: 'Nam', dob: '15/05/1980', address: 'Thôn An Trạch', hasVoted: true, votedAt: '07:30' },
+  { id: 'v2', stt: 2, voterCardNo: 'TC-21-0002', fullName: 'Nguyễn Thị Hồng', gender: 'Nữ', dob: '20/11/1985', address: 'Thôn An Trạch', hasVoted: true, votedAt: '07:45' },
+  { id: 'v3', stt: 3, voterCardNo: 'TC-21-0003', fullName: 'Lê Văn Hoàng', gender: 'Nam', dob: '12/03/1972', address: 'Thôn Lệ Sơn 2', hasVoted: true, votedAt: '08:10' },
+  { id: 'v4', stt: 4, voterCardNo: 'TC-21-0004', fullName: 'Trần Thị Mai', gender: 'Nữ', dob: '04/09/1990', address: 'Thôn Lệ Sơn 2', hasVoted: false },
+  { id: 'v5', stt: 5, voterCardNo: 'TC-21-0005', fullName: 'Đặng Văn Hùng', gender: 'Nam', dob: '30/01/1965', address: 'Thôn Nam Sơn', hasVoted: true, votedAt: '09:00' },
+  { id: 'v6', stt: 6, voterCardNo: 'TC-21-0006', fullName: 'Bùi Thị Lan', gender: 'Nữ', dob: '18/08/1995', address: 'Thôn Nam Sơn', hasVoted: false },
+  { id: 'v7', stt: 7, voterCardNo: 'TC-21-0007', fullName: 'Vũ Quốc Bảo', gender: 'Nam', dob: '25/12/1988', address: 'Thôn An Trạch', hasVoted: false },
+];
+
+const STORAGE_KEYS = {
+  UNIT: 'app_bau_cu_unit',
+  CONFIGS: 'app_bau_cu_configs',
+  COMMITTEE: 'app_bau_cu_committee',
+  WITNESSES: 'app_bau_cu_witnesses',
+  CANDIDATES: 'app_bau_cu_candidates',
+  VOTERS: 'app_bau_cu_voters',
+  BALLOTS: 'app_bau_cu_ballots',
+  SETTINGS: 'app_bau_cu_settings',
+};
+
+export function useElectionStore() {
+  const [unit, setUnit] = useState<ElectionUnit>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.UNIT);
+    return saved ? JSON.parse(saved) : INITIAL_UNIT;
+  });
+
+  const [configs, setConfigs] = useState<Record<ElectionLevel, ElectionLevelConfig>>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.CONFIGS);
+    return saved ? JSON.parse(saved) : INITIAL_CONFIGS;
+  });
+
+  const [committee, setCommittee] = useState<CommitteeMember[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.COMMITTEE);
+    return saved ? JSON.parse(saved) : INITIAL_COMMITTEE;
+  });
+
+  const [witnesses, setWitnesses] = useState<Witness[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.WITNESSES);
+    return saved ? JSON.parse(saved) : INITIAL_WITNESSES;
+  });
+
+  const [candidates, setCandidates] = useState<Candidate[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.CANDIDATES);
+    return saved ? JSON.parse(saved) : INITIAL_CANDIDATES;
+  });
+
+  const [voters, setVoters] = useState<Voter[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.VOTERS);
+    return saved ? JSON.parse(saved) : INITIAL_VOTERS;
+  });
+
+  const [ballots, setBallots] = useState<BallotRecord[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.BALLOTS);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [settings, setSettings] = useState<SystemSettings>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+    return saved ? JSON.parse(saved) : { isLocked: false, currentRole: 'ADMIN', termName: 'Khóa XVI (2026 - 2031)' };
+  });
+
+  // Synchronize to LocalStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.UNIT, JSON.stringify(unit));
+    localStorage.setItem(STORAGE_KEYS.CONFIGS, JSON.stringify(configs));
+    localStorage.setItem(STORAGE_KEYS.COMMITTEE, JSON.stringify(committee));
+    localStorage.setItem(STORAGE_KEYS.WITNESSES, JSON.stringify(witnesses));
+    localStorage.setItem(STORAGE_KEYS.CANDIDATES, JSON.stringify(candidates));
+    localStorage.setItem(STORAGE_KEYS.VOTERS, JSON.stringify(voters));
+    localStorage.setItem(STORAGE_KEYS.BALLOTS, JSON.stringify(ballots));
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+  }, [unit, configs, committee, witnesses, candidates, voters, ballots, settings]);
+
+  // Actions
+  const toggleVoterStatus = (voterId: string) => {
+    setVoters(prev =>
+      prev.map(v => {
+        if (v.id === voterId) {
+          const nextState = !v.hasVoted;
+          const now = new Date();
+          const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+          return { ...v, hasVoted: nextState, votedAt: nextState ? timeStr : undefined };
+        }
+        return v;
+      })
+    );
+  };
+
+  const addBallot = (level: ElectionLevel, inputStruckOut: string) => {
+    const levelConfig = configs[level];
+    const levelCandidates = candidates.filter(c => c.electionLevel === level);
+
+    const result = calculateBallot(inputStruckOut, levelCandidates, levelConfig);
+
+    const levelBallots = ballots.filter(b => b.electionLevel === level);
+    const newBallotIndex = levelBallots.length + 1;
+
+    const newRecord: BallotRecord = {
+      id: `ballot-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      ballotIndex: newBallotIndex,
+      electionLevel: level,
+      isValid: result.isValid,
+      struckOutNumbers: inputStruckOut,
+      struckOutCandidateIds: result.struckOutCandidates.map(c => c.id),
+      electedCandidateIds: result.electedCandidates.map(c => c.id),
+      createdAt: new Date().toISOString(),
+    };
+
+    // Update ballot list
+    const updatedBallots = [...ballots, newRecord];
+    setBallots(updatedBallots);
+
+    // Recalculate vote counts for level candidates
+    recalculateCandidateVotes(level, updatedBallots, candidates);
+
+    return result;
+  };
+
+  const undoLastBallot = (level: ElectionLevel) => {
+    const levelBallots = ballots.filter(b => b.electionLevel === level);
+    if (levelBallots.length === 0) return;
+
+    const lastBallot = levelBallots[levelBallots.length - 1];
+    const updatedBallots = ballots.filter(b => b.id !== lastBallot.id);
+    setBallots(updatedBallots);
+
+    recalculateCandidateVotes(level, updatedBallots, candidates);
+  };
+
+  const resetBallotsForLevel = (level: ElectionLevel) => {
+    const updatedBallots = ballots.filter(b => b.electionLevel !== level);
+    setBallots(updatedBallots);
+
+    recalculateCandidateVotes(level, updatedBallots, candidates);
+  };
+
+  const recalculateCandidateVotes = (
+    level: ElectionLevel,
+    currentBallots: BallotRecord[],
+    currentCandidates: Candidate[]
+  ) => {
+    const validLevelBallots = currentBallots.filter(
+      b => b.electionLevel === level && b.isValid
+    );
+
+    const totalValidBallotsCount = validLevelBallots.length;
+
+    const updatedCandidates = currentCandidates.map(c => {
+      if (c.electionLevel !== level) return c;
+
+      const votes = validLevelBallots.filter(b =>
+        b.electedCandidateIds.includes(c.id)
+      ).length;
+
+      const percentage = totalValidBallotsCount > 0
+        ? parseFloat(((votes / totalValidBallotsCount) * 100).toFixed(2))
+        : 0;
+
+      return {
+        ...c,
+        voteCount: votes,
+        votePercentage: percentage,
+      };
+    });
+
+    setCandidates(updatedCandidates);
+  };
+
+  const addVoter = (newVoter: Omit<Voter, 'id' | 'stt'>) => {
+    const nextStt = voters.length + 1;
+    const item: Voter = {
+      ...newVoter,
+      id: `v-${Date.now()}`,
+      stt: nextStt,
+    };
+    setVoters([...voters, item]);
+  };
+
+  const updateCandidate = (updatedCandidate: Candidate) => {
+    setCandidates(candidates.map(c => (c.id === updatedCandidate.id ? updatedCandidate : c)));
+  };
+
+  const updateUnit = (newUnit: ElectionUnit) => {
+    setUnit(newUnit);
+  };
+
+  const updateLevelConfig = (level: ElectionLevel, newConfig: Partial<ElectionLevelConfig>) => {
+    setConfigs({
+      ...configs,
+      [level]: { ...configs[level], ...newConfig },
+    });
+  };
+
+  return {
+    unit,
+    configs,
+    committee,
+    witnesses,
+    candidates,
+    voters,
+    ballots,
+    settings,
+    setSettings,
+    toggleVoterStatus,
+    addBallot,
+    undoLastBallot,
+    resetBallotsForLevel,
+    addVoter,
+    updateCandidate,
+    updateUnit,
+    updateLevelConfig,
+    setCommittee,
+    setWitnesses,
+  };
+}

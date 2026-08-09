@@ -1,119 +1,85 @@
-export type CouncilId = 'quoc_hoi' | 'hdnd_tinh' | 'hdnd_xa';
+export type ElectionLevel = 'QUOC_HOI' | 'HDND_TINH' | 'HDND_XA';
 
-export type Role = 'admin' | 'editor' | 'viewer';
-export type UserStatus = 'active' | 'pending_approval' | 'rejected';
+export type UserRole = 'ADMIN' | 'EDITOR' | 'VIEW';
 
-export interface User {
+export interface ElectionUnit {
   id: string;
-  username: string;
-  fullName: string;
-  email: string;
-  phone?: string;
-  role: Role;
-  status: UserStatus;
-  activationCode?: string;
-  isActivated?: boolean;
-  registeredAt?: string;
+  province: string; // Tỉnh/Thành phố (VD: Thành phố Đà Nẵng)
+  term: string; // Khóa (VD: XVI)
+  quocHoiUnitNo: number; // Đơn vị bầu cử ĐBQH số
+  quocHoiWards: string; // Gồm các Xã/Phường
+  hdndTinhUnitNo: number; // Đơn vị bầu cử HĐND Tỉnh số
+  hdndTinhWards: string; // Gồm các Xã/Phường
+  hdndXaUnitNo: number; // Đơn vị bầu cử HĐND Xã số
+  hdndXaVillages: string; // Gồm các Thôn/Tổ dân phố
+  votingAreaNo: number; // Khu vực bỏ phiếu số (VD: 21)
+  wardName: string; // Xã/Phường (VD: Xã Hòa Tiến)
 }
 
-export interface VotingUnit {
+export interface CommitteeMember {
   id: string;
-  unitName: string;
-  votingArea: string;
-  province: string;
-  term: string;
-  district: string;
-  commune: string;
-  totalVoters: number;
-  quocHoiUnitNo: string;
-  quocHoiAreas: string;
-  hdndTinhUnitNo: string;
-  hdndTinhAreas: string;
-  hdndXaUnitNo: string;
-  hdndXaAreas: string;
-}
-
-export interface ElectionPersonnelMember {
   stt: number;
   fullName: string;
-  position: string;
-  idCard?: string;
-  phone?: string;
+  role: string; // Tổ trưởng, Thư ký, Ủy viên
+  idCard: string;
+  phone: string;
 }
 
-export interface ElectionPersonnel {
-  toTruong: string;
-  thuKy: string;
-  uyVien1: string;
-  uyVien2: string;
-  uyVien3: string;
-  members?: ElectionPersonnelMember[];
-}
-
-export interface WitnessVoter {
+export interface Witness {
+  id: string;
   stt: number;
   fullName: string;
   address: string;
-  idCard: string;
-  phone?: string;
-}
-
-export interface Council {
-  id: CouncilId;
-  name: string;
-  shortName: string;
-  candidatesCount: number;
-  electCount: number;
-  candidatesToElect?: number;
-  reportTemplate?: string;
 }
 
 export interface Candidate {
   id: string;
-  councilId: CouncilId;
   stt: number;
   fullName: string;
-  yearOfBirth?: number;
-  birthDate?: string;
-  gender?: string;
-  hometown?: string;
-  residence?: string;
-  qualification?: string;
-  position?: string;
-  workplace?: string;
-  notes?: string;
-  votingUnitId?: string;
+  gender: string; // Ông / Bà
+  dob: string; // Ngày sinh
+  electionLevel: ElectionLevel;
+  voteCount: number;
+  votePercentage: number;
 }
 
-export interface VoteRecord {
+export interface ElectionLevelConfig {
+  levelCode: ElectionLevel;
+  levelName: string; // ĐẠI BIỂU QUỐC HỘI, ĐẠI BIỂU HĐND TỈNH, ĐẠI BIỂU HĐND XÃ
+  totalVoters: number; // Tổng số cử tri
+  numCandidates: number; // Số người ứng cử
+  numRepresentatives: number; // Số đại biểu được bầu
+  ballotsReceived: number; // Số phiếu nhận vào
+  ballotsIssued: number; // Số phiếu phát ra
+  ballotsDamaged: number; // Số phiếu đổi hỏng
+  ballotsReturned: number; // Số phiếu thu vào
+}
+
+export interface Voter {
   id: string;
-  votingUnitId: string;
-  councilId: CouncilId;
-  totalVoters: number;
-  votersVoted: number;
-  ballotsIssued: number;
-  ballotsCollected: number;
-  validBallots: number;
-  invalidBallots: number;
-  notes?: string;
-  status: 'draft' | 'completed';
-  ballotsReceived?: number;
-  ballotsDamaged?: number;
-  ballotsRemaining?: number;
+  stt: number;
+  voterCardNo: string;
+  fullName: string;
+  gender: string;
+  dob: string;
+  address: string; // Thôn / Tổ
+  hasVoted: boolean;
+  votedAt?: string;
 }
 
-export interface CandidateVote {
-  id?: string;
-  voteRecordId: string;
-  candidateId: string;
-  votesCount: number;
-  voteCount?: number;
-}
-
-export interface SingleBallotLog {
+export interface BallotRecord {
   id: string;
-  ballotNo: number;
-  struckOutStts: number[];
-  valid: boolean;
-  timestamp: string;
+  ballotIndex: number; // Số phiếu thứ bao nhiêu (1, 2, 3...)
+  electionLevel: ElectionLevel;
+  isValid: boolean;
+  struckOutNumbers: string; // Chuỗi gạch nhập vào, VD '134' hoặc '0'
+  struckOutCandidateIds: string[]; // Danh sách ID các ứng cử viên bị gạch
+  electedCandidateIds: string[]; // Danh sách ID các ứng cử viên được bầu
+  createdAt: string;
+}
+
+export interface SystemSettings {
+  isLocked: boolean;
+  currentRole: UserRole;
+  termName: string;
 }
