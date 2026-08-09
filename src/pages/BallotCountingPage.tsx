@@ -7,6 +7,12 @@ import {
   CheckCircle,
   Eye,
   ChevronRight,
+  Sparkles,
+  Lock,
+  Edit3,
+  Check,
+  X,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { BallotRecord, Candidate, ElectionLevel, ElectionLevelConfig } from '../types';
 import { BallotValidationResult } from '../lib/ballotCalculator';
@@ -97,18 +103,25 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
   };
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
-      {/* Top Header & Level Switcher Tabs */}
-      <div className="bg-slate-800 text-white p-3.5 rounded-t-xl shadow flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-amber-400">
-        <div className="flex items-center gap-2">
-          <Vote className="w-5 h-5 text-amber-400" />
-          <h1 className="text-base font-extrabold uppercase tracking-wide">
-            KIỂM PHIẾU BẦU CỬ {config.levelName.toUpperCase()}
-          </h1>
+    <div className="space-y-5 max-w-7xl mx-auto font-sans">
+      {/* Top Banner Header & Level Switcher Tabs */}
+      <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-xl border border-sky-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden">
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 border border-sky-400/30 flex items-center justify-center font-bold shadow-lg shrink-0">
+            🗳️
+          </div>
+          <div>
+            <h1 className="text-base sm:text-lg font-black tracking-tight uppercase text-white flex items-center gap-2">
+              <span>KIỂM PHIẾU BẦU CỬ {config.levelName.toUpperCase()}</span>
+            </h1>
+            <p className="text-[11px] text-slate-300 font-medium">
+              Nhập gạch tên ứng cử viên siêu tốc & tự động tổng hợp kết quả 3 cấp
+            </p>
+          </div>
         </div>
 
         {/* Level Switcher Buttons */}
-        <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-700 text-xs font-bold">
+        <div className="flex bg-slate-950/80 p-1.5 rounded-xl border border-slate-700/80 text-xs font-bold shrink-0 relative z-10">
           {(['QUOC_HOI', 'HDND_TINH', 'HDND_XA'] as ElectionLevel[]).map(lvl => {
             const isSelected = activeLevel === lvl;
             return (
@@ -119,10 +132,10 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
                   setStruckOutInput('');
                   setLastSubmittedResult(null);
                 }}
-                className={`px-3.5 py-1.5 rounded transition-all ${
+                className={`px-4 py-2 rounded-lg transition-all ${
                   isSelected
-                    ? 'bg-sky-600 text-white font-extrabold shadow'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white font-black shadow-md'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
                 {configs[lvl].levelName}
@@ -132,43 +145,52 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
         </div>
       </div>
 
-      {/* MAIN TWO-COLUMN LAYOUT MATCHING SPECS SCREENSHOT EXACTLY */}
+      {/* MAIN TWO-COLUMN LAYOUT */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* LEFT COLUMN: CANDIDATE TABLE + RAPID INPUT BOX (Cols 7) */}
-        <div className="lg:col-span-7 bg-white rounded-b-xl border border-slate-300 p-4 shadow-sm space-y-4">
-          {/* Candidate Table */}
-          <div className="overflow-x-auto border border-slate-300 rounded">
+        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/90 p-5 shadow-sm space-y-5">
+          {/* Candidate Vote Table with Progress Bars */}
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-slate-100 text-slate-800 font-extrabold border-b border-slate-300">
+              <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider">
                 <tr>
-                  <th className="p-2.5 w-12 text-center border-r border-slate-300">STT</th>
-                  <th className="p-2.5 border-r border-slate-300">Họ và tên</th>
-                  <th className="p-2.5 w-28 text-center border-r border-slate-300">Ngày sinh</th>
-                  <th className="p-2.5 w-24 text-center border-r border-slate-300">Số phiếu bầu</th>
-                  <th className="p-2.5 w-20 text-center">Tỷ lệ %</th>
+                  <th className="p-3 w-12 text-center border-r border-slate-200">STT</th>
+                  <th className="p-3 border-r border-slate-200">Họ và tên ứng cử viên</th>
+                  <th className="p-3 w-28 text-center border-r border-slate-200">Ngày sinh</th>
+                  <th className="p-3 w-24 text-center border-r border-slate-200">Số phiếu</th>
+                  <th className="p-3 w-32 text-center">Tỷ lệ %</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-100 font-medium">
                 {levelCandidates.map(c => {
-                  const pctVal = validBallotsCount > 0
-                    ? ((c.voteCount / validBallotsCount) * 100).toFixed(2)
-                    : '0.00';
+                  const pctNum = validBallotsCount > 0 ? (c.voteCount / validBallotsCount) * 100 : 0;
+                  const pctVal = pctNum.toFixed(2);
                   return (
-                    <tr key={c.id} className="hover:bg-slate-50">
-                      <td className="p-2.5 text-center font-bold text-slate-700 border-r border-slate-200">
+                    <tr key={c.id} className="hover:bg-sky-50/40 transition-colors">
+                      <td className="p-3 text-center font-mono font-bold text-slate-500 border-r border-slate-100">
                         {c.stt}
                       </td>
-                      <td className="p-2.5 font-bold text-slate-900 text-sm border-r border-slate-200">
+                      <td className="p-3 font-semibold text-slate-900 text-xs border-r border-slate-100">
                         {c.fullName}
                       </td>
-                      <td className="p-2.5 text-center font-mono text-slate-600 border-r border-slate-200">
+                      <td className="p-3 text-center font-mono text-slate-500 border-r border-slate-100 whitespace-nowrap">
                         {c.dob}
                       </td>
-                      <td className="p-2.5 text-center font-extrabold text-slate-900 text-sm border-r border-slate-200">
+                      <td className="p-3 text-center font-black text-slate-900 text-sm border-r border-slate-100">
                         {c.voteCount}
                       </td>
-                      <td className="p-2.5 text-center font-bold text-sky-800 font-mono">
-                        {pctVal}%
+                      <td className="p-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-sky-900 font-mono font-bold text-xs">
+                            <span>{pctVal}%</span>
+                          </div>
+                          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200">
+                            <div
+                              className="bg-gradient-to-r from-sky-500 to-blue-600 h-full transition-all duration-300 rounded-full"
+                              style={{ width: `${Math.min(100, pctNum)}%` }}
+                            />
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -177,64 +199,76 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
             </table>
           </div>
 
-          {/* RAPID INPUT PANEL (SPECS LAYOUT) */}
-          <div className="pt-2 space-y-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-xs font-bold text-slate-700">
-                Phiếu số: <span className="text-sm font-extrabold text-sky-700">{currentBallotNo}</span>
-              </span>
+          {/* RAPID INPUT PANEL */}
+          <div className="bg-gradient-to-r from-rose-50/70 via-sky-50/40 to-slate-50 p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-700 uppercase">
+                  Phiếu số:
+                </span>
+                <span className="text-base font-black font-mono text-sky-800 bg-white px-3 py-1 rounded-xl border border-sky-300 shadow-2xs">
+                  #{currentBallotNo}
+                </span>
+              </div>
 
-              <div className="flex-1 flex items-center gap-2 max-w-xs">
+              <div className="flex-1 flex items-center gap-2 max-w-sm">
                 <input
                   ref={inputRef}
                   type="text"
                   value={struckOutInput}
                   onChange={e => setStruckOutInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder=""
-                  className="w-full p-2 bg-pink-50/40 border-2 border-rose-300 rounded text-center text-lg font-mono font-bold text-rose-900 focus:bg-white focus:outline-none focus:border-rose-500 shadow-inner"
+                  placeholder="Gõ số bị gạch..."
+                  className="w-full px-4 py-2 bg-white border-2 border-rose-300 rounded-xl text-center text-lg font-mono font-black text-rose-900 focus:bg-white focus:outline-none focus:border-rose-500 shadow-inner tracking-wider"
                 />
                 <button
                   onClick={handleSubmitBallot}
-                  className="bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 font-bold text-xs px-3 py-2 rounded shadow-xs flex items-center gap-1"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all shrink-0 flex items-center gap-1.5"
                 >
-                  ✓ Xác nhận
+                  <Check className="w-4 h-4" />
+                  <span>Xác nhận</span>
                 </button>
               </div>
 
               <button
                 onClick={() => setShowLogModal(true)}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3 py-2 rounded border border-slate-300 flex items-center gap-1 ml-auto"
+                className="bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-3.5 py-2 rounded-xl border border-slate-200 flex items-center gap-1.5 shadow-2xs transition-colors"
               >
-                <Eye className="w-3.5 h-3.5" />
-                Xem phiếu đã kiểm
+                <Eye className="w-4 h-4 text-sky-600" />
+                <span>Xem phiếu đã kiểm</span>
               </button>
             </div>
 
-            {/* Sub-label explanation text */}
-            <div className="text-[11px] text-slate-600 space-y-0.5 font-sans italic pt-1">
-              <p>1. Nhập số 0 cho những phiếu không hợp lệ.</p>
-              <p>2. Nhập liên tiếp các số thứ tự bị gạch ➔ bấm Enter 2 lần.</p>
-              <p className="not-italic text-slate-500">
-                (Ví dụ: gõ <strong>134</strong> là những ứng cử viên có số thứ tự 1, 3, 4 là bị gạch)
+            {/* Instruction Guidance Text */}
+            <div className="text-[11px] text-slate-600 space-y-0.5 font-sans leading-relaxed pt-1 bg-white/70 p-3 rounded-xl border border-slate-200/60">
+              <p className="font-semibold text-slate-800">1. Nhập số <strong className="text-rose-600 font-mono">0</strong> cho những phiếu không hợp lệ.</p>
+              <p className="font-semibold text-slate-800">2. Nhập liên tiếp các số thứ tự bị gạch ➔ bấm <strong className="text-sky-700 font-mono">Enter 2 lần</strong>.</p>
+              <p className="text-slate-500 italic">
+                (Ví dụ: gõ <strong className="text-slate-800 font-mono not-italic bg-amber-100 px-1 rounded">134</strong> là những ứng cử viên có số thứ tự 1, 3, 4 bị gạch phiếu)
               </p>
             </div>
 
-            {/* Last Submitted Result Alert */}
+            {/* Last Submitted Result Toast Alert */}
             {lastSubmittedResult && (
               <div
-                className={`p-2.5 rounded border text-xs font-semibold ${
+                className={`p-3 rounded-xl border text-xs font-bold flex items-center gap-2 shadow-2xs ${
                   lastSubmittedResult.isValid
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
-                    : 'bg-rose-50 border-rose-300 text-rose-900'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                    : 'bg-rose-50 border-rose-300 text-rose-950 animate-pulse'
                 }`}
               >
                 {lastSubmittedResult.isValid ? (
-                  <span>
-                    ✅ <strong>Phiếu hợp lệ:</strong> Đã ghi nhận vote cho [{lastSubmittedResult.electedCandidates.map(c => c.fullName).join(', ')}]
-                  </span>
+                  <>
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>
+                      ✅ <strong>Phiếu hợp lệ:</strong> Đã ghi nhận vote cho [{lastSubmittedResult.electedCandidates.map(c => c.fullName).join(', ')}]
+                    </span>
+                  </>
                 ) : (
-                  <span>❌ <strong>Phiếu không hợp lệ:</strong> {lastSubmittedResult.reason}</span>
+                  <>
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>❌ <strong>Phiếu không hợp lệ:</strong> {lastSubmittedResult.reason}</span>
+                  </>
                 )}
               </div>
             )}
@@ -242,9 +276,9 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
         </div>
 
         {/* RIGHT COLUMN: 3 STATS CARDS + RESET/UNDO BUTTONS (Cols 5) */}
-        <div className="lg:col-span-5 space-y-3">
+        <div className="lg:col-span-5 space-y-4">
           {/* CARD 1: GENERAL ELECTION SETUP */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-300 shadow-sm text-xs space-y-2">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm text-xs space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-slate-700 font-bold flex items-center gap-1">
                 <span>▶ Tổng số cử tri:</span>
@@ -255,10 +289,11 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
                 readOnly
                 disabled
                 value={config.totalVoters}
-                className="w-24 p-1 bg-slate-100 border border-slate-300 rounded font-bold text-center text-slate-500 cursor-not-allowed select-none"
-                title="Tự động đồng bộ từ danh sách cử tri"
+                className="w-28 p-1.5 bg-slate-100 border border-slate-200 rounded-xl font-mono font-bold text-center text-slate-600 cursor-not-allowed select-none"
+                title="Tự động đồng bộ từ danh sách cử tri chính thức"
               />
             </div>
+
             <div className="flex items-center justify-between">
               <span className="text-slate-700 font-bold flex items-center gap-1">
                 <span>▶ Số người ứng cử:</span>
@@ -269,35 +304,36 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
                 readOnly
                 disabled
                 value={levelCandidates.length}
-                className="w-24 p-1 bg-slate-100 border border-slate-300 rounded font-bold text-center text-slate-500 cursor-not-allowed select-none"
+                className="w-28 p-1.5 bg-slate-100 border border-slate-200 rounded-xl font-mono font-bold text-center text-slate-600 cursor-not-allowed select-none"
                 title="Tự động lấy từ danh sách ứng cử viên nhập vào"
               />
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sky-900 font-bold flex items-center gap-1">
+
+            <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+              <span className="text-sky-900 font-extrabold flex items-center gap-1">
                 <span>▶ Số đại biểu được bầu:</span>
-                <span className="text-[10px] text-sky-600 bg-sky-100 px-1 rounded font-normal">✍️ Nhập số</span>
+                <span className="text-[10px] text-sky-600 bg-sky-100 px-1.5 py-0.5 rounded font-bold">✍️ Nhập số</span>
               </span>
               <input
                 type="number"
                 min={1}
                 value={config.numRepresentatives}
                 onChange={e => updateLevelConfig(activeLevel, { numRepresentatives: Math.max(1, parseInt(e.target.value) || 1) })}
-                className="w-24 p-1 bg-sky-50 border-2 border-sky-400 rounded font-black text-center text-sky-900 focus:ring-2 focus:ring-sky-500 outline-none"
-                placeholder="Nhập số..."
+                className="w-28 p-1.5 bg-sky-50 border-2 border-sky-400 rounded-xl font-mono font-black text-center text-sky-900 focus:ring-2 focus:ring-sky-500 outline-none"
+                placeholder="Nhập..."
               />
             </div>
           </div>
 
           {/* CARD 2: BALLOT INVENTORY SETUP */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-300 shadow-sm text-xs space-y-2">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm text-xs space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-slate-700 font-bold">▶ Số phiếu nhận vào:</span>
               <input
                 type="number"
                 value={config.ballotsReceived}
                 onChange={e => updateLevelConfig(activeLevel, { ballotsReceived: parseInt(e.target.value) || 0 })}
-                className="w-24 p-1 bg-slate-50 border border-slate-300 rounded font-bold text-center text-slate-800"
+                className="w-28 p-1.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold text-center text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none"
               />
             </div>
             <div className="flex items-center justify-between">
@@ -306,80 +342,80 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
                 type="number"
                 value={config.ballotsDamaged}
                 onChange={e => updateLevelConfig(activeLevel, { ballotsDamaged: parseInt(e.target.value) || 0 })}
-                className="w-24 p-1 bg-slate-50 border border-slate-300 rounded font-bold text-center text-rose-700"
+                className="w-28 p-1.5 bg-rose-50 border border-rose-200 rounded-xl font-mono font-bold text-center text-rose-700 focus:ring-2 focus:ring-rose-500 outline-none"
               />
             </div>
-            <div className="flex items-center justify-between border-t pt-1.5">
-              <span className="text-slate-700 font-bold">▶ Số phiếu còn lại:</span>
-              <div className="w-24 p-1 bg-slate-100 border border-slate-300 rounded font-bold text-center text-slate-800">
+            <div className="flex items-center justify-between border-t border-slate-100 pt-2">
+              <span className="text-slate-800 font-extrabold">▶ Số phiếu còn lại:</span>
+              <div className="w-28 p-1.5 bg-slate-100 border border-slate-200 rounded-xl font-mono font-bold text-center text-slate-700">
                 {calculatedRemaining}
               </div>
             </div>
           </div>
 
           {/* CARD 3: COUNTING METRICS & PERCENTAGES */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-300 shadow-sm text-xs space-y-2">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm text-xs space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-slate-700 font-bold">▶ Số phiếu phát ra:</span>
               <input
                 type="number"
                 value={config.ballotsIssued}
                 onChange={e => updateLevelConfig(activeLevel, { ballotsIssued: parseInt(e.target.value) || 0 })}
-                className="w-24 p-1 bg-slate-50 border border-slate-300 rounded font-bold text-center text-slate-800"
+                className="w-28 p-1.5 bg-slate-50 border border-slate-300 rounded-xl font-mono font-bold text-center text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none"
               />
             </div>
 
             <div className="flex items-center justify-between">
               <span className="text-slate-700 font-bold">▶ Số phiếu thu vào:</span>
-              <div className="flex items-center gap-3">
-                <div className="w-24 p-1 bg-slate-100 border border-slate-300 rounded font-bold text-center text-sky-900">
+              <div className="flex items-center gap-2">
+                <div className="w-20 p-1.5 bg-slate-100 border border-slate-200 rounded-xl font-mono font-bold text-center text-sky-900">
                   {totalReturnedBallots}
                 </div>
-                <span className="w-12 text-right font-bold text-slate-700">{returnedPct}%</span>
+                <span className="w-12 text-right font-mono font-bold text-slate-600">{returnedPct}%</span>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-slate-700 font-bold">▶ Số phiếu hợp lệ:</span>
-              <div className="flex items-center gap-3">
-                <div className="w-24 p-1 bg-emerald-50 border border-emerald-300 rounded font-bold text-center text-emerald-800">
+              <span className="text-emerald-900 font-bold">▶ Số phiếu hợp lệ:</span>
+              <div className="flex items-center gap-2">
+                <div className="w-20 p-1.5 bg-emerald-50 border border-emerald-300 rounded-xl font-mono font-bold text-center text-emerald-800">
                   {validBallotsCount}
                 </div>
-                <span className="w-12 text-right font-bold text-emerald-700">{validPct}%</span>
+                <span className="w-12 text-right font-mono font-bold text-emerald-700">{validPct}%</span>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-slate-700 font-bold">▶ Số phiếu không hợp lệ:</span>
-              <div className="flex items-center gap-3">
-                <div className="w-24 p-1 bg-rose-50 border border-rose-300 rounded font-bold text-center text-rose-800">
+              <span className="text-rose-900 font-bold">▶ Số phiếu không hợp lệ:</span>
+              <div className="flex items-center gap-2">
+                <div className="w-20 p-1.5 bg-rose-50 border border-rose-300 rounded-xl font-mono font-bold text-center text-rose-800">
                   {invalidBallotsCount}
                 </div>
-                <span className="w-12 text-right font-bold text-rose-700">{invalidPct}%</span>
+                <span className="w-12 text-right font-mono font-bold text-rose-700">{invalidPct}%</span>
               </div>
             </div>
           </div>
 
           {/* BOTTOM ACTION BUTTONS */}
-          <div className="flex gap-2 pt-1">
+          <div className="flex gap-3 pt-1">
             <button
               onClick={() => {
                 if (confirm(`Bạn có chắc chắn muốn xóa toàn bộ ${levelBallots.length} phiếu đã kiểm của cấp ${config.levelName}?`)) {
                   resetBallotsForLevel(activeLevel);
                 }
               }}
-              className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-400 font-bold text-xs rounded flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+              className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-2xs transition-colors"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-600" />
-              Kiểm phiếu lại
+              <RotateCcw className="w-4 h-4 text-slate-600" />
+              <span>Kiểm phiếu lại</span>
             </button>
             <button
               onClick={() => undoLastBallot(activeLevel)}
               disabled={levelBallots.length === 0}
-              className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-rose-700 border border-slate-400 font-bold text-xs rounded flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-xs transition-colors"
+              className="flex-1 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 shadow-2xs transition-colors"
             >
-              <Undo2 className="w-3.5 h-3.5 text-rose-600" />
-              Xóa phiếu cuối cùng
+              <Undo2 className="w-4 h-4 text-rose-600" />
+              <span>Xóa phiếu cuối cùng</span>
             </button>
           </div>
         </div>
@@ -387,30 +423,31 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
 
       {/* Log Modal: View Ballots List */}
       {showLogModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6 space-y-4 shadow-xl border border-slate-200 max-h-[85vh] flex flex-col">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 font-sans">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-200 max-h-[85vh] flex flex-col">
             <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="text-sm font-bold text-slate-800 uppercase">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-sky-600" />
                 NHẬT KÝ PHIẾU ĐÃ KIỂM ({config.levelName})
               </h3>
-              <button onClick={() => setShowLogModal(false)} className="text-slate-400 hover:text-slate-600 font-bold">
+              <button onClick={() => setShowLogModal(false)} className="text-slate-400 hover:text-slate-600 font-bold text-base">
                 ✕
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2 text-xs">
+            <div className="flex-1 overflow-y-auto space-y-2 text-xs pr-1">
               {levelBallots.length === 0 ? (
                 <p className="text-center text-slate-400 py-8">Chưa có phiếu nào được ghi nhận.</p>
               ) : (
                 levelBallots.map(b => (
-                  <div key={b.id} className="p-3 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <div key={b.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between shadow-2xs">
                     <div>
                       <span className="font-bold text-sky-800 mr-2">Phiếu #{b.ballotIndex}:</span>
-                      <span className="font-mono bg-white px-2 py-0.5 border rounded">
+                      <span className="font-mono bg-white px-2.5 py-1 border rounded-lg text-slate-800">
                         Gạch: {b.struckOutNumbers || 'Không'}
                       </span>
                     </div>
-                    <span className={`px-2 py-0.5 rounded font-bold ${b.isValid ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                    <span className={`px-2.5 py-1 rounded-full font-extrabold ${b.isValid ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'}`}>
                       {b.isValid ? 'Hợp lệ' : 'Không hợp lệ'}
                     </span>
                   </div>
