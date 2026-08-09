@@ -68,6 +68,8 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
   const [editingWitness, setEditingWitness] = useState<Witness | null>(null);
   const [wFullName, setWFullName] = useState('');
   const [wAddress, setWAddress] = useState('Thôn An Trạch');
+  const [wIdCard, setWIdCard] = useState('');
+  const [wPhone, setWPhone] = useState('');
 
   // Modal State for Candidates
   const [showCandidateModal, setShowCandidateModal] = useState(false);
@@ -127,6 +129,8 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
     setEditingWitness(null);
     setWFullName('');
     setWAddress('Thôn An Trạch');
+    setWIdCard('');
+    setWPhone('');
     setShowWitnessModal(true);
   };
 
@@ -134,6 +138,8 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
     setEditingWitness(w);
     setWFullName(w.fullName);
     setWAddress(w.address);
+    setWIdCard(w.idCard || '');
+    setWPhone(w.phone || '');
     setShowWitnessModal(true);
   };
 
@@ -145,11 +151,15 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
         ...editingWitness,
         fullName: wFullName,
         address: wAddress,
+        idCard: wIdCard,
+        phone: wPhone,
       });
     } else {
       addWitness({
         fullName: wFullName,
         address: wAddress,
+        idCard: wIdCard,
+        phone: wPhone,
       });
     }
     setShowWitnessModal(false);
@@ -477,13 +487,13 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
         </div>
       )}
 
-      {/* SUB-TAB 3: CỬ TRI CHỨNG KIẾN (CÓ THÊM - SỬA - XÓA) */}
+      {/* SUB-TAB 3: CỬ TRI CHỨNG KIẾN (CÓ SỐ CCCD & SỐ ĐIỆN THOẠI + THÊM SỬA XÓA) */}
       {activeSubTab === 'witnesses' && (
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-3">
             <div>
               <h2 className="text-sm font-bold text-slate-800">DANH SÁCH CỬ TRI CHỨNG KIẾN MỞ THÙNG PHIẾU</h2>
-              <p className="text-xs text-slate-500">Cử tri đại diện tham gia kiểm kê niêm phong (Hỗ trợ Thêm, Sửa, Xóa)</p>
+              <p className="text-xs text-slate-500">Cử tri đại diện tham gia kiểm kê niêm phong (Đầy đủ Họ tên, Địa chỉ, Số CCCD, SĐT)</p>
             </div>
 
             <button
@@ -502,6 +512,8 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
                   <th className="p-3 w-12 text-center">STT</th>
                   <th className="p-3">Họ và tên cử tri</th>
                   <th className="p-3">Địa chỉ / Thôn</th>
+                  <th className="p-3">Số CCCD</th>
+                  <th className="p-3">Số điện thoại</th>
                   <th className="p-3 w-28 text-center">Thao tác</th>
                 </tr>
               </thead>
@@ -511,6 +523,8 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
                     <td className="p-3 text-center font-bold text-slate-600">{w.stt}</td>
                     <td className="p-3 font-bold text-slate-800 text-sm">{w.fullName}</td>
                     <td className="p-3 text-slate-600">{w.address}</td>
+                    <td className="p-3 font-mono text-slate-600">{w.idCard || '---'}</td>
+                    <td className="p-3 font-mono text-slate-600">{w.phone || '---'}</td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
@@ -736,7 +750,7 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
         </div>
       )}
 
-      {/* MODAL 2: WITNESS FORM */}
+      {/* MODAL 2: WITNESS FORM (BỔ SUNG CCCD & SĐT) */}
       {showWitnessModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
@@ -768,6 +782,26 @@ export const ElectionDataPage: React.FC<ElectionDataPageProps> = ({
                   onChange={e => setWAddress(e.target.value)}
                   placeholder="Thôn An Trạch"
                   className="w-full p-2 border border-slate-300 rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-600 font-semibold mb-1">Số CCCD:</label>
+                <input
+                  type="text"
+                  value={wIdCard}
+                  onChange={e => setWIdCard(e.target.value)}
+                  placeholder="048085006666"
+                  className="w-full p-2 border border-slate-300 rounded font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-600 font-semibold mb-1">Số điện thoại:</label>
+                <input
+                  type="text"
+                  value={wPhone}
+                  onChange={e => setWPhone(e.target.value)}
+                  placeholder="0905111333"
+                  className="w-full p-2 border border-slate-300 rounded font-mono"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t">

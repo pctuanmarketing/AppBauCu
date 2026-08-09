@@ -30,6 +30,8 @@ export interface Witness {
   stt: number;
   fullName: string;
   address: string;
+  idCard?: string;
+  phone?: string;
 }
 
 export interface Candidate {

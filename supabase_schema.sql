@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS witnesses (
   stt INT NOT NULL,
   full_name VARCHAR(255) NOT NULL,
   address VARCHAR(255),
+  id_card VARCHAR(20),
+  phone VARCHAR(20),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

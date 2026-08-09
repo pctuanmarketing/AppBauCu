@@ -80,8 +80,8 @@ const INITIAL_COMMITTEE: CommitteeMember[] = [
 ];
 
 const INITIAL_WITNESSES: Witness[] = [
-  { id: 'w1', stt: 1, fullName: 'Trần Văn Cảnh', address: 'Thôn An Trạch' },
-  { id: 'w2', stt: 2, fullName: 'Phan Thị Bích', address: 'Thôn Lệ Sơn 2' },
+  { id: 'w1', stt: 1, fullName: 'Trần Văn Cảnh', address: 'Thôn An Trạch', idCard: '048085006666', phone: '0905111333' },
+  { id: 'w2', stt: 2, fullName: 'Phan Thị Bích', address: 'Thôn Lệ Sơn 2', idCard: '048085007777', phone: '0905222444' },
 ];
 
 const INITIAL_CANDIDATES: Candidate[] = [
