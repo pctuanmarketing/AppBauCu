@@ -87,6 +87,7 @@ export function App() {
     setSettings,
     toggleVoterStatus,
     addBallot,
+    addBallotsBatch,
     undoLastBallot,
     resetBallotsForLevel,
     addVoter,
@@ -266,6 +267,18 @@ export function App() {
     return res;
   };
 
+  const handleAddBallotsBatch = (level: any, inputStruckOut: string, count: number) => {
+    const res = addBallotsBatch(level, inputStruckOut, count);
+    if (res) {
+      if (res.isValid) {
+        pushNotification('Ghi nhận lô phiếu', `Đã nạp thành công lô ${count} phiếu bầu hợp lệ cấp ${configs[level]?.levelName || level}.`, 'VOTE');
+      } else {
+        pushNotification('Cảnh báo lô phiếu', `Đã ghi nhận lô ${count} phiếu không hợp lệ cấp ${configs[level]?.levelName || level}.`, 'VOTE');
+      }
+    }
+    return res;
+  };
+
   // If in Landing Page View mode
   if (isLandingPage && !currentUser) {
     return (
@@ -372,6 +385,7 @@ export function App() {
           candidates={candidates}
           ballots={ballots}
           addBallot={handleAddBallot}
+          addBallotsBatch={handleAddBallotsBatch}
           undoLastBallot={undoLastBallot}
           resetBallotsForLevel={resetBallotsForLevel}
           assignedLevel={currentUser?.assignedLevel}

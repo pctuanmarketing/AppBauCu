@@ -25,6 +25,7 @@ interface BallotCountingPageProps {
   candidates: Candidate[];
   ballots: BallotRecord[];
   addBallot: (level: ElectionLevel, inputStruckOut: string) => BallotValidationResult;
+  addBallotsBatch?: (level: ElectionLevel, inputStruckOut: string, count: number) => BallotValidationResult | null;
   undoLastBallot: (level: ElectionLevel) => void;
   resetBallotsForLevel: (level: ElectionLevel) => void;
   assignedLevel?: ElectionLevel | 'ALL';
@@ -36,6 +37,7 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
   candidates,
   ballots,
   addBallot,
+  addBallotsBatch,
   undoLastBallot,
   resetBallotsForLevel,
   assignedLevel,
@@ -124,17 +126,16 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
       return;
     }
 
-    let lastRes: BallotValidationResult | null = null;
-    for (let i = 0; i < batchQuantity; i++) {
-      lastRes = addBallot(activeLevel, cleanInput);
-    }
+    const res = addBallotsBatch
+      ? addBallotsBatch(activeLevel, cleanInput, batchQuantity)
+      : addBallot(activeLevel, cleanInput);
 
-    if (lastRes) {
+    if (res) {
       setBatchToast({
         count: batchQuantity,
         input: cleanInput,
-        isValid: lastRes.isValid,
-        reason: lastRes.reason,
+        isValid: res.isValid,
+        reason: res.reason,
       });
       setStruckOutInput('');
     }

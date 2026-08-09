@@ -259,6 +259,45 @@ export function useElectionStore() {
     return result;
   };
 
+  const addBallotsBatch = (level: ElectionLevel, inputStruckOut: string, count: number) => {
+    if (count <= 0) return null;
+    const levelConfig = configs[level];
+    const levelCandidates = candidates.filter(c => c.electionLevel === level);
+
+    const result = calculateBallot(inputStruckOut, levelCandidates, levelConfig);
+    const numElectedCount = result.isValid ? result.electedCandidates.length : 0;
+    const nowIso = new Date().toISOString();
+
+    let updatedAllBallots: BallotRecord[] = [];
+
+    setBallots(prevBallots => {
+      const levelBallots = prevBallots.filter(b => b.electionLevel === level);
+      let startIndex = levelBallots.length + 1;
+
+      const newRecords: BallotRecord[] = [];
+      for (let i = 0; i < count; i++) {
+        newRecords.push({
+          id: `ballot-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 7)}`,
+          ballotIndex: startIndex + i,
+          electionLevel: level,
+          isValid: result.isValid,
+          struckOutNumbers: inputStruckOut,
+          struckOutCandidateIds: result.struckOutCandidates.map(c => c.id),
+          electedCandidateIds: result.electedCandidates.map(c => c.id),
+          numElectedCount,
+          createdAt: nowIso,
+        });
+      }
+
+      updatedAllBallots = [...prevBallots, ...newRecords];
+      return updatedAllBallots;
+    });
+
+    recalculateCandidateVotes(level, updatedAllBallots, candidates);
+
+    return result;
+  };
+
   const undoLastBallot = (level: ElectionLevel) => {
     const levelBallots = ballots.filter(b => b.electionLevel === level);
     if (levelBallots.length === 0) return;
@@ -469,6 +508,7 @@ export function useElectionStore() {
     setSettings,
     toggleVoterStatus,
     addBallot,
+    addBallotsBatch,
     undoLastBallot,
     resetBallotsForLevel,
     addVoter,
