@@ -147,17 +147,6 @@ export const ElectionResultsPage: React.FC<ElectionResultsPageProps> = ({
         ))}
       </div>
 
-      {/* Notice Yellow Box matching exact screenshot */}
-      <div className="p-3.5 bg-amber-50 rounded-2xl border-2 border-amber-300 text-amber-950 font-bold text-xs flex items-center justify-between shadow-2xs">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-          <span>*** PHẢI BẤM NÚT CẬP NHẬT TRÊN MENU ĐỂ TỔNG HỢP KẾT QUẢ KIỂM PHIẾU CHÍNH XÁC ***</span>
-        </div>
-        <span className="text-[11px] font-mono bg-white px-2.5 py-0.5 rounded border border-amber-300 text-amber-800">
-          Chỉ số trúng cử: Top {config.numRepresentatives} ứng viên
-        </span>
-      </div>
-
       {/* MAIN TWO TABLES MATCHING SCREENSHOT EXACTLY */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* TABLE 1: KẾT QUẢ KIỂM PHIẾU (Cols 7) */}
@@ -319,20 +308,22 @@ export const ElectionResultsPage: React.FC<ElectionResultsPageProps> = ({
             </table>
           </div>
 
-          {/* Verification Status Card */}
-          <div className={`p-3 rounded-xl text-xs font-bold flex items-center justify-between border ${
-            isMatch ? 'bg-emerald-50 text-emerald-950 border-emerald-300' : 'bg-rose-50 text-rose-950 border-rose-300 animate-pulse'
+          {/* Compact Verification Status Badge */}
+          <div className={`p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between border ${
+            isMatch ? 'bg-emerald-50 text-emerald-900 border-emerald-200' : 'bg-rose-50 text-rose-900 border-rose-200 animate-pulse'
           }`}>
             <div className="flex items-center gap-2">
-              {isMatch ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />}
+              {isMatch ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              )}
               <span>
-                {isMatch
-                  ? '✅ DỮ LIỆU ĐỐI SOÁT CHÍNH XÁC: Tổng lượt bầu của 2 bảng trùng khớp 100%.'
-                  : '⚠️ CẢNH BÁO: Tổng số lượt bầu cả 2 bảng KHÔNG BẰNG NHAU. Vui lòng kiểm tra lại phiếu!'}
+                {isMatch ? '✅ ĐỐI SOÁT CHÍNH XÁC: Trùng khớp 100% lượt bầu' : '⚠️ CẢNH BÁO: Lượt bầu 2 bảng không bằng nhau'}
               </span>
             </div>
-            <span className="font-mono text-[11px] font-black underline">
-              {totalTable1Votes} = {totalTable2Votes}
+            <span className="font-mono text-xs font-black px-2.5 py-0.5 rounded-lg bg-white border border-emerald-200 text-emerald-800 shadow-2xs">
+              {totalTable1Votes} = {totalTable2Votes} lượt
             </span>
           </div>
         </div>
