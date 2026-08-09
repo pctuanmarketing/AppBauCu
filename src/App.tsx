@@ -8,6 +8,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { ElectionDataPage } from './pages/ElectionDataPage';
 import { VoterManagementPage } from './pages/VoterManagementPage';
 import { BallotCountingPage } from './pages/BallotCountingPage';
+import { ElectionResultsPage } from './pages/ElectionResultsPage';
 import { ResultsReportPage } from './pages/ResultsReportPage';
 import { SystemAdminPage } from './pages/SystemAdminPage';
 import { UserProfilePage } from './pages/UserProfilePage';
@@ -359,6 +360,16 @@ export function App() {
           addBallot={handleAddBallot}
           undoLastBallot={undoLastBallot}
           resetBallotsForLevel={resetBallotsForLevel}
+        />
+      )}
+
+      {activeTab === 'election_results' && (
+        <ElectionResultsPage
+          unit={unit}
+          configs={configs}
+          candidates={candidates}
+          ballots={ballots}
+          committee={committee}
         />
       )}
 

@@ -47,11 +47,12 @@ export const Layout: React.FC<LayoutProps> = ({
   onClearNotifications,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-100 text-slate-800 font-sans">
-      {/* Dark Sidebar */}
+      {/* Dark Sidebar (Supports Mobile Off-canvas Drawer) */}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -59,6 +60,8 @@ export const Layout: React.FC<LayoutProps> = ({
         setCollapsed={setCollapsed}
         currentRole={currentRole}
         onOpenQuickAction={onOpenQuickAction}
+        mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
       />
 
       {/* Main Workspace Area */}
@@ -74,13 +77,14 @@ export const Layout: React.FC<LayoutProps> = ({
           onNavigateToProfile={onNavigateToProfile}
           onNavigateToLanding={onNavigateToLanding}
           onLogout={onLogout}
+          onToggleMobileMenu={() => setMobileOpen(!mobileOpen)}
           notifications={notifications}
           onMarkAsRead={onMarkAsRead}
           onMarkAllAsRead={onMarkAllAsRead}
           onClearNotifications={onClearNotifications}
         />
 
-        <main ref={mainRef} className="flex-1 overflow-y-auto p-6 min-h-0 bg-slate-50/80 scroll-smooth">
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-3 sm:p-6 min-h-0 bg-slate-50/80 scroll-smooth">
           {children}
         </main>
 

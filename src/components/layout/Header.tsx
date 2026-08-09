@@ -17,6 +17,7 @@ import {
   Users,
   Sparkles,
   Settings,
+  Menu,
 } from 'lucide-react';
 import { ElectionUnit, SystemNotification, UserAccount, UserRole } from '../../types';
 
@@ -31,6 +32,7 @@ interface HeaderProps {
   onNavigateToProfile: () => void;
   onNavigateToLanding: () => void;
   onLogout: () => void;
+  onToggleMobileMenu?: () => void;
 
   notifications?: SystemNotification[];
   onMarkAsRead?: (id: string) => void;
@@ -49,6 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateToProfile,
   onNavigateToLanding,
   onLogout,
+  onToggleMobileMenu,
   notifications = [],
   onMarkAsRead,
   onMarkAllAsRead,
@@ -110,15 +113,24 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-20 shadow-sm font-sans">
-      {/* Left: Election Area Location Badge */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 bg-sky-50 text-sky-700 px-3 py-1.5 rounded-lg border border-sky-200 text-xs font-semibold">
-          <Building className="w-4 h-4 text-sky-600" />
-          <span>
+    <header className="h-16 bg-white border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-20 shadow-sm font-sans">
+      {/* Left: Hamburger Button (Mobile) & Location Badge */}
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+        {/* Mobile Hamburger Drawer Toggle Button */}
+        <button
+          onClick={onToggleMobileMenu}
+          className="md:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 shrink-0"
+          title="Mở danh mục menu"
+        >
+          <Menu className="w-5 h-5 text-slate-700" />
+        </button>
+
+        <div className="flex items-center gap-2 bg-sky-50 text-sky-700 px-2.5 sm:px-3 py-1.5 rounded-lg border border-sky-200 text-xs font-semibold truncate">
+          <Building className="w-4 h-4 text-sky-600 shrink-0" />
+          <span className="truncate">
             Khu vực bỏ phiếu số {unit.votingAreaNo} - {unit.wardName}, {unit.province}
           </span>
-          <span className="bg-sky-200 text-sky-900 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-mono font-bold">
+          <span className="hidden sm:inline-block bg-sky-200 text-sky-900 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-mono font-bold shrink-0">
             Khóa {unit.term}
           </span>
         </div>

@@ -4,6 +4,7 @@ import {
   Building2,
   Users,
   Vote,
+  Trophy,
   FileSpreadsheet,
   Settings,
   PlusCircle,
@@ -20,6 +21,8 @@ interface SidebarProps {
   setCollapsed: (collapsed: boolean) => void;
   currentRole: UserRole;
   onOpenQuickAction: () => void;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -29,6 +32,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setCollapsed,
   currentRole,
   onOpenQuickAction,
+  mobileOpen = false,
+  onCloseMobile,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -46,8 +51,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'election_data', label: 'DỮ LIỆU BẦU CỬ', icon: Building2 },
         { id: 'voters', label: 'QUẢN LÝ CỬ TRI', icon: Users },
-        { id: 'ballot_counting', label: 'KIỂM PHIẾU BẦU CỬ', icon: Vote, highlight: true },
-        { id: 'results_report', label: 'KẾT QUẢ', icon: FileSpreadsheet },
+        { id: 'ballot_counting', label: 'KIỂM PHIẾU BẦU CỬ', icon: Vote },
+        { id: 'election_results', label: 'KẾT QUẢ', icon: Trophy, highlight: true },
+        { id: 'results_report', label: 'BÁO CÁO', icon: FileSpreadsheet },
       ],
     },
     {
@@ -59,13 +65,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`sidebar-gradient text-slate-300 flex flex-col transition-all duration-300 z-30 relative select-none shadow-xl border-r border-slate-800 ${
-        isEffectiveExpanded ? 'w-64' : 'w-20'
-      }`}
-    >
+    <>
+      {/* Mobile Drawer Backdrop Overlay */}
+      {mobileOpen && (
+        <div
+          onClick={onCloseMobile}
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-40 md:hidden transition-opacity"
+        />
+      )}
+
+      <aside
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`sidebar-gradient text-slate-300 flex flex-col transition-all duration-300 z-50 fixed md:relative inset-y-0 left-0 h-full select-none shadow-2xl md:shadow-xl border-r border-slate-800 ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        } ${isEffectiveExpanded ? 'w-64' : 'w-20'}`}
+      >
       {/* Brand Header with Integrated Logo Toggle */}
       <div className="h-16 px-3 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/60">
         <button
@@ -125,7 +140,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    onCloseMobile?.();
+                  }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all ${
                     isActive
                       ? 'bg-gradient-to-r from-sky-500/20 to-blue-500/10 text-sky-300 border-l-4 border-sky-400 bg-slate-800/90 shadow-md'
@@ -164,5 +182,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
     </aside>
+    </>
   );
 };
