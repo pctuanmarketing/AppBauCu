@@ -17,14 +17,15 @@ import {
   Sparkles,
   AlertTriangle,
 } from 'lucide-react';
-import { SystemSettings, UserAccount, UserRole } from '../types';
+import { ElectionLevel, SystemSettings, UserAccount, UserRole } from '../types';
 import { sendRealEmail, EmailPayload } from '../lib/emailService';
 
 interface SystemAdminPageProps {
   settings: SystemSettings;
   setSettings: React.Dispatch<React.SetStateAction<SystemSettings>>;
   registeredUsers?: UserAccount[];
-  onApproveUser?: (userId: string, role: UserRole) => void;
+  onApproveUser?: (userId: string, role: UserRole, assignedLevel?: ElectionLevel | 'ALL') => void;
+  onUpdateUserLevel?: (userId: string, assignedLevel: ElectionLevel | 'ALL') => void;
   onRejectUser?: (userId: string) => void;
   onDeleteUser?: (userId: string) => void;
   onShowEmailModal?: (emailData: EmailPayload) => void;
@@ -36,12 +37,14 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
   setSettings,
   registeredUsers = [],
   onApproveUser,
+  onUpdateUserLevel,
   onRejectUser,
   onDeleteUser,
   onShowEmailModal,
   currentRole = 'ADMIN',
 }) => {
   const [selectedRoleMap, setSelectedRoleMap] = useState<Record<string, UserRole>>({});
+  const [selectedLevelMap, setSelectedLevelMap] = useState<Record<string, ElectionLevel | 'ALL'>>({});
 
   // Block non-admin users from accessing system administration
   if (currentRole !== 'ADMIN') {
@@ -158,13 +161,15 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
                   <th className="p-3">Họ và Tên</th>
                   <th className="p-3">Email nhận thông báo</th>
                   <th className="p-3">Điện thoại</th>
-                  <th className="p-3 w-44 text-center">Phân công Quyền hạn</th>
-                  <th className="p-3 w-52 text-center">Thao tác Phê duyệt</th>
+                  <th className="p-3 w-40 text-center">Phân công Quyền hạn</th>
+                  <th className="p-3 w-48 text-center">Cấp kiểm phiếu phụ trách</th>
+                  <th className="p-3 w-44 text-center">Thao tác Phê duyệt</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {pendingUsers.map(u => {
                   const assignedRole = selectedRoleMap[u.id] || 'EDITOR';
+                  const assignedLvl = selectedLevelMap[u.id] || 'ALL';
                   return (
                     <tr key={u.id} className="hover:bg-slate-50">
                       <td className="p-3 font-bold text-slate-900 uppercase">{u.fullName}</td>
@@ -177,8 +182,20 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
                           className="p-1.5 bg-sky-50 border border-sky-300 rounded-lg font-bold text-sky-900 outline-none text-xs w-full"
                         >
                           <option value="ADMIN">ADMIN (Toàn quyền)</option>
-                          <option value="EDITOR">EDITOR (Kiểm phiếu & Nhập liệu)</option>
+                          <option value="EDITOR">EDITOR (Kiểm phiếu)</option>
                           <option value="VIEW">VIEW (Chỉ xem)</option>
+                        </select>
+                      </td>
+                      <td className="p-3 text-center">
+                        <select
+                          value={assignedLvl}
+                          onChange={e => setSelectedLevelMap(prev => ({ ...prev, [u.id]: e.target.value as any }))}
+                          className="p-1.5 bg-amber-50 border border-amber-300 rounded-lg font-bold text-amber-900 outline-none text-xs w-full"
+                        >
+                          <option value="ALL">🌐 Tất cả 3 cấp bầu cử</option>
+                          <option value="QUOC_HOI">🇻🇳 Chỉ cấp QUỐC HỘI</option>
+                          <option value="HDND_TINH">🏛️ Chỉ cấp HĐND TỈNH</option>
+                          <option value="HDND_XA">🏡 Chỉ cấp HĐND XÃ</option>
                         </select>
                       </td>
                       <td className="p-3 text-center">
@@ -188,11 +205,11 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
                             className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs flex items-center gap-1"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
-                            Duyệt & Gửi Mail kích hoạt
+                            Duyệt tài khoản
                           </button>
                           <button
                             onClick={() => onRejectUser && onRejectUser(u.id)}
-                            className="px-2.5 py-1.5 bg-rose-100 text-rose-700 hover:bg-rose-200 font-bold text-xs rounded-lg flex items-center gap-1"
+                            className="px-2 py-1.5 bg-rose-100 text-rose-700 hover:bg-rose-200 font-bold text-xs rounded-lg flex items-center gap-1"
                           >
                             <XCircle className="w-3.5 h-3.5" />
                             Từ chối
@@ -225,8 +242,9 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
                 <th className="p-3">Email</th>
                 <th className="p-3">Điện thoại</th>
                 <th className="p-3 w-32 text-center">Quyền hạn</th>
-                <th className="p-3 w-32 text-center">Trạng thái</th>
-                <th className="p-3 w-24 text-center">Thao tác</th>
+                <th className="p-3 w-48 text-center">Cấp phụ trách</th>
+                <th className="p-3 w-28 text-center">Trạng thái</th>
+                <th className="p-3 w-20 text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -245,6 +263,18 @@ export const SystemAdminPage: React.FC<SystemAdminPageProps> = ({
                     }`}>
                       {u.role}
                     </span>
+                  </td>
+                  <td className="p-3 text-center">
+                    <select
+                      value={u.assignedLevel || 'ALL'}
+                      onChange={e => onUpdateUserLevel && onUpdateUserLevel(u.id, e.target.value as any)}
+                      className="p-1 bg-amber-50 border border-amber-300 rounded font-bold text-amber-900 text-xs w-full"
+                    >
+                      <option value="ALL">🌐 Tất cả 3 cấp</option>
+                      <option value="QUOC_HOI">🇻🇳 Cấp Quốc hội</option>
+                      <option value="HDND_TINH">🏛️ Cấp HĐND Tỉnh</option>
+                      <option value="HDND_XA">🏡 Cấp HĐND Xã</option>
+                    </select>
                   </td>
                   <td className="p-3 text-center">
                     <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">

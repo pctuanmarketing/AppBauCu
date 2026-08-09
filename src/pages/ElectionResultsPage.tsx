@@ -11,6 +11,7 @@ import {
   Vote,
   Clock,
   Building2,
+  Lock,
 } from 'lucide-react';
 import { Candidate, ElectionLevel, ElectionLevelConfig, ElectionUnit, BallotRecord } from '../types';
 import { exportElectionResultsToExcel } from '../lib/excelExporter';
@@ -22,6 +23,7 @@ interface ElectionResultsPageProps {
   candidates: Candidate[];
   ballots: BallotRecord[];
   committee: any[];
+  assignedLevel?: ElectionLevel | 'ALL';
 }
 
 export const ElectionResultsPage: React.FC<ElectionResultsPageProps> = ({
@@ -30,8 +32,12 @@ export const ElectionResultsPage: React.FC<ElectionResultsPageProps> = ({
   candidates,
   ballots,
   committee,
+  assignedLevel,
 }) => {
-  const [selectedLevel, setSelectedLevel] = useState<ElectionLevel>('QUOC_HOI');
+  const [selectedLevel, setSelectedLevel] = useState<ElectionLevel>(() => {
+    if (assignedLevel && assignedLevel !== 'ALL') return assignedLevel;
+    return 'QUOC_HOI';
+  });
 
   const config = configs[selectedLevel];
   const levelCandidates = candidates
@@ -132,19 +138,31 @@ export const ElectionResultsPage: React.FC<ElectionResultsPageProps> = ({
 
       {/* Level Selector Tabs */}
       <div className="flex bg-white p-2 rounded-2xl border border-slate-200 shadow-sm gap-2">
-        {(['QUOC_HOI', 'HDND_TINH', 'HDND_XA'] as ElectionLevel[]).map(lvl => (
-          <button
-            key={lvl}
-            onClick={() => setSelectedLevel(lvl)}
-            className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${
-              selectedLevel === lvl
-                ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-md'
-                : 'text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            {configs[lvl].levelName.toUpperCase()}
-          </button>
-        ))}
+        {(['QUOC_HOI', 'HDND_TINH', 'HDND_XA'] as ElectionLevel[]).map(lvl => {
+          const isSelected = selectedLevel === lvl;
+          const isLocked = assignedLevel && assignedLevel !== 'ALL' && assignedLevel !== lvl;
+          return (
+            <button
+              key={lvl}
+              disabled={isLocked}
+              onClick={() => {
+                if (isLocked) return;
+                setSelectedLevel(lvl);
+              }}
+              className={`flex-1 py-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 ${
+                isLocked
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 opacity-60'
+                  : isSelected
+                  ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-md'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+              title={isLocked ? `🔒 Bạn chỉ được xem kết quả cấp ${configs[assignedLevel!].levelName}` : ''}
+            >
+              {isLocked && <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+              <span>{configs[lvl].levelName.toUpperCase()}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* MAIN TWO TABLES MATCHING SCREENSHOT EXACTLY */}

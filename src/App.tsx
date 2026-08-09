@@ -193,13 +193,24 @@ export function App() {
     pushNotification('Đăng ký tài khoản mới', `Tài khoản ${newUser.fullName} đã gửi yêu cầu cấp quyền.`, 'USER');
   };
 
-  const handleApproveUser = (userId: string, role: UserRole) => {
+  const handleApproveUser = (userId: string, role: UserRole, assignedLevel?: ElectionLevel | 'ALL') => {
     const targetUser = registeredUsers.find(u => u.id === userId);
+    const levelVal = assignedLevel || 'ALL';
     setRegisteredUsers(prev =>
-      prev.map(u => (u.id === userId ? { ...u, role, status: 'APPROVED', approvedAt: new Date().toISOString() } : u))
+      prev.map(u => (u.id === userId ? { ...u, role, assignedLevel: levelVal, status: 'APPROVED', approvedAt: new Date().toISOString() } : u))
     );
     if (targetUser) {
-      pushNotification('Tài khoản đã kích hoạt', `Tài khoản ${targetUser.fullName} đã được duyệt cấp quyền ${role}.`, 'USER');
+      pushNotification('Tài khoản đã kích hoạt', `Tài khoản ${targetUser.fullName} đã được duyệt cấp quyền ${role} (Cấp phụ trách: ${levelVal}).`, 'USER');
+    }
+  };
+
+  const handleUpdateUserLevel = (userId: string, assignedLevel: ElectionLevel | 'ALL') => {
+    setRegisteredUsers(prev =>
+      prev.map(u => (u.id === userId ? { ...u, assignedLevel } : u))
+    );
+    const targetUser = registeredUsers.find(u => u.id === userId);
+    if (targetUser) {
+      pushNotification('Phân công nhiệm vụ', `Đã đổi cấp phụ trách của ${targetUser.fullName} thành ${assignedLevel}.`, 'SYSTEM');
     }
   };
 
@@ -363,6 +374,7 @@ export function App() {
           addBallot={handleAddBallot}
           undoLastBallot={undoLastBallot}
           resetBallotsForLevel={resetBallotsForLevel}
+          assignedLevel={currentUser?.assignedLevel}
         />
       )}
 
@@ -373,6 +385,7 @@ export function App() {
           candidates={candidates}
           ballots={ballots}
           committee={committee}
+          assignedLevel={currentUser?.assignedLevel}
         />
       )}
 
@@ -384,6 +397,7 @@ export function App() {
           voters={voters}
           ballots={ballots}
           committee={committee}
+          assignedLevel={currentUser?.assignedLevel}
         />
       )}
 
@@ -393,6 +407,7 @@ export function App() {
           setSettings={setSettings}
           registeredUsers={registeredUsers}
           onApproveUser={handleApproveUser}
+          onUpdateUserLevel={handleUpdateUserLevel}
           onRejectUser={handleRejectUser}
           onDeleteUser={handleDeleteUser}
           onShowEmailModal={payload => setActiveEmailModalPayload(payload)}

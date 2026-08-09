@@ -25,6 +25,7 @@ interface BallotCountingPageProps {
   addBallot: (level: ElectionLevel, inputStruckOut: string) => BallotValidationResult;
   undoLastBallot: (level: ElectionLevel) => void;
   resetBallotsForLevel: (level: ElectionLevel) => void;
+  assignedLevel?: ElectionLevel | 'ALL';
 }
 
 export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
@@ -35,8 +36,18 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
   addBallot,
   undoLastBallot,
   resetBallotsForLevel,
+  assignedLevel,
 }) => {
-  const [activeLevel, setActiveLevel] = useState<ElectionLevel>('QUOC_HOI');
+  const [activeLevel, setActiveLevel] = useState<ElectionLevel>(() => {
+    if (assignedLevel && assignedLevel !== 'ALL') return assignedLevel;
+    return 'QUOC_HOI';
+  });
+
+  useEffect(() => {
+    if (assignedLevel && assignedLevel !== 'ALL') {
+      setActiveLevel(assignedLevel);
+    }
+  }, [assignedLevel]);
   const [struckOutInput, setStruckOutInput] = useState('');
   const [enterCount, setEnterCount] = useState(0);
   const [lastSubmittedResult, setLastSubmittedResult] = useState<BallotValidationResult | null>(null);
@@ -124,21 +135,28 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
         <div className="flex bg-slate-950/80 p-1.5 rounded-xl border border-slate-700/80 text-xs font-bold shrink-0 relative z-10">
           {(['QUOC_HOI', 'HDND_TINH', 'HDND_XA'] as ElectionLevel[]).map(lvl => {
             const isSelected = activeLevel === lvl;
+            const isLocked = assignedLevel && assignedLevel !== 'ALL' && assignedLevel !== lvl;
             return (
               <button
                 key={lvl}
+                disabled={isLocked}
                 onClick={() => {
+                  if (isLocked) return;
                   setActiveLevel(lvl);
                   setStruckOutInput('');
                   setLastSubmittedResult(null);
                 }}
-                className={`px-4 py-2 rounded-lg transition-all ${
-                  isSelected
+                className={`px-3.5 py-2 rounded-lg transition-all flex items-center gap-1.5 ${
+                  isLocked
+                    ? 'bg-slate-900/40 text-slate-500 cursor-not-allowed opacity-50'
+                    : isSelected
                     ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white font-black shadow-md'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                 }`}
+                title={isLocked ? `🔒 Bạn chỉ được phân công thao tác kiểm phiếu cấp ${configs[assignedLevel!].levelName}` : ''}
               >
-                {configs[lvl].levelName}
+                {isLocked && <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                <span>{configs[lvl].levelName}</span>
               </button>
             );
           })}

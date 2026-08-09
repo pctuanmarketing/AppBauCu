@@ -11,6 +11,7 @@ export interface UserAccount {
   phone: string;
   password?: string;
   role: UserRole;
+  assignedLevel?: ElectionLevel | 'ALL'; // 'ALL' | 'QUOC_HOI' | 'HDND_TINH' | 'HDND_XA'
   status: UserAccountStatus;
   createdAt: string;
   approvedAt?: string;
