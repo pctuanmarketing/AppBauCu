@@ -279,6 +279,19 @@ export function App() {
     return res;
   };
 
+  const handleResetPassword = (emailOrPhone: string, newPassword: string) => {
+    const clean = emailOrPhone.trim().toLowerCase();
+    setRegisteredUsers(prev =>
+      prev.map(u => {
+        if (u.email.toLowerCase() === clean || u.phone.trim() === clean) {
+          return { ...u, password: newPassword };
+        }
+        return u;
+      })
+    );
+    pushNotification('Đổi mật khẩu', `Tài khoản (${emailOrPhone}) đã khôi phục mật khẩu thành công.`, 'USER');
+  };
+
   // If in Landing Page View mode
   if (isLandingPage && !currentUser) {
     return (
@@ -296,6 +309,7 @@ export function App() {
             onLoginSuccess={handleLoginSuccess}
             registeredUsers={registeredUsers}
             onRegisterSubmit={handleRegisterSubmit}
+            onResetPassword={handleResetPassword}
             onShowEmailModal={payload => setActiveEmailModalPayload(payload)}
           />
         )}
@@ -445,6 +459,7 @@ export function App() {
           onLoginSuccess={handleLoginSuccess}
           registeredUsers={registeredUsers}
           onRegisterSubmit={handleRegisterSubmit}
+          onResetPassword={handleResetPassword}
           onShowEmailModal={payload => setActiveEmailModalPayload(payload)}
         />
       )}

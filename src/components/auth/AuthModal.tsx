@@ -15,9 +15,12 @@ import {
   Eye,
   EyeOff,
   ShieldAlert,
+  KeyRound,
+  Send,
+  ArrowLeft,
 } from 'lucide-react';
 import { UserAccount, UserRole } from '../../types';
-import { EmailPayload } from '../../lib/emailService';
+import { sendRealEmail, EmailPayload } from '../../lib/emailService';
 
 interface AuthModalProps {
   mode: 'LOGIN' | 'REGISTER';
@@ -26,6 +29,7 @@ interface AuthModalProps {
   onLoginSuccess: (user: UserAccount) => void;
   registeredUsers: UserAccount[];
   onRegisterSubmit: (newUser: Omit<UserAccount, 'id' | 'createdAt' | 'status' | 'role'>) => void;
+  onResetPassword?: (emailOrPhone: string, newPassword: string) => void;
   onShowEmailModal: (emailData: EmailPayload) => void;
 }
 
@@ -36,8 +40,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onLoginSuccess,
   registeredUsers,
   onRegisterSubmit,
+  onResetPassword,
   onShowEmailModal,
 }) => {
+  // Internal View Mode State
+  const [viewMode, setViewMode] = useState<'LOGIN' | 'REGISTER' | 'FORGOT_PASSWORD'>(mode);
+
+  useEffect(() => {
+    setViewMode(mode);
+  }, [mode]);
+
   // Login Form States
   const [loginInput, setLoginInput] = useState(''); // Email or Phone number
   const [loginPassword, setLoginPassword] = useState('');
@@ -57,6 +69,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [regError, setRegError] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regSuccessMsg, setRegSuccessMsg] = useState(false);
+
+  // Forgot / Reset Password States
+  const [resetInput, setResetInput] = useState('');
+  const [resetStep, setResetStep] = useState<1 | 2>(1);
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [inputOtp, setInputOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState('');
+  const [targetResetUser, setTargetResetUser] = useState<UserAccount | null>(null);
 
   // Lockout Timer countdown effect
   useEffect(() => {
@@ -146,6 +170,107 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setFailedAttempts(0);
     onLoginSuccess(matchedUser);
     onClose();
+  };
+
+  // Handle Send Password Reset OTP via Email/Phone
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    setResetSuccess('');
+
+    const cleanInput = resetInput.trim().toLowerCase();
+    if (!cleanInput) {
+      setResetError('Vui lòng nhập Email hoặc Số điện thoại đã đăng ký.');
+      return;
+    }
+
+    let matched = registeredUsers.find(
+      u => u.email.toLowerCase() === cleanInput || u.phone.trim() === cleanInput
+    );
+
+    if (!matched && (cleanInput === 'pctuanit@gmail.com' || cleanInput === '0916199945')) {
+      matched = {
+        id: 'admin-default',
+        fullName: 'Phạm Công Tuân',
+        email: 'pctuanit@gmail.com',
+        phone: '0916199945',
+        role: 'ADMIN',
+        status: 'APPROVED',
+        createdAt: new Date().toISOString(),
+      };
+    }
+
+    if (!matched) {
+      setResetError('❌ Không tìm thấy tài khoản nào phù hợp với Email hoặc Số điện thoại này!');
+      return;
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(otp);
+    setTargetResetUser(matched);
+
+    const emailPayload: EmailPayload = {
+      to_name: matched.fullName,
+      to_email: matched.email,
+      phone: matched.phone,
+      subject: `[HỆ THỐNG BẦU CỬ] MÃ XÁC THỰC OTP KHÔI PHỤC MẬT KHẨU: ${otp}`,
+      type: 'PASSWORD_RESET_OTP',
+      message_html: `
+        <p>Hệ thống Kiểm phiếu Bầu cử Điện tử nhận được yêu cầu khôi phục mật khẩu cho tài khoản <strong>${matched.fullName}</strong> (${matched.email}).</p>
+        <p>Mã OTP xác thực khôi phục mật khẩu của bạn là:</p>
+        <div style="background-color: #f0f9ff; border: 2px solid #38bdf8; padding: 16px; border-radius: 12px; text-align: center; margin: 16px 0;">
+          <strong style="color: #0284c7; font-size: 32px; letter-spacing: 6px; font-family: monospace;">${otp}</strong>
+        </div>
+        <p>Vui lòng nhập mã OTP gồm 6 chữ số này vào giao diện phần mềm để hoàn tất khôi phục mật khẩu mới.</p>
+      `,
+    };
+
+    await sendRealEmail(emailPayload);
+    onShowEmailModal(emailPayload);
+
+    setResetStep(2);
+    setResetSuccess(`✅ Mã xác thực OTP đã được gửi đến ${matched.email}!`);
+  };
+
+  // Handle Verify OTP and Save New Password
+  const handleVerifyOtpAndResetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    setResetSuccess('');
+
+    if (inputOtp.trim() !== generatedOtp) {
+      setResetError('❌ Mã OTP xác thực không chính xác. Vui lòng kiểm tra lại!');
+      return;
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      setResetError('❌ Mật khẩu mới phải có tối thiểu 6 ký tự.');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setResetError('❌ Mật khẩu xác nhận không trùng khớp.');
+      return;
+    }
+
+    if (onResetPassword && targetResetUser) {
+      onResetPassword(targetResetUser.email, newPassword);
+    }
+
+    setResetSuccess('🎉 Khôi phục mật khẩu thành công! Chuyển sang trang Đăng nhập...');
+
+    setTimeout(() => {
+      setLoginInput(targetResetUser?.email || '');
+      setLoginPassword(newPassword);
+      setViewMode('LOGIN');
+      onSwitchMode('LOGIN');
+      setResetStep(1);
+      setResetInput('');
+      setInputOtp('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setResetSuccess('');
+    }, 2000);
   };
 
   // Handle Register Submit with strict security validations
@@ -335,6 +460,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <div className="flex justify-end pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginError('');
+                      setResetError('');
+                      setResetSuccess('');
+                      setViewMode('FORGOT_PASSWORD');
+                    }}
+                    className="text-xs font-bold text-sky-600 hover:text-sky-800 hover:underline flex items-center gap-1"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>Quên mật khẩu?</span>
+                  </button>
+                </div>
               </div>
 
               <button
@@ -345,15 +485,159 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <LogIn className="w-4 h-4" />
                 <span>Xác nhận Đăng Nhập</span>
               </button>
-
-              <div className="p-3 bg-sky-50/60 rounded-2xl border border-sky-100 text-[11px] text-slate-600 space-y-1">
-                <div className="font-bold text-sky-900 flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-sky-600" />
-                  <span>Tài khoản Demo Quản trị tối cao (Admin):</span>
-                </div>
-                <p>Email: <strong className="text-slate-800 font-mono">pctuanit@gmail.com</strong> | Mật khẩu: <strong className="text-slate-800 font-mono">123456</strong></p>
-              </div>
             </form>
+          ) : viewMode === 'FORGOT_PASSWORD' ? (
+            /* FORGOT & RESET PASSWORD FORM */
+            <div className="space-y-4">
+              {resetError && (
+                <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-bold flex items-center gap-2 shadow-2xs">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{resetError}</span>
+                </div>
+              )}
+
+              {resetSuccess && (
+                <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs font-bold flex items-center gap-2 shadow-2xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{resetSuccess}</span>
+                </div>
+              )}
+
+              {resetStep === 1 ? (
+                /* STEP 1: ENTER EMAIL OR PHONE TO SEND OTP */
+                <form onSubmit={handleSendOtp} className="space-y-4">
+                  <div className="p-3 bg-sky-50 rounded-2xl border border-sky-200 text-xs text-sky-900 font-medium space-y-1">
+                    <p className="font-bold flex items-center gap-1.5 text-sky-950">
+                      <KeyRound className="w-4 h-4 text-sky-600" />
+                      <span>Khôi phục mật khẩu bằng Email hoặc SĐT</span>
+                    </p>
+                    <p className="text-[11px] text-slate-600">
+                      Nhập địa chỉ Email hoặc Số điện thoại đã đăng ký để nhận <strong>Mã xác thực OTP (6 chữ số)</strong> gửi về email của bạn.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase">
+                      Email hoặc Số điện thoại đăng ký:
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        required
+                        value={resetInput}
+                        onChange={e => setResetInput(e.target.value)}
+                        placeholder="VD: pctuanit@gmail.com hoặc 0916199945..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 bg-gradient-to-r from-sky-600 via-sky-700 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-sky-600/20 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>GỬI MÃ XÁC THỰC (OTP) KHÔI PHỤC</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setViewMode('LOGIN');
+                      onSwitchMode('LOGIN');
+                    }}
+                    className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Quay lại trang Đăng nhập</span>
+                  </button>
+                </form>
+              ) : (
+                /* STEP 2: ENTER OTP & NEW PASSWORD */
+                <form onSubmit={handleVerifyOtpAndResetPassword} className="space-y-3.5">
+                  {targetResetUser && (
+                    <div className="p-2.5 bg-slate-100 rounded-xl border border-slate-200 text-xs text-slate-700 flex items-center justify-between">
+                      <span>Tài khoản khôi phục:</span>
+                      <strong className="text-sky-900 font-bold">{targetResetUser.fullName} ({targetResetUser.email})</strong>
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase">
+                      Mã xác thực OTP (6 chữ số):
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      required
+                      value={inputOtp}
+                      onChange={e => setInputOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="Nhập 6 chữ số OTP..."
+                      className="w-full px-4 py-2.5 bg-white border-2 border-sky-400 rounded-xl text-center text-xl font-mono font-black text-sky-900 tracking-widest focus:ring-2 focus:ring-sky-500 outline-none shadow-inner"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase">
+                      Mật khẩu mới:
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        required
+                        value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                        placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)..."
+                        className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-slate-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase">
+                      Xác nhận mật khẩu mới:
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="password"
+                        required
+                        value={confirmNewPassword}
+                        onChange={e => setConfirmNewPassword(e.target.value)}
+                        placeholder="Nhập lại mật khẩu mới..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>XÁC NHẬN ĐỔI MẬT KHẨU MỚI</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setResetStep(1)}
+                    className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1 transition-all"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Nhập lại Email/SĐT khác</span>
+                  </button>
+                </form>
+              )}
+            </div>
           ) : regSuccessMsg ? (
             /* REGISTER SUCCESS MODAL SCREEN */
             <div className="text-center space-y-4 py-4">
