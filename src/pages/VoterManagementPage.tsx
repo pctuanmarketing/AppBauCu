@@ -77,6 +77,29 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
   const votedPct = votedPctNum.toFixed(2);
   const remainingPct = remainingPctNum.toFixed(2);
 
+  // 1. Tính toán số cử tri bầu 3 cấp và cử tri bầu 2 cấp
+  const voters3Levels = voters.filter(
+    v => (v.eligibleQuocHoi !== false) && (v.eligibleHdndTinh !== false) && (v.eligibleHdndXa !== false)
+  ).length;
+
+  const voters2Levels = voters.filter(v => {
+    const count = [v.eligibleQuocHoi !== false, v.eligibleHdndTinh !== false, v.eligibleHdndXa !== false].filter(Boolean).length;
+    return count === 2;
+  }).length;
+
+  // 2. Thống kê cử tri đi bầu tương ứng cho từng cấp bầu cử
+  const totalQuocHoi = voters.filter(v => v.eligibleQuocHoi !== false).length;
+  const votedQuocHoi = voters.filter(v => v.hasVoted && (v.eligibleQuocHoi !== false)).length;
+  const pctQuocHoi = totalQuocHoi > 0 ? ((votedQuocHoi / totalQuocHoi) * 100).toFixed(2) : '0.00';
+
+  const totalHdndTinh = voters.filter(v => v.eligibleHdndTinh !== false).length;
+  const votedHdndTinh = voters.filter(v => v.hasVoted && (v.eligibleHdndTinh !== false)).length;
+  const pctHdndTinh = totalHdndTinh > 0 ? ((votedHdndTinh / totalHdndTinh) * 100).toFixed(2) : '0.00';
+
+  const totalHdndXa = voters.filter(v => v.eligibleHdndXa !== false).length;
+  const votedHdndXa = voters.filter(v => v.hasVoted && (v.eligibleHdndXa !== false)).length;
+  const pctHdndXa = totalHdndXa > 0 ? ((votedHdndXa / totalHdndXa) * 100).toFixed(2) : '0.00';
+
   const showToast = (text: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToastMsg({ text, type });
     setTimeout(() => {
@@ -480,6 +503,99 @@ export const VoterManagementPage: React.FC<VoterManagementPageProps> = ({
             </div>
             <div className="w-full sm:w-28 bg-emerald-600 text-white font-mono font-extrabold text-center py-2 rounded-lg border border-emerald-700 shadow-xs text-xs">
               {remainingPct}%
+            </div>
+          </div>
+
+          {/* KHU VỰC THỐNG KÊ CHI TIẾT: CỬ TRI BẦU 3 CẤP & 2 CẤP & SỐ CỬ TRI ĐÃ ĐI BẦU THEO TỪNG CẤP */}
+          <div className="pt-3 border-t border-slate-200 space-y-3">
+            {/* THỐNG KÊ CỬ TRI 3 CẤP VÀ 2 CẤP */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="p-3.5 bg-gradient-to-r from-sky-50 to-blue-50 rounded-xl border border-sky-200 flex items-center justify-between shadow-2xs">
+                <div className="space-y-0.5">
+                  <div className="font-extrabold text-sky-950 text-xs uppercase flex items-center gap-1.5">
+                    <span>🗳️ CỬ TRI BẦU 3 CẤP</span>
+                    <span className="text-[10px] text-sky-700 font-medium">(Quốc hội + HĐND Tỉnh + HĐND Xã)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600">Tổng số cử tri được cấp 3 phiếu bầu</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-base font-black text-sky-900 font-mono">{voters3Levels.toLocaleString('vi-VN')}</div>
+                  <div className="text-[10px] font-bold text-sky-700 bg-white px-2 py-0.5 rounded border border-sky-300 inline-block">
+                    {totalCount > 0 ? ((voters3Levels / totalCount) * 100).toFixed(1) : '0'}% tổng cử tri
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200 flex items-center justify-between shadow-2xs">
+                <div className="space-y-0.5">
+                  <div className="font-extrabold text-purple-950 text-xs uppercase flex items-center gap-1.5">
+                    <span>🗳️ CỬ TRI BẦU 2 CẤP</span>
+                    <span className="text-[10px] text-purple-700 font-medium">(Cử tri biến động / Tạm trú)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600">Tổng số cử tri được cấp 2 phiếu bầu</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-base font-black text-purple-900 font-mono">{voters2Levels.toLocaleString('vi-VN')}</div>
+                  <div className="text-[10px] font-bold text-purple-700 bg-white px-2 py-0.5 rounded border border-purple-300 inline-block">
+                    {totalCount > 0 ? ((voters2Levels / totalCount) * 100).toFixed(1) : '0'}% tổng cử tri
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* THỐNG KÊ SỐ CỬ TRI ĐÃ ĐI BẦU TƯƠNG ỨNG CHO TỪNG CẤP BẦU CỬ */}
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/90 space-y-2.5">
+              <div className="font-extrabold text-slate-900 text-xs uppercase tracking-wide flex items-center gap-2 border-b border-slate-200 pb-2">
+                <Vote className="w-4 h-4 text-sky-600" />
+                SỐ CỬ TRI ĐÃ ĐI BẦU TƯƠNG ỨNG CHO TỪNG CẤP BẦU CỬ:
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                {/* 1. ĐẠI BIỂU QUỐC HỘI */}
+                <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between font-bold text-xs text-slate-800">
+                    <span className="text-sky-900 font-extrabold">🇻🇳 ĐẠI BIỂU QUỐC HỘI</span>
+                    <span className="font-mono text-sky-700 font-extrabold">{pctQuocHoi}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
+                    <div className="bg-sky-600 h-full transition-all duration-500 rounded-full" style={{ width: `${Math.min(100, Number(pctQuocHoi))}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-600 font-medium">
+                    <span>Đã đi bầu: <strong className="text-slate-900 font-bold">{votedQuocHoi.toLocaleString('vi-VN')}</strong></span>
+                    <span>Tổng cử tri: <strong className="text-slate-700">{totalQuocHoi.toLocaleString('vi-VN')}</strong></span>
+                  </div>
+                </div>
+
+                {/* 2. ĐẠI BIỂU HĐND TỈNH */}
+                <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between font-bold text-xs text-slate-800">
+                    <span className="text-emerald-900 font-extrabold">🏛️ HĐND TỈNH/THÀNH PHỐ</span>
+                    <span className="font-mono text-emerald-700 font-extrabold">{pctHdndTinh}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
+                    <div className="bg-emerald-600 h-full transition-all duration-500 rounded-full" style={{ width: `${Math.min(100, Number(pctHdndTinh))}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-600 font-medium">
+                    <span>Đã đi bầu: <strong className="text-slate-900 font-bold">{votedHdndTinh.toLocaleString('vi-VN')}</strong></span>
+                    <span>Tổng cử tri: <strong className="text-slate-700">{totalHdndTinh.toLocaleString('vi-VN')}</strong></span>
+                  </div>
+                </div>
+
+                {/* 3. ĐẠI BIỂU HĐND XÃ */}
+                <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between font-bold text-xs text-slate-800">
+                    <span className="text-indigo-900 font-extrabold">🏡 HĐND XÃ/PHƯỜNG</span>
+                    <span className="font-mono text-indigo-700 font-extrabold">{pctHdndXa}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
+                    <div className="bg-indigo-600 h-full transition-all duration-500 rounded-full" style={{ width: `${Math.min(100, Number(pctHdndXa))}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-600 font-medium">
+                    <span>Đã đi bầu: <strong className="text-slate-900 font-bold">{votedHdndXa.toLocaleString('vi-VN')}</strong></span>
+                    <span>Tổng cử tri: <strong className="text-slate-700">{totalHdndXa.toLocaleString('vi-VN')}</strong></span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
