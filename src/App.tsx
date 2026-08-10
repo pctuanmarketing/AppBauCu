@@ -435,6 +435,7 @@ export function App() {
           undoLastBallot={undoLastBallot}
           resetBallotsForLevel={resetBallotsForLevel}
           assignedLevel={currentUser?.assignedLevel}
+          settings={settings}
         />
       )}
 

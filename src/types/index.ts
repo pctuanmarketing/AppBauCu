@@ -126,4 +126,5 @@ export interface SystemSettings {
   votingEndTime?: string;   // e.g. "19:00"
   votingDate?: string;      // e.g. "2026-05-24"
   enableVotingTimeCheck?: boolean;
+  lockCountingDuringVoting?: boolean;
 }

@@ -16,7 +16,7 @@ import {
   Zap,
   Layers,
 } from 'lucide-react';
-import { BallotRecord, Candidate, ElectionLevel, ElectionLevelConfig } from '../types';
+import { BallotRecord, Candidate, ElectionLevel, ElectionLevelConfig, SystemSettings } from '../types';
 import { BallotValidationResult } from '../lib/ballotCalculator';
 
 interface BallotCountingPageProps {
@@ -29,6 +29,7 @@ interface BallotCountingPageProps {
   undoLastBallot: (level: ElectionLevel) => void;
   resetBallotsForLevel: (level: ElectionLevel) => void;
   assignedLevel?: ElectionLevel | 'ALL';
+  settings?: SystemSettings;
 }
 
 export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
@@ -41,6 +42,7 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
   undoLastBallot,
   resetBallotsForLevel,
   assignedLevel,
+  settings,
 }) => {
   const [activeLevel, setActiveLevel] = useState<ElectionLevel>(() => {
     if (assignedLevel && assignedLevel !== 'ALL') return assignedLevel;
@@ -121,13 +123,42 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
 
   const invalidSttsInInput = getInvalidSttsFromInput(struckOutInput);
 
+  // Helper to check if ballot counting is locked during voting hours
+  const checkIsCountingLocked = () => {
+    if (settings?.enableVotingTimeCheck === false) return false;
+    if (settings?.lockCountingDuringVoting === false) return false;
+
+    const now = new Date();
+    const startTimeStr = settings?.votingStartTime || '07:00';
+    const endTimeStr = settings?.votingEndTime || '19:00';
+
+    const [startH, startM] = startTimeStr.split(':').map(Number);
+    const [endH, endM] = endTimeStr.split(':').map(Number);
+
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+
+    // Locked if current time is during/before voting hours end
+    return nowMinutes <= endMinutes;
+  };
+
+  const isCountingLocked = checkIsCountingLocked();
+
   // Auto focus input on level switch or submission
   useEffect(() => {
-    inputRef.current?.focus();
-  }, [activeLevel, currentBallotNo]);
+    if (!isCountingLocked) {
+      inputRef.current?.focus();
+    }
+  }, [activeLevel, currentBallotNo, isCountingLocked]);
 
   // Handle Form Submission
   const handleSubmitBallot = () => {
+    if (isCountingLocked) {
+      alert(`🔒 CHỨC NĂNG KIỂM PHIẾU ĐANG TẠM KHÓA: Hòm phiếu vẫn đang mở cho cử tri đi bầu (đến ${settings?.votingEndTime || '19:00'}). Việc mở hòm kiểm phiếu chỉ được tiến hành SAU ${settings?.votingEndTime || '19:00'} theo Luật Bầu cử!`);
+      return;
+    }
+
     if (!struckOutInput.trim()) return;
 
     if (invalidSttsInInput.length > 0) {
@@ -148,6 +179,11 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
   const handleBatchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLastSubmittedResult(null);
+
+    if (isCountingLocked) {
+      alert(`🔒 CHỨC NĂNG KIỂM PHIẾU ĐANG TẠM KHÓA: Hòm phiếu vẫn đang mở cho cử tri đi bầu (đến ${settings?.votingEndTime || '19:00'}). Việc mở hòm kiểm phiếu chỉ được tiến hành SAU ${settings?.votingEndTime || '19:00'} theo Luật Bầu cử!`);
+      return;
+    }
 
     const cleanInput = struckOutInput.trim();
     if (!cleanInput) {
@@ -304,8 +340,36 @@ export const BallotCountingPage: React.FC<BallotCountingPageProps> = ({
             </table>
           </div>
 
+          {/* VOTING HOURS LOCK BANNER (If voting is still ongoing) */}
+          {isCountingLocked && (
+            <div className="p-4 bg-rose-950 text-white rounded-2xl border-2 border-rose-500 shadow-xl space-y-2 animate-fade-in">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/30 text-rose-300 border border-rose-400/40 flex items-center justify-center font-bold text-xl shrink-0 mt-0.5">
+                  🔒
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-sm font-black uppercase text-rose-200 flex items-center gap-2 flex-wrap">
+                    <span>CHỨC NĂNG KIỂM PHIẾU ĐANG TẠM KHÓA TRONG GIỜ BỎ PHIẾU</span>
+                    <span className="bg-rose-500/40 text-white text-[10px] px-2 py-0.5 rounded-full font-bold border border-rose-300/40">
+                      QUY ĐỊNH LUẬT BẦU CỬ
+                    </span>
+                  </h3>
+                  <p className="text-xs text-rose-100 font-medium leading-relaxed">
+                    Theo Luật Bầu cử Quốc gia, việc mở hòm phiếu và kiểm phiếu bầu cử chỉ được tiến hành <strong>SAU KHI KẾT THÚC GIỜ BỎ PHIẾU ({settings?.votingEndTime || '19:00'})</strong>. Hòm phiếu hiện vẫn đang mở cho cử tri đi bầu.
+                  </p>
+                </div>
+              </div>
+              <div className="p-3 bg-rose-900/60 rounded-xl border border-rose-700/60 text-xs text-rose-200 space-y-1">
+                <p>• Hệ thống tạm khóa ô nhập phiếu để ngăn kiểm phiếu trước giờ quy định.</p>
+                <p>• Quản trị viên (Admin) có thể chủ động chuyển công tắc <strong>[🔓 MỞ KHÓA KIỂM PHIẾU MỌI LÚC]</strong> tại phân hệ HỆ THỐNG nếu cần chạy thử nghiệm / thực hành.</p>
+              </div>
+            </div>
+          )}
+
           {/* DUAL MODE INPUT PANEL (SINGLE VS BATCH) */}
-          <div className="bg-gradient-to-r from-rose-50/70 via-sky-50/40 to-slate-50 p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3.5">
+          <div className={`bg-gradient-to-r from-rose-50/70 via-sky-50/40 to-slate-50 p-4.5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3.5 ${
+            isCountingLocked ? 'opacity-50 pointer-events-none' : ''
+          }`}>
             {/* Mode Switcher Tabs */}
             <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5 gap-2">
               <div className="flex items-center gap-2">
