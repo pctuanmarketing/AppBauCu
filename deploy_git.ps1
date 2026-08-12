@@ -4,7 +4,7 @@ Write-Host "  KHỞI TẠO VÀ PUSH DỰ ÁN LÊN GITHUB" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 
 git add .
-git commit -m "Complete App Bau Cu WebApp (MISA AMIS SaaS UI, Supabase DDL, Vercel Config)"
+git commit -m "Update Auth (Login, Register, Forgot Password) & Admin User CRUD (Add, Edit, Delete with Supabase Sync)"
 git branch -M main
 git push -u origin main
 

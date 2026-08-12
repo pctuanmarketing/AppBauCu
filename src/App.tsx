@@ -15,6 +15,7 @@ import { UserProfilePage } from './pages/UserProfilePage';
 import { HelpModal } from './components/common/HelpModal';
 import { ElectionLevel, SystemNotification, UserAccount, UserRole } from './types';
 import { EmailPayload } from './lib/emailService';
+import { fetchUsersFromSupabase, saveUserToSupabase, deleteUserFromSupabase } from './lib/userService';
 import { HelpCircle, Vote, Users, X } from 'lucide-react';
 
 const INITIAL_USERS: UserAccount[] = [
@@ -148,6 +149,21 @@ export function App() {
   const [showQuickActionModal, setShowQuickActionModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
 
+  // Initial fetch users from Supabase database
+  useEffect(() => {
+    fetchUsersFromSupabase().then(dbUsers => {
+      if (dbUsers && dbUsers.length > 0) {
+        setRegisteredUsers(prev => {
+          const map = new Map<string, UserAccount>();
+          INITIAL_USERS.forEach(u => map.set(u.id, u));
+          prev.forEach(u => map.set(u.id, u));
+          dbUsers.forEach(u => map.set(u.id, u));
+          return Array.from(map.values());
+        });
+      }
+    });
+  }, []);
+
   // Sync users to LocalStorage
   useEffect(() => {
     localStorage.setItem('app_bau_cu_users', JSON.stringify(registeredUsers));
@@ -193,7 +209,27 @@ export function App() {
     setNotifications(prev => [newNotif, ...prev]);
   };
 
-  // Auth Actions
+  // Auth & User Actions (with Supabase DB Sync)
+  const handleAddUser = (newUser: Omit<UserAccount, 'id' | 'createdAt'>) => {
+    const item: UserAccount = {
+      ...newUser,
+      id: `user-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    setRegisteredUsers(prev => [...prev, item]);
+    saveUserToSupabase(item);
+    pushNotification('Thêm người dùng mới', `Đã tạo tài khoản ${item.fullName} (${item.email}) với quyền ${item.role}.`, 'USER');
+  };
+
+  const handleUpdateUser = (updatedUser: UserAccount) => {
+    setRegisteredUsers(prev => prev.map(u => (u.id === updatedUser.id ? updatedUser : u)));
+    saveUserToSupabase(updatedUser);
+    if (currentUser && currentUser.id === updatedUser.id) {
+      setCurrentUser(updatedUser);
+    }
+    pushNotification('Cập nhật người dùng', `Đã cập nhật thông tin tài khoản ${updatedUser.fullName}.`, 'USER');
+  };
+
   const handleRegisterSubmit = (newUser: Omit<UserAccount, 'id' | 'createdAt' | 'status' | 'role'>) => {
     const item: UserAccount = {
       ...newUser,
@@ -203,43 +239,56 @@ export function App() {
       createdAt: new Date().toISOString(),
     };
     setRegisteredUsers(prev => [...prev, item]);
+    saveUserToSupabase(item);
     pushNotification('Đăng ký tài khoản mới', `Tài khoản ${newUser.fullName} đã gửi yêu cầu cấp quyền.`, 'USER');
   };
 
   const handleApproveUser = (userId: string, role: UserRole, assignedLevel?: ElectionLevel | 'ALL') => {
     const targetUser = registeredUsers.find(u => u.id === userId);
     const levelVal = assignedLevel || 'ALL';
-    setRegisteredUsers(prev =>
-      prev.map(u => (u.id === userId ? { ...u, role, assignedLevel: levelVal, status: 'APPROVED', approvedAt: new Date().toISOString() } : u))
-    );
-    if (targetUser) {
-      pushNotification('Tài khoản đã kích hoạt', `Tài khoản ${targetUser.fullName} đã được duyệt cấp quyền ${role} (Cấp phụ trách: ${levelVal}).`, 'USER');
-    }
+    if (!targetUser) return;
+    const updated: UserAccount = {
+      ...targetUser,
+      role,
+      assignedLevel: levelVal,
+      status: 'APPROVED',
+      approvedAt: new Date().toISOString(),
+    };
+    setRegisteredUsers(prev => prev.map(u => (u.id === userId ? updated : u)));
+    saveUserToSupabase(updated);
+    pushNotification('Tài khoản đã kích hoạt', `Tài khoản ${updated.fullName} đã được duyệt cấp quyền ${role} (Cấp phụ trách: ${levelVal}).`, 'USER');
   };
 
   const handleUpdateUserLevel = (userId: string, assignedLevel: ElectionLevel | 'ALL') => {
-    setRegisteredUsers(prev =>
-      prev.map(u => (u.id === userId ? { ...u, assignedLevel } : u))
-    );
     const targetUser = registeredUsers.find(u => u.id === userId);
-    if (targetUser) {
-      pushNotification('Phân công nhiệm vụ', `Đã đổi cấp phụ trách của ${targetUser.fullName} thành ${assignedLevel}.`, 'SYSTEM');
-    }
+    if (!targetUser) return;
+    const updated: UserAccount = { ...targetUser, assignedLevel };
+    setRegisteredUsers(prev => prev.map(u => (u.id === userId ? updated : u)));
+    saveUserToSupabase(updated);
+    pushNotification('Phân công nhiệm vụ', `Đã đổi cấp phụ trách của ${updated.fullName} thành ${assignedLevel}.`, 'SYSTEM');
   };
 
   const handleRejectUser = (userId: string) => {
-    setRegisteredUsers(prev =>
-      prev.map(u => (u.id === userId ? { ...u, status: 'REJECTED' } : u))
-    );
+    const targetUser = registeredUsers.find(u => u.id === userId);
+    if (!targetUser) return;
+    const updated: UserAccount = { ...targetUser, status: 'REJECTED' };
+    setRegisteredUsers(prev => prev.map(u => (u.id === userId ? updated : u)));
+    saveUserToSupabase(updated);
   };
 
   const handleDeleteUser = (userId: string) => {
+    const targetUser = registeredUsers.find(u => u.id === userId);
     setRegisteredUsers(prev => prev.filter(u => u.id !== userId));
+    deleteUserFromSupabase(userId);
+    if (targetUser) {
+      pushNotification('Xóa người dùng', `Đã xóa tài khoản ${targetUser.fullName} (${targetUser.email}) khỏi hệ thống và CSDL Supabase.`, 'USER');
+    }
   };
 
   const handleUpdateProfile = (updatedUser: UserAccount) => {
     setCurrentUser(updatedUser);
     setRegisteredUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+    saveUserToSupabase(updatedUser);
     pushNotification('Cập nhật hồ sơ', `Hồ sơ cá nhân của ${updatedUser.fullName} đã được cập nhật thành công.`, 'SYSTEM');
   };
 
@@ -293,17 +342,20 @@ export function App() {
 
   const handleResetPassword = (emailOrPhone: string, newPassword: string) => {
     const clean = emailOrPhone.trim().toLowerCase();
+    let updatedTarget: UserAccount | null = null;
+
     setRegisteredUsers(prev => {
       const exists = prev.some(u => u.email.toLowerCase() === clean || u.phone.trim() === clean);
       if (exists) {
         return prev.map(u => {
           if (u.email.toLowerCase() === clean || u.phone.trim() === clean) {
-            return { ...u, password: newPassword };
+            updatedTarget = { ...u, password: newPassword };
+            return updatedTarget;
           }
           return u;
         });
       } else {
-        const defaultAdmin: UserAccount = {
+        updatedTarget = {
           id: 'admin-default',
           fullName: 'Phạm Công Tuân',
           email: 'pctuanit@gmail.com',
@@ -313,9 +365,13 @@ export function App() {
           status: 'APPROVED',
           createdAt: new Date().toISOString(),
         };
-        return [...prev, defaultAdmin];
+        return [...prev, updatedTarget];
       }
     });
+
+    if (updatedTarget) {
+      saveUserToSupabase(updatedTarget);
+    }
 
     if (currentUser && (currentUser.email.toLowerCase() === clean || currentUser.phone.trim() === clean)) {
       setCurrentUser(prev => prev ? { ...prev, password: newPassword } : null);
@@ -467,6 +523,8 @@ export function App() {
           settings={settings}
           setSettings={setSettings}
           registeredUsers={registeredUsers}
+          onAddUser={handleAddUser}
+          onUpdateUser={handleUpdateUser}
           onApproveUser={handleApproveUser}
           onUpdateUserLevel={handleUpdateUserLevel}
           onRejectUser={handleRejectUser}

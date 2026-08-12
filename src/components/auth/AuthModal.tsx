@@ -365,12 +365,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
 
           <h2 className="text-lg font-black uppercase tracking-tight text-white">
-            {mode === 'LOGIN' ? 'ĐĂNG NHẬP HỆ THỐNG' : 'ĐĂNG KÝ TÀI KHOẢN MỚI'}
+            {viewMode === 'LOGIN' ? 'ĐĂNG NHẬP HỆ THỐNG' : viewMode === 'REGISTER' ? 'ĐĂNG KÝ TÀI KHOẢN MỚI' : 'KHÔI PHỤC MẬT KHẨU'}
           </h2>
           <p className="text-xs text-slate-300 font-medium mt-1">
-            {mode === 'LOGIN'
+            {viewMode === 'LOGIN'
               ? 'Hệ thống Kiểm phiếu Bầu cử Điện tử An Trạch - Hòa Tiến'
-              : 'Gửi yêu cầu đăng ký tài khoản truy cập phần mềm'}
+              : viewMode === 'REGISTER'
+              ? 'Gửi yêu cầu đăng ký tài khoản truy cập phần mềm'
+              : 'Xác thực OTP qua Email để tạo mật khẩu mới'}
           </p>
         </div>
 
@@ -379,10 +381,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <button
             onClick={() => {
               setLoginError('');
+              setViewMode('LOGIN');
               onSwitchMode('LOGIN');
             }}
             className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
-              mode === 'LOGIN'
+              viewMode === 'LOGIN'
                 ? 'bg-white text-sky-900 shadow-sm font-extrabold border border-slate-200'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
@@ -393,10 +396,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <button
             onClick={() => {
               setRegError('');
+              setViewMode('REGISTER');
               onSwitchMode('REGISTER');
             }}
             className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
-              mode === 'REGISTER'
+              viewMode === 'REGISTER'
                 ? 'bg-white text-sky-900 shadow-sm font-extrabold border border-slate-200'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
@@ -408,7 +412,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-6 space-y-4">
-          {mode === 'LOGIN' ? (
+          {viewMode === 'LOGIN' ? (
             /* LOGIN FORM */
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               {loginError && (

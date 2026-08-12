@@ -94,14 +94,19 @@ CREATE TABLE IF NOT EXISTS ballot_records (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 8. Bảng Tài khoản & Phân quyền (user_roles)
-CREATE TABLE IF NOT EXISTS user_roles (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  username VARCHAR(100) UNIQUE NOT NULL,
-  full_name VARCHAR(255),
+-- 8. Bảng Tài khoản & Phân quyền Người dùng (user_accounts)
+CREATE TABLE IF NOT EXISTS user_accounts (
+  id VARCHAR(255) PRIMARY KEY,
+  full_name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  phone VARCHAR(50),
+  password VARCHAR(255),
   role VARCHAR(50) NOT NULL DEFAULT 'EDITOR', -- 'ADMIN', 'EDITOR', 'VIEW'
-  is_locked BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  assigned_level VARCHAR(50) DEFAULT 'ALL',   -- 'ALL', 'QUOC_HOI', 'HDND_TINH', 'HDND_XA'
+  status VARCHAR(50) NOT NULL DEFAULT 'PENDING', -- 'PENDING', 'APPROVED', 'REJECTED'
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  approved_at TIMESTAMPTZ,
+  approved_by VARCHAR(255)
 );
 
 -- BẬT ROW LEVEL SECURITY (RLS) HOẶC CHO PHÉP ANONYMOUS TRONG BẢN DEMO
@@ -112,6 +117,7 @@ ALTER TABLE witnesses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE voters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ballot_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_accounts ENABLE ROW LEVEL SECURITY;
 
 -- Tạo Policy công khai cho phép SELECT/INSERT/UPDATE (Cho môi trường triển khai nhanh)
 CREATE POLICY "Public Read Access" ON election_units FOR SELECT USING (true);
@@ -134,3 +140,7 @@ CREATE POLICY "Public Write Access" ON voters FOR ALL USING (true);
 
 CREATE POLICY "Public Read Access" ON ballot_records FOR SELECT USING (true);
 CREATE POLICY "Public Write Access" ON ballot_records FOR ALL USING (true);
+
+CREATE POLICY "Public Read Access" ON user_accounts FOR SELECT USING (true);
+CREATE POLICY "Public Write Access" ON user_accounts FOR ALL USING (true);
+
