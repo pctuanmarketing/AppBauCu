@@ -144,3 +144,13 @@ CREATE POLICY "Public Write Access" ON ballot_records FOR ALL USING (true);
 CREATE POLICY "Public Read Access" ON user_accounts FOR SELECT USING (true);
 CREATE POLICY "Public Write Access" ON user_accounts FOR ALL USING (true);
 
+-- CẤU HÌNH SUPABASE REALTIME PUBLICATION & REPLICA IDENTITY
+ALTER TABLE user_accounts REPLICA IDENTITY FULL;
+ALTER TABLE voters REPLICA IDENTITY FULL;
+ALTER TABLE ballot_records REPLICA IDENTITY FULL;
+
+-- Đăng ký các bảng vào Supabase Realtime Publication để phát sóng sự kiện INSERT, UPDATE, DELETE
+DROP PUBLICATION IF EXISTS supabase_realtime;
+CREATE PUBLICATION supabase_realtime FOR TABLE user_accounts, voters, ballot_records, candidates, committee_members, witnesses, election_units, election_level_configs;
+
+

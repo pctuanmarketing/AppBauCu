@@ -15,7 +15,12 @@ import { UserProfilePage } from './pages/UserProfilePage';
 import { HelpModal } from './components/common/HelpModal';
 import { ElectionLevel, SystemNotification, UserAccount, UserRole } from './types';
 import { EmailPayload } from './lib/emailService';
-import { fetchUsersFromSupabase, saveUserToSupabase, deleteUserFromSupabase } from './lib/userService';
+import {
+  fetchUsersFromSupabase,
+  saveUserToSupabase,
+  deleteUserFromSupabase,
+  subscribeToUserAccountChanges,
+} from './lib/userService';
 import { HelpCircle, Vote, Users, X } from 'lucide-react';
 
 const INITIAL_USERS: UserAccount[] = [
@@ -149,20 +154,80 @@ export function App() {
   const [showQuickActionModal, setShowQuickActionModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
 
-  // Initial fetch users from Supabase database
+  // Authoritative DB sync callback (Supabase DB is the Single Source of Truth)
+  const syncUsersFromDb = React.useCallback(async () => {
+    const dbUsers = await fetchUsersFromSupabase();
+    if (dbUsers && Array.isArray(dbUsers)) {
+      setRegisteredUsers(() => {
+        const map = new Map<string, UserAccount>();
+        // Ensure default admin exists as fallback if missing
+        INITIAL_USERS.forEach(u => map.set(u.id, u));
+        // Populate from authoritative DB list ONLY (Do not resurrect deleted/stale localStorage items)
+        dbUsers.forEach(u => map.set(u.id, u));
+        return Array.from(map.values());
+      });
+    }
+  }, []);
+
+  // Initial DB Sync + Supabase Realtime Channel Subscription
   useEffect(() => {
-    fetchUsersFromSupabase().then(dbUsers => {
-      if (dbUsers && dbUsers.length > 0) {
+    // 1. Initial snapshot fetch from DB
+    syncUsersFromDb();
+
+    // 2. Realtime listener for INSERT, UPDATE, DELETE events across all browser sessions
+    const sub = subscribeToUserAccountChanges(event => {
+      console.log('⚡ [REALTIME SYNC EVENT]:', event.eventType, event);
+
+      if (event.eventType === 'INSERT') {
         setRegisteredUsers(prev => {
-          const map = new Map<string, UserAccount>();
-          INITIAL_USERS.forEach(u => map.set(u.id, u));
-          prev.forEach(u => map.set(u.id, u));
-          dbUsers.forEach(u => map.set(u.id, u));
-          return Array.from(map.values());
+          const exists = prev.some(u => u.id === event.newRecord.id);
+          if (exists) {
+            return prev.map(u => (u.id === event.newRecord.id ? event.newRecord : u));
+          }
+          return [event.newRecord, ...prev];
+        });
+      } else if (event.eventType === 'UPDATE') {
+        setRegisteredUsers(prev =>
+          prev.map(u => (u.id === event.newRecord.id ? event.newRecord : u))
+        );
+
+        // Instantly update current active user session profile/role/status if modified
+        setCurrentUser(prevUser => {
+          if (prevUser && prevUser.id === event.newRecord.id) {
+            return event.newRecord;
+          }
+          return prevUser;
+        });
+      } else if (event.eventType === 'DELETE') {
+        setRegisteredUsers(prev => prev.filter(u => u.id !== event.oldRecord.id));
+
+        // If currently logged in user account is deleted in DB, handle logout cleanly
+        setCurrentUser(prevUser => {
+          if (prevUser && prevUser.id === event.oldRecord.id) {
+            alert('⚠️ Tài khoản của bạn đã bị xóa khỏi hệ thống bởi Quản trị viên!');
+            setIsLandingPage(true);
+            return null;
+          }
+          return prevUser;
         });
       }
     });
-  }, []);
+
+    // 3. Auto re-sync when window is focused or network recovers
+    const handleFocusOrOnline = () => {
+      console.log('🔄 [RE-CONNECT / FOCUS] Re-syncing user accounts with Supabase DB...');
+      syncUsersFromDb();
+    };
+
+    window.addEventListener('focus', handleFocusOrOnline);
+    window.addEventListener('online', handleFocusOrOnline);
+
+    return () => {
+      if (sub) sub.unsubscribe();
+      window.removeEventListener('focus', handleFocusOrOnline);
+      window.removeEventListener('online', handleFocusOrOnline);
+    };
+  }, [syncUsersFromDb]);
 
   // Sync users to LocalStorage
   useEffect(() => {

@@ -3,8 +3,49 @@ import { UserAccount } from '../types';
 
 export const USER_TABLE = 'user_accounts';
 
+export interface RealtimeUserInsertEvent {
+  eventType: 'INSERT';
+  newRecord: UserAccount;
+}
+
+export interface RealtimeUserUpdateEvent {
+  eventType: 'UPDATE';
+  newRecord: UserAccount;
+  oldRecord: { id: string };
+}
+
+export interface RealtimeUserDeleteEvent {
+  eventType: 'DELETE';
+  oldRecord: { id: string };
+}
+
+export type RealtimeUserEvent =
+  | RealtimeUserInsertEvent
+  | RealtimeUserUpdateEvent
+  | RealtimeUserDeleteEvent;
+
 /**
- * Fetch all users from Supabase database table `user_accounts`.
+ * Maps raw database row into UserAccount frontend interface.
+ */
+export function mapRawDbUserToAccount(u: any): UserAccount {
+  return {
+    id: String(u.id),
+    fullName: u.full_name || '',
+    email: u.email || '',
+    phone: u.phone || '',
+    password: u.password || '123456',
+    role: u.role || 'EDITOR',
+    assignedLevel: u.assigned_level || 'ALL',
+    status: u.status || 'APPROVED',
+    createdAt: u.created_at || new Date().toISOString(),
+    approvedAt: u.approved_at,
+    approvedBy: u.approved_by,
+  };
+}
+
+/**
+ * Fetch all users directly from Supabase database table `user_accounts`.
+ * Database is the authoritative Single Source of Truth.
  */
 export async function fetchUsersFromSupabase(): Promise<UserAccount[] | null> {
   if (!isSupabaseConfigured || !supabase) return null;
@@ -21,19 +62,7 @@ export async function fetchUsersFromSupabase(): Promise<UserAccount[] | null> {
     }
 
     if (data && Array.isArray(data)) {
-      return data.map((u: any) => ({
-        id: u.id,
-        fullName: u.full_name || '',
-        email: u.email || '',
-        phone: u.phone || '',
-        password: u.password || '123456',
-        role: u.role || 'EDITOR',
-        assignedLevel: u.assigned_level || 'ALL',
-        status: u.status || 'APPROVED',
-        createdAt: u.created_at || new Date().toISOString(),
-        approvedAt: u.approved_at,
-        approvedBy: u.approved_by,
-      }));
+      return data.map(mapRawDbUserToAccount);
     }
     return [];
   } catch (err) {
@@ -101,4 +130,58 @@ export async function deleteUserFromSupabase(userId: string): Promise<boolean> {
     console.error('❌ Supabase delete user exception:', err);
     return false;
   }
+}
+
+/**
+ * Subscribe to Supabase Realtime changes (INSERT, UPDATE, DELETE) on `user_accounts` table.
+ * Enables instant multi-browser data consistency without F5/reloads.
+ */
+export function subscribeToUserAccountChanges(
+  onEvent: (event: RealtimeUserEvent) => void
+): { unsubscribe: () => void } | null {
+  if (!isSupabaseConfigured || !supabase) return null;
+
+  console.log('📡 [REALTIME] Subscribing to user_accounts postgres_changes...');
+
+  const channel = supabase
+    .channel('user_accounts_realtime_channel')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: USER_TABLE },
+      (payload) => {
+        console.log('⚡ [REALTIME EVENT RECEIVED]:', payload.eventType, payload);
+
+        if (payload.eventType === 'INSERT' && payload.new) {
+          onEvent({
+            eventType: 'INSERT',
+            newRecord: mapRawDbUserToAccount(payload.new),
+          });
+        } else if (payload.eventType === 'UPDATE' && payload.new) {
+          onEvent({
+            eventType: 'UPDATE',
+            newRecord: mapRawDbUserToAccount(payload.new),
+            oldRecord: { id: String(payload.old?.id || payload.new.id) },
+          });
+        } else if (payload.eventType === 'DELETE' && payload.old) {
+          onEvent({
+            eventType: 'DELETE',
+            oldRecord: { id: String(payload.old.id) },
+          });
+        }
+      }
+    )
+    .subscribe((status, err) => {
+      if (err) {
+        console.error('❌ [REALTIME SUBSCRIPTION ERROR]:', err);
+      } else {
+        console.log(`📡 [REALTIME SUBSCRIPTION STATUS]: ${status}`);
+      }
+    });
+
+  return {
+    unsubscribe: () => {
+      console.log('🔌 [REALTIME] Unsubscribing user_accounts channel...');
+      supabase.removeChannel(channel);
+    },
+  };
 }
