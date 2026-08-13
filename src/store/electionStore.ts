@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   BallotRecord,
   Candidate,
@@ -11,6 +11,20 @@ import {
   Witness,
 } from '../types';
 import { calculateBallot } from '../lib/ballotCalculator';
+import {
+  fetchGlobalElectionData,
+  saveVoterToSupabase,
+  deleteVoterFromSupabase,
+  saveCandidateToSupabase,
+  deleteCandidateFromSupabase,
+  saveBallotToSupabase,
+  deleteBallotFromSupabase,
+  saveCommitteeToSupabase,
+  deleteCommitteeFromSupabase,
+  saveWitnessToSupabase,
+  deleteWitnessFromSupabase,
+  subscribeToGlobalElectionChanges,
+} from '../lib/electionDataService';
 
 // ---------------------------------------------------------
 // INITIAL DATASETS
@@ -85,21 +99,18 @@ const INITIAL_WITNESSES: Witness[] = [
 ];
 
 const INITIAL_CANDIDATES: Candidate[] = [
-  // Cấp Quốc hội
   { id: 'qh-1', stt: 1, fullName: 'Nguyễn Đại Đồng', gender: 'Ông', dob: '13/10/1979', electionLevel: 'QUOC_HOI', voteCount: 4, votePercentage: 44.44, votesType3: 3, votesType2: 1, votesType1: 0 },
   { id: 'qh-2', stt: 2, fullName: 'Nguyễn Duy Minh', gender: 'Ông', dob: '26/07/1982', electionLevel: 'QUOC_HOI', voteCount: 4, votePercentage: 44.44, votesType3: 3, votesType2: 1, votesType1: 0 },
   { id: 'qh-3', stt: 3, fullName: 'Lê Ngọc Quang', gender: 'Ông', dob: '21/01/1978', electionLevel: 'QUOC_HOI', voteCount: 3, votePercentage: 33.33, votesType3: 3, votesType2: 0, votesType1: 0 },
   { id: 'qh-4', stt: 4, fullName: 'Đặng Thị Thanh Trà', gender: 'Bà', dob: '20/08/1978', electionLevel: 'QUOC_HOI', voteCount: 6, votePercentage: 66.67, votesType3: 3, votesType2: 2, votesType1: 1 },
   { id: 'qh-5', stt: 5, fullName: 'Phạm Trần Minh Tuyễn', gender: 'Bà', dob: '11/04/1989', electionLevel: 'QUOC_HOI', voteCount: 1, votePercentage: 11.11, votesType3: 0, votesType2: 0, votesType1: 1 },
 
-  // Cấp HĐND Tỉnh
   { id: 'tinh-1', stt: 1, fullName: 'Vũ Quang Hùng', gender: 'Ông', dob: '06/09/1969', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
   { id: 'tinh-2', stt: 2, fullName: 'Lê Phú Nguyên', gender: 'Ông', dob: '01/01/1978', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
   { id: 'tinh-3', stt: 3, fullName: 'Nguyễn Thị Phượng', gender: 'Bà', dob: '14/07/1974', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
   { id: 'tinh-4', stt: 4, fullName: 'Nguyễn Thị Xuân Sang', gender: 'Bà', dob: '22/01/1992', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
   { id: 'tinh-5', stt: 5, fullName: 'Châu Thị Thu', gender: 'Bà', dob: '01/04/1988', electionLevel: 'HDND_TINH', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
 
-  // Cấp HĐND Xã (Theo ảnh mẫu Xã Hòa Tiến)
   { id: 'xa-1', stt: 1, fullName: 'BÙI NGỌC ANH', gender: 'Ông', dob: '19/03/1979', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
   { id: 'xa-2', stt: 2, fullName: 'NGUYỄN CƯỜNG', gender: 'Ông', dob: '18/12/1975', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
   { id: 'xa-3', stt: 3, fullName: 'PHẠM ĐIỆP', gender: 'Ông', dob: '25/01/1964', electionLevel: 'HDND_XA', voteCount: 0, votePercentage: 0, votesType3: 0, votesType2: 0, votesType1: 0 },
@@ -171,6 +182,47 @@ export function useElectionStore() {
     return saved ? { ...defaultVal, ...JSON.parse(saved) } : defaultVal;
   });
 
+  // Authoritative Database Sync Callback (Supabase DB is Single Source of Truth)
+  const syncGlobalElectionDataFromDb = useCallback(async () => {
+    const snapshot = await fetchGlobalElectionData();
+    if (snapshot) {
+      if (snapshot.unit) setUnit(snapshot.unit);
+      if (snapshot.configs) setConfigs(snapshot.configs);
+      if (snapshot.committee && snapshot.committee.length > 0) setCommittee(snapshot.committee);
+      if (snapshot.witnesses && snapshot.witnesses.length > 0) setWitnesses(snapshot.witnesses);
+      if (snapshot.candidates && snapshot.candidates.length > 0) setCandidates(snapshot.candidates);
+      if (snapshot.voters && snapshot.voters.length > 0) setVoters(snapshot.voters);
+      if (snapshot.ballots && snapshot.ballots.length > 0) setBallots(snapshot.ballots);
+    }
+  }, []);
+
+  // Global Realtime Subscription & Initial Fetch Effect
+  useEffect(() => {
+    // 1. Fetch initial snapshot from Supabase DB
+    syncGlobalElectionDataFromDb();
+
+    // 2. Realtime subscription to postgres_changes across shared business tables
+    const sub = subscribeToGlobalElectionChanges((tableName, _eventType, _payload) => {
+      console.log(`⚡ [GLOBAL REALTIME EVENT TRIGGERED] Table: ${tableName}`);
+      syncGlobalElectionDataFromDb();
+    });
+
+    // 3. Auto re-sync on window focus / network reconnect
+    const handleFocusOrOnline = () => {
+      console.log('🔄 [GLOBAL RE-CONNECT / FOCUS] Refreshing global election DB snapshot...');
+      syncGlobalElectionDataFromDb();
+    };
+
+    window.addEventListener('focus', handleFocusOrOnline);
+    window.addEventListener('online', handleFocusOrOnline);
+
+    return () => {
+      if (sub) sub.unsubscribe();
+      window.removeEventListener('focus', handleFocusOrOnline);
+      window.removeEventListener('online', handleFocusOrOnline);
+    };
+  }, [syncGlobalElectionDataFromDb]);
+
   // Auto-synchronize totalVoters & numCandidates for each level from real lists
   useEffect(() => {
     const qhVoters = voters.filter(v => v.eligibleQuocHoi !== false).length;
@@ -202,7 +254,7 @@ export function useElectionStore() {
     });
   }, [voters, candidates]);
 
-  // Synchronize to LocalStorage
+  // Synchronize to LocalStorage (as UI cache fallback)
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.UNIT, JSON.stringify(unit));
     localStorage.setItem(STORAGE_KEYS.CONFIGS, JSON.stringify(configs));
@@ -214,7 +266,7 @@ export function useElectionStore() {
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
   }, [unit, configs, committee, witnesses, candidates, voters, ballots, settings]);
 
-  // Actions
+  // Actions with Supabase DB persistence
   const toggleVoterStatus = (voterId: string) => {
     setVoters(prev =>
       prev.map(v => {
@@ -222,7 +274,9 @@ export function useElectionStore() {
           const nextState = !v.hasVoted;
           const now = new Date();
           const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-          return { ...v, hasVoted: nextState, votedAt: nextState ? timeStr : undefined };
+          const updated = { ...v, hasVoted: nextState, votedAt: nextState ? timeStr : undefined };
+          saveVoterToSupabase(updated);
+          return updated;
         }
         return v;
       })
@@ -254,6 +308,7 @@ export function useElectionStore() {
 
     const updatedBallots = [...ballots, newRecord];
     setBallots(updatedBallots);
+    saveBallotToSupabase(newRecord);
 
     recalculateCandidateVotes(level, updatedBallots, candidates);
 
@@ -277,7 +332,7 @@ export function useElectionStore() {
 
       const newRecords: BallotRecord[] = [];
       for (let i = 0; i < count; i++) {
-        newRecords.push({
+        const item: BallotRecord = {
           id: `ballot-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 7)}`,
           ballotIndex: startIndex + i,
           electionLevel: level,
@@ -287,7 +342,9 @@ export function useElectionStore() {
           electedCandidateIds: result.electedCandidates.map(c => c.id),
           numElectedCount,
           createdAt: nowIso,
-        });
+        };
+        newRecords.push(item);
+        saveBallotToSupabase(item);
       }
 
       updatedAllBallots = [...prevBallots, ...newRecords];
@@ -306,13 +363,16 @@ export function useElectionStore() {
     const lastBallot = levelBallots[levelBallots.length - 1];
     const updatedBallots = ballots.filter(b => b.id !== lastBallot.id);
     setBallots(updatedBallots);
+    deleteBallotFromSupabase(lastBallot.id);
 
     recalculateCandidateVotes(level, updatedBallots, candidates);
   };
 
   const resetBallotsForLevel = (level: ElectionLevel) => {
+    const targetBallots = ballots.filter(b => b.electionLevel === level);
     const updatedBallots = ballots.filter(b => b.electionLevel !== level);
     setBallots(updatedBallots);
+    targetBallots.forEach(b => deleteBallotFromSupabase(b.id));
 
     recalculateCandidateVotes(level, updatedBallots, candidates);
   };
@@ -344,7 +404,7 @@ export function useElectionStore() {
         ? parseFloat(((votes / totalValidBallotsCount) * 100).toFixed(2))
         : 0;
 
-      return {
+      const updated = {
         ...c,
         voteCount: votes,
         votePercentage: percentage,
@@ -352,6 +412,8 @@ export function useElectionStore() {
         votesType2,
         votesType1,
       };
+      saveCandidateToSupabase(updated);
+      return updated;
     });
 
     setCandidates(updatedCandidates);
@@ -365,16 +427,19 @@ export function useElectionStore() {
       stt: committee.length + 1,
     };
     setCommittee([...committee, newMember]);
+    saveCommitteeToSupabase(newMember);
   };
 
   const updateCommitteeMember = (updated: CommitteeMember) => {
     setCommittee(committee.map(m => (m.id === updated.id ? updated : m)));
+    saveCommitteeToSupabase(updated);
   };
 
   const deleteCommitteeMember = (id: string) => {
     const filtered = committee.filter(m => m.id !== id);
     const reindexed = filtered.map((m, idx) => ({ ...m, stt: idx + 1 }));
     setCommittee(reindexed);
+    deleteCommitteeFromSupabase(id);
   };
 
   // CRUD FOR WITNESSES
@@ -385,16 +450,19 @@ export function useElectionStore() {
       stt: witnesses.length + 1,
     };
     setWitnesses([...witnesses, newWitness]);
+    saveWitnessToSupabase(newWitness);
   };
 
   const updateWitness = (updated: Witness) => {
     setWitnesses(witnesses.map(w => (w.id === updated.id ? updated : w)));
+    saveWitnessToSupabase(updated);
   };
 
   const deleteWitness = (id: string) => {
     const filtered = witnesses.filter(w => w.id !== id);
     const reindexed = filtered.map((w, idx) => ({ ...w, stt: idx + 1 }));
     setWitnesses(reindexed);
+    deleteWitnessFromSupabase(id);
   };
 
   // CRUD FOR CANDIDATES (3 LEVELS)
@@ -415,6 +483,7 @@ export function useElectionStore() {
 
     const updatedCandidates = [...candidates, newCandidate];
     setCandidates(updatedCandidates);
+    saveCandidateToSupabase(newCandidate);
 
     updateLevelConfig(candidate.electionLevel, {
       numCandidates: levelCandidates.length + 1,
@@ -423,6 +492,7 @@ export function useElectionStore() {
 
   const updateCandidate = (updatedCandidate: Candidate) => {
     setCandidates(candidates.map(c => (c.id === updatedCandidate.id ? updatedCandidate : c)));
+    saveCandidateToSupabase(updatedCandidate);
   };
 
   const deleteCandidate = (id: string) => {
@@ -439,6 +509,7 @@ export function useElectionStore() {
     ];
 
     setCandidates(updated);
+    deleteCandidateFromSupabase(id);
 
     updateLevelConfig(target.electionLevel, {
       numCandidates: reindexedLevelCandidates.length,
@@ -454,22 +525,26 @@ export function useElectionStore() {
         id: `v-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         stt: nextStt,
       };
+      saveVoterToSupabase(item);
       return [...prev, item];
     });
   };
 
   const updateVoter = (updated: Voter) => {
     setVoters(prev => prev.map(v => (v.id === updated.id ? updated : v)));
+    saveVoterToSupabase(updated);
   };
 
   const deleteVoter = (id: string) => {
     setVoters(prev => {
       const filtered = prev.filter(v => v.id !== id);
+      deleteVoterFromSupabase(id);
       return filtered.map((v, idx) => ({ ...v, stt: idx + 1 }));
     });
   };
 
   const clearAllVoters = () => {
+    voters.forEach(v => deleteVoterFromSupabase(v.id));
     setVoters([]);
   };
 
@@ -477,11 +552,15 @@ export function useElectionStore() {
   const importVotersBatch = (newVotersList: Omit<Voter, 'id' | 'stt'>[]) => {
     setVoters(prev => {
       let currentStt = prev.length + 1;
-      const items: Voter[] = newVotersList.map(v => ({
-        ...v,
-        id: `v-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        stt: currentStt++,
-      }));
+      const items: Voter[] = newVotersList.map(v => {
+        const item: Voter = {
+          ...v,
+          id: `v-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          stt: currentStt++,
+        };
+        saveVoterToSupabase(item);
+        return item;
+      });
       return [...prev, ...items];
     });
   };
